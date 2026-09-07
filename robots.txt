@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://dafiq18.github.io/webpelanggan/sitemap.xml
