@@ -151,7 +151,7 @@ button{touch-action:manipulation}
 .picker-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin:14px 0 8px}.picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.picker-choice{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);color:#fff;padding:12px 8px;text-align:center;cursor:pointer;min-height:58px;font-weight:900}.picker-choice small{display:block;color:#94a3b8;font-size:11px;margin-top:3px;font-weight:700}.picker-choice.active{border-color:var(--cyan);background:rgba(34,211,238,.13);box-shadow:0 0 0 2px rgba(34,211,238,.09) inset}.picker-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.picker-actions button{min-height:48px;border-radius:13px;border:0;font-weight:900;cursor:pointer}.picker-cancel{background:rgba(255,255,255,.08);color:#fff}.picker-confirm{background:linear-gradient(100deg,#67e8f9,#a7f3d0);color:#052e16}
 .ai-status{font-size:11px;color:#86efac;margin-top:3px}.ai-msg.bot strong{font-weight:900}
 @media(max-width:600px){.picker-grid{grid-template-columns:1fr 1fr}.picker-actions{grid-template-columns:1fr}.ai-messages{height:56vh}.ai-input{grid-template-columns:1fr}.ai-send{min-height:46px}.hero h1{font-size:clamp(38px,13vw,60px)}.search{padding:8px 12px}.search input{min-height:44px}}
-.clear-btn{background:linear-gradient(135deg,#c0392b,#8e1f16)!important;color:#fff!important}</style></head><body><main class="wrap">
+.clear-btn{background:linear-gradient(135deg,#c0392b,#8e1f16)!important;color:#fff!important}.ai-msg{white-space:pre-wrap;line-height:1.55}</style></head><body><main class="wrap">
 <!-- =========================
      NAVIGASI KATEGORI
      ========================= -->
@@ -6759,6 +6759,10 @@ button{touch-action:manipulation}
   // Efek mengetik untuk AI
   div.textContent = "";
 
+    text = String(text)
+    .replace(/\*\*/g, "")
+    .replace(/([:!?])\s+(?=1\.\s)/g, "$1\n\n")
+    .replace(/\s+(?=\d{1,2}\.\s+[A-Z])/g, "\n");
   var characters = Array.from(text);
 
   for(var i = 0; i < characters.length; i++){
