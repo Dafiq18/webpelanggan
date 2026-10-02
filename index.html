@@ -6752,6 +6752,7 @@ button{touch-action:manipulation}
       found.sort(function(a,b){return b.score-a.score;});
       var top=found.slice(0,5);
       if(/apa itu edp|edp itu|eau de parfum/i.test(q))return 'EDP (Eau de Parfum) adalah tipe parfum dengan konsentrasi parfum yang umumnya lebih tinggi daripada EDT. Cocok jika kamu ingin aroma yang cukup terasa tanpa harus terlalu berat.';
+      if(/halo|hai|p|oi|oy/i.test(q))return 'Halo juga, Perkenalkan saya asistent aroma semarang. Ada yang bisa saya bantu?';
       if(/le parfum/i.test(q) && /apa|arti|itu|beda|bedanya/.test(q))return 'Le Parfum biasanya diposisikan sebagai versi yang lebih pekat/intens dibanding EDP. Namun formula dan ketahanan tiap produk bisa berbeda, jadi jangan menganggap semua Le Parfum pasti sama.';
       if(/extrait|extract/i.test(q) && /apa|arti|itu|beda|bedanya/.test(q))return 'Extrait de Parfum umumnya merupakan konsentrasi yang lebih tinggi dan karakter aromanya bisa terasa lebih pekat. Ketahanan tetap bergantung pada formula, kulit, cuaca, dan pemakaian.';
       if(/awet|tahan lama|longevity|berapa jam/i.test(q))return 'Untuk ketahanan, konsentrasi yang lebih tinggi sering terasa lebih pekat, tetapi durasi tidak bisa dijamin hanya dari nama EDP/Le Parfum/Extrait. Kulit, cuaca, jumlah semprotan, dan formulanya sangat berpengaruh.';
