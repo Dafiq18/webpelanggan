@@ -6703,13 +6703,34 @@ button{touch-action:manipulation}
     };
 
     /* ---------- AI LOKAL ---------- */
-    function addAI(text,who){
-      var div=document.createElement("div");
-      div.className="ai-msg "+who;
-      div.textContent=text;
-      aiMessages.appendChild(div);
-      aiMessages.scrollTop=aiMessages.scrollHeight;
-    }
+    async function addAI(text, who){
+  var div = document.createElement("div");
+  div.className = "ai-msg " + who;
+
+  aiMessages.appendChild(div);
+
+  // Pesan user langsung tampil
+  if(who === "user"){
+    div.textContent = text;
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+    return;
+  }
+
+  // Efek mengetik untuk AI
+  div.textContent = "";
+
+  var characters = Array.from(text);
+
+  for(var i = 0; i < characters.length; i++){
+    div.textContent += characters[i];
+
+    aiMessages.scrollTop = aiMessages.scrollHeight;
+
+    await new Promise(function(resolve){
+      setTimeout(resolve, 20);
+    });
+  }
+}
 
     function catalogText(card){
       var data=card.querySelector(".detail-data");
