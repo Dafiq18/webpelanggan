@@ -6786,6 +6786,36 @@ button{touch-action:manipulation}
 
     function aiAnswer(question){
       var q=normalize(question), found=[];
+            for(var jm=0;jm<jawabanManual.length;jm++){
+        if(jawabanManual[jm].kata.some(function(k){return q.indexOf(normalize(k))>=0;})) return jawabanManual[jm].jawab;
+      }
+          /* ====== DAFTAR JAWABAN MANUAL (ISI DI SINI) ====== */
+    var jawabanManual = [
+      {
+        kata: ["jam buka","jam operasional","buka jam","tutup jam"],
+        jawab: "ISI JAM BUKA TOKO DI SINI, contoh: Toko buka setiap hari jam 09.00 - 21.00."
+      },
+      {
+        kata: ["alamat","lokasi","dimana toko","di mana toko"],
+        jawab: "ISI ALAMAT TOKO DI SINI."
+      },
+      {
+        kata: ["ongkir","ongkos kirim","pengiriman","kirim kemana"],
+        jawab: "ISI INFO PENGIRIMAN DI SINI."
+      },
+      {
+        kata: ["bayar","pembayaran","transfer","cod"],
+        jawab: "ISI CARA PEMBAYARAN DI SINI."
+      },
+      {
+        kata: ["admin","hubungi","kontak","nomor wa"],
+        jawab: "Hubungi kami lewat WhatsApp 0882005034977."
+      }
+      {
+        kata: ["siapa penciptamu","memprogram","membuatmu"],
+        jawab: "Saya di ciptakan sama 'dafiq' untuk membantu melayani anda."
+      },
+    ];
       var wantsWomen=/wanita|cewek|perempuan|women|female/i.test(q), wantsMen=/pria|cowok|laki|men|male/i.test(q);
       var wantsFresh=/fresh|segar|clean|bersih|aquatic|laut|citrus|citrusy|panas|siang/i.test(q);
       var wantsSweet=/manis|sweet|gourmand|vanilla|creamy|caramel|coffee|kopi|coklat/i.test(q);
