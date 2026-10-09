@@ -6897,14 +6897,52 @@ button{touch-action:manipulation}
       try{ return aiAnswer(q+" "+fixTypos(q)); }
       catch(e){ return "Maaf, aku belum bisa menjawab itu. Coba tanya soal parfum, misalnya \"parfum fresh untuk cowok\", atau hubungi admin lewat WhatsApp 0882005034977."; }
     }
-    async function askAI(){
-      var q=aiInput.value.trim(); if(!q||aiBusy)return;
-      aiBusy=true; addAI(q,"user"); aiInput.value="";
-      var wait=document.createElement("div"); wait.className="ai-msg bot"; wait.textContent="Sedang berpikir…"; aiMessages.appendChild(wait); aiMessages.scrollTop=aiMessages.scrollHeight;
-      var a=await aiReply(q); wait.remove();
-      aiHistory.push({role:"user",content:q},{role:"assistant",content:a});
-      await addAI(a,"bot"); aiBusy=false;bicara(a); await addAI(a,"bot"); aiBusy=false;
+    
+async function askAI(){
+  var q = aiInput.value.trim();
+
+  if (!q || aiBusy) return;
+
+  aiBusy = true;
+  addAI(q, "user");
+  aiInput.value = "";
+
+  var wait = document.createElement("div");
+  wait.className = "ai-msg bot";
+  wait.textContent = "Sedang berpikir...";
+  aiMessages.appendChild(wait);
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+
+  try {
+    var a = await aiReply(q);
+
+    if (!a || !String(a).trim()) {
+      a = "Maaf, aku belum menemukan jawaban. Coba sebutkan nama parfum atau aroma yang kamu cari.";
     }
+
+    a = String(a);
+
+    aiHistory.push(
+      { role: "user", content: q },
+      { role: "assistant", content: a }
+    );
+
+    wait.remove();
+    await addAI(a, "bot");
+    bicara(a);
+
+  } catch (error) {
+    wait.remove();
+
+    await addAI(
+      "Maaf, ada kendala saat memproses pertanyaanmu. Coba tulis dengan kalimat yang lebih sederhana atau sebutkan nama parfumnya.",
+      "bot"
+    );
+
+  } finally {
+    aiBusy = false;
+  }
+}
 
         /* ---------- SUARA AI ---------- */
     var suaraBisa = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
