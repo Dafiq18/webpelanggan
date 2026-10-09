@@ -6903,9 +6903,63 @@ button{touch-action:manipulation}
       var wait=document.createElement("div"); wait.className="ai-msg bot"; wait.textContent="Sedang berpikir…"; aiMessages.appendChild(wait); aiMessages.scrollTop=aiMessages.scrollHeight;
       var a=await aiReply(q); wait.remove();
       aiHistory.push({role:"user",content:q},{role:"assistant",content:a});
-      await addAI(a,"bot"); aiBusy=false;
+      await addAI(a,"bot"); aiBusy=false;bicara(a); await addAI(a,"bot"); aiBusy=false;
     }
 
+        /* ---------- SUARA AI ---------- */
+    var suaraBisa = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
+    var suaraAktif = true;
+    try{ if(localStorage.getItem("aromaSuara")==="off") suaraAktif=false; }catch(e){}
+    function pilihSuara(){
+      var vs = window.speechSynthesis.getVoices() || [];
+      for(var i=0;i<vs.length;i++){ if(/^id([-_]|$)/i.test(vs[i].lang)) return vs[i]; }
+      return null;
+    }
+    function bersihkanUntukSuara(t){
+      t = String(t||"")
+        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu," ")
+        .replace(/[•→·]/g,",").replace(/\s+—\s+/g,", ")
+        .replace(/\n+/g,". ").replace(/\s+/g," ").trim();
+      if(t.length>420){
+        var cut=t.slice(0,420), p=Math.max(cut.lastIndexOf(". "),cut.lastIndexOf("? "),cut.lastIndexOf("! "));
+        t = (p>150) ? cut.slice(0,p+1) : cut;
+      }
+      return t;
+    }
+    function bicara(teks){
+      if(!suaraBisa || !suaraAktif) return;
+      try{
+        var s = window.speechSynthesis; s.cancel();
+        var u = new SpeechSynthesisUtterance(bersihkanUntukSuara(teks));
+        u.lang = "id-ID"; var v = pilihSuara(); if(v) u.voice = v;
+        u.rate = 1; u.pitch = 1;
+        s.speak(u);
+      }catch(e){}
+    }
+    function hentikanSuara(){ try{ if(suaraBisa) window.speechSynthesis.cancel(); }catch(e){} }
+    function bukaKunciSuara(){
+      if(!suaraBisa || !suaraAktif) return;
+      try{ var u = new SpeechSynthesisUtterance(" "); u.volume = 0; window.speechSynthesis.speak(u); }catch(e){}
+    }
+    if(suaraBisa){
+      var tombolSuara = document.createElement("button");
+      tombolSuara.type = "button";
+      tombolSuara.setAttribute("aria-label","Nyalakan atau matikan suara AI");
+      tombolSuara.style.cssText = "margin-top:6px;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:none;color:inherit;font:inherit;font-size:12px;cursor:pointer";
+      var labelSuara = function(){ tombolSuara.textContent = suaraAktif ? "🔊 Suara: nyala" : "🔇 Suara: mati"; };
+      labelSuara();
+      tombolSuara.onclick = function(){
+        suaraAktif = !suaraAktif;
+        try{ localStorage.setItem("aromaSuara", suaraAktif ? "on" : "off"); }catch(e){}
+        if(suaraAktif) bukaKunciSuara(); else hentikanSuara();
+        labelSuara();
+      };
+      var statusAI = aiModal.querySelector(".ai-status");
+      if(statusAI && statusAI.parentNode) statusAI.parentNode.appendChild(tombolSuara);
+      aiSend.addEventListener("click", bukaKunciSuara);
+      aiInput.addEventListener("keydown", function(e){ if(e.key==="Enter") bukaKunciSuara(); });
+      aiClose.addEventListener("click", hentikanSuara);
+    }
     aiFab.onclick=function(){aiModal.classList.add("open");body.classList.add("modal-open");aiInput.focus();};
     aiClose.onclick=function(){aiModal.classList.remove("open");if(!shopModal.classList.contains("open")&&!modal.classList.contains("open"))body.classList.remove("modal-open");};
     aiModal.onclick=function(e){if(e.target===aiModal)aiClose.onclick();};
