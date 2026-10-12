@@ -6958,22 +6958,57 @@ async function askAI(){
         .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu," ")
         .replace(/[•→·]/g,",").replace(/\s+—\s+/g,", ")
         .replace(/\n+/g,". ").replace(/\s+/g," ").trim();
-      if(t.length>420){
-        var cut=t.slice(0,420), p=Math.max(cut.lastIndexOf(". "),cut.lastIndexOf("? "),cut.lastIndexOf("! "));
-        t = (p>150) ? cut.slice(0,p+1) : cut;
-      }
+      
+if (t.length > 1800) {
+  var cut = t.slice(0, 1800);
+  var p = Math.max(
+    cut.lastIndexOf(". "),
+    cut.lastIndexOf("? "),
+    cut.lastIndexOf("! ")
+  );
+
+  t = p > 900 ? cut.slice(0, p + 1) : cut;
+}
+
       return t;
     }
-    function bicara(teks){
-      if(!suaraBisa || !suaraAktif) return;
-      try{
-        var s = window.speechSynthesis; s.cancel();
-        var u = new SpeechSynthesisUtterance(bersihkanUntukSuara(teks));
-        u.lang = "id-ID"; var v = pilihSuara(); if(v) u.voice = v;
-        u.rate = 1; u.pitch = 1;
-        s.speak(u);
-      }catch(e){}
+    
+function bicara(teks) {
+  if (!suaraBisa || !suaraAktif) return;
+
+  try {
+    var s = window.speechSynthesis;
+
+    // Hentikan suara sebelumnya agar tidak bertumpuk
+    s.cancel();
+
+    // Bersihkan emoji dan format yang sulit dibacakan
+    var kalimat = bersihkanUntukSuara(teks);
+    if (!kalimat) return;
+
+    var u = new SpeechSynthesisUtterance(kalimat);
+
+    // Gunakan bahasa Indonesia
+    u.lang = "id-ID";
+
+    // Pilih suara Indonesia jika tersedia
+    var suara = pilihSuara();
+    if (suara) {
+      u.voice = suara;
     }
+
+    // Kecepatan dan nada suara
+    u.rate = 0.92;
+    u.pitch = 1;
+    u.volume = 1;
+
+    s.speak(u);
+
+  } catch (error) {
+    console.warn("Suara AI bermasalah:", error);
+  }
+}
+
     function hentikanSuara(){ try{ if(suaraBisa) window.speechSynthesis.cancel(); }catch(e){} }
     function bukaKunciSuara(){
       if(!suaraBisa || !suaraAktif) return;
