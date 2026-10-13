@@ -6814,11 +6814,231 @@ button{touch-action:manipulation}
         jawab: "Saya diciptakan oleh Dafiq untuk membantu melayani Anda."
       }
     ];
-    function aiAnswer(question){
-      var q=normalize(question), found=[];
-      for(var jm=0;jm<semuaJawaban.length;jm++){
-        if(semuaJawaban[jm].kata.some(function(k){return q.indexOf(normalize(k))>=0;})) return semuaJawaban[jm].jawab;
+        var jawabanParfum = [];
+    /* ===== TEMPEL BAGIAN 1 SAMPAI 6 DI BARIS KOSONG DI BAWAH INI, BERURUTAN ===== */
+        /* ====== OTAK AI PARFUM: LOGIKA ====== */
+    function Q(k,j,l,p,u){var o={kata:k.split(","),jawab:j};if(l)o.lanjut=true;if(p)o.profil=p;if(u)o.umum=true;return o;}
+    var PROFIL = {"malam": ["vanil", "vanila", "vanilla", "amber", "ambar", "ambergris", "tonka", "oud", "oudh", "gaharu", "kayu manis", "cinnamon", "cengkeh", "clove", "tembakau", "tobacco", "leather", "dupa", "incense", "kemenyan", "resin", "benzoin", "labdanum", "madu", "honey", "karamel", "caramel", "pralin", "praline", "coklat", "cokelat", "chocolate", "kakao", "cacao", "kopi", "coffee", "rum", "whisky", "rempah", "spicy", "lada", "pepper", "kapulaga", "cardamom", "saffron", "safran", "cendana", "sandalwood", "nilam", "patchouli", "gourmand", "sweet", "woody", "intense", "noir", "night", "nuit", "tuberose", "sedap malam", "ylang", "kenanga"], "siang": ["lemon", "jeruk", "bergamot", "citrus", "citrusy", "grapefruit", "mandarin", "yuzu", "lime", "mint", "mentol", "peppermint", "laut", "aquatic", "marine", "ocean", "segar", "fresh", "teh hijau", "green tea", "tea", "daun", "green", "apel", "apple", "melon", "timun", "mentimun", "cucumber", "tropis", "tropical", "neroli", "bunga jeruk", "orange blossom", "lavender", "pir", "pear", "semangka", "watermelon", "ozonic", "airy", "water", "aqua", "jahe", "ginger", "citron", "orange"], "kantor": ["musk", "kesturi", "cedar", "cedarwood", "lavender", "iris", "linen", "clean", "bersih", "sabun", "soap", "teh", "tea", "bergamot", "citrus", "lemon", "powdery", "bedak", "aldehid", "aldehyde", "vetiver", "akar wangi", "sandalwood", "cendana", "freesia", "lily", "lili", "green tea", "teh hijau"], "kencan": ["vanil", "vanila", "vanilla", "musk", "tonka", "mawar", "rose", "melati", "jasmine", "peony", "ylang", "kenanga", "tuberose", "sedap malam", "sweet", "floral", "fruity", "peach", "persik", "raspberry", "berry", "karamel", "caramel", "pralin", "praline", "cokelat", "coklat", "amber", "sensual", "creamy", "madu"], "acara": ["mawar", "rose", "melati", "jasmine", "iris", "oud", "gaharu", "amber", "cendana", "sandalwood", "tuberose", "sedap malam", "saffron", "safran", "ylang", "kenanga", "patchouli", "nilam", "vanil", "powdery", "aldehyd", "elegan", "luxury", "royal"], "manis": ["vanil", "vanila", "vanilla", "karamel", "caramel", "pralin", "praline", "coklat", "cokelat", "chocolate", "kakao", "cacao", "kopi", "coffee", "madu", "honey", "tonka", "gula", "sugar", "permen", "candy", "creamy", "gourmand", "sweet", "manis", "almond", "marshmallow", "kelapa", "coconut", "susu", "milk"], "floral": ["floral", "bunga", "mawar", "rose", "melati", "jasmine", "peony", "lily", "lili", "freesia", "violet", "magnolia", "tuberose", "sedap malam", "ylang", "kenanga", "iris", "orchid", "anggrek", "gardenia", "neroli", "bunga jeruk", "powdery", "bedak", "heliotrope", "lotus", "teratai", "sakura"], "woody": ["woody", "kayu", "oud", "oudh", "gaharu", "cendana", "sandalwood", "cedar", "cedarwood", "vetiver", "akar wangi", "patchouli", "nilam", "amber", "ambar", "ambergris", "leather", "tembakau", "tobacco", "dupa", "incense", "kemenyan", "rempah", "spicy", "lada", "pepper", "kapulaga", "cardamom", "cengkeh", "clove", "birch", "guaiac", "oakmoss", "lumut", "pinus", "pine", "smoky"], "buah": ["fruity", "buah", "berry", "raspberry", "strawberry", "stroberi", "cherry", "ceri", "peach", "persik", "apel", "apple", "pir", "pear", "mangga", "mango", "nanas", "pineapple", "semangka", "melon", "plum", "fig", "buah ara", "kelapa", "coconut", "tropis", "tropical", "pisang", "banana", "anggur", "grape", "aprikot", "apricot", "blackcurrant", "cassis", "lychee", "leci"]};
+    var LABEL = {"malam": "malam hari", "siang": "siang / segar", "kantor": "kantor / harian", "kencan": "kencan", "acara": "acara / elegan", "manis": "manis", "floral": "floral", "woody": "woody / hangat", "buah": "fruity"};
+    var DETEKSI = [["malam", "\\bmalam\\b|nightlife|clubbing|\\bnight\\b|dinner"], ["malam", "hujan|dingin|sejuk|hangat|cozy|nyaman"], ["siang", "siang|pagi|panas|terik|outdoor|olahraga|gym|kuliah|sekolah|segar|fresh|citrus|jeruk|aquatic|laut|pantai|ringan|harian|santai|keringat"], ["kantor", "kantor|kerja|office|rapat|meeting|wawancara|interview|presentasi|bersih|rapi|profesional|sopan|masjid"], ["kencan", "kencan|\\bdate\\b|romantis|pacar|sensual|seksi|menggoda|memikat|valentine"], ["acara", "kondangan|pernikahan|resepsi|pesta|acara|elegan|mewah|berkelas|formal|wisuda|lebaran"], ["manis", "manis|sweet|gourmand|vanil|karamel|caramel|coklat|cokelat|kopi|coffee|creamy|dessert|permen|madu"], ["floral", "floral|bunga|mawar|\\brose\\b|melati|jasmine|peony|powdery|bedak|feminin|\\blily\\b|\\blili\\b|violet"], ["woody", "woody|kayu|\\boud\\b|oudh|gaharu|cendana|sandalwood|cedar|amber|rempah|spicy|leather|maskulin|tembakau|tobacco|dupa|incense|smoky"], ["buah", "buah|fruity|berry|peach|persik|apel|mangga|nanas|tropis|tropical|kelapa|coconut|stroberi|cherry"]];
+    var STOPKATA = {}; "wanita pria cewek cowok laki perempuan women unisex gender yang buat untuk apakah bagaimana gimana kenapa mengapa dong saya bisa boleh mau ingin tolong parfum wangi aroma minyak tidak nggak kalau lebih banyak sedikit sekali dengan dari pada akan sudah belum juga cuma hanya biar supaya sama atau itu apa nih deh banget cocok bagus enak aja saja".split(" ").forEach(function(w){STOPKATA[w]=1;});
+
+    function cocokKata(q,k){
+      k=normalize(k).trim(); if(!k) return 0;
+      if(k.length<=4){
+        var re=new RegExp("(^|[^a-z0-9])"+k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"($|[^a-z0-9])");
+        return re.test(q)?k.length:0;
       }
+      return q.indexOf(k)>=0?k.length:0;
+    }
+    function cariJawaban(question){
+      var q=normalize(question), best=null, bestScore=0, all=jawabanManual.concat(jawabanParfum);
+      for(var i=0;i<all.length;i++){
+        var bonus=i<jawabanManual.length?3:0;
+        for(var j=0;j<all[i].kata.length;j++){
+          var s=cocokKata(q,all[i].kata[j]);
+          if(s&&s+bonus>bestScore){bestScore=s+bonus;best=all[i];}
+        }
+      }
+      return best;
+    }
+
+    var fuzzyIdx=null;
+    function bangunFuzzy(){
+      var all=jawabanManual.concat(jawabanParfum), df={}, tops=[];
+      for(var i=0;i<all.length;i++){
+        var set={};
+        all[i].kata.forEach(function(k){
+          normalize(k).split(/[^a-z0-9]+/).forEach(function(w){ if(w.length>=4 && !STOPKATA[w]) set[w]=1; });
+        });
+        tops.push(set);
+        for(var w in set){ df[w]=(df[w]||0)+1; }
+      }
+      fuzzyIdx={all:all,tops:tops,df:df};
+    }
+    function cariFuzzy(question){
+      if(!fuzzyIdx) bangunFuzzy();
+      var toks=normalize(question).split(/[^a-z0-9]+/).filter(function(w){return w.length>=4 && !STOPKATA[w];});
+      var best=null, bs=0;
+      for(var i=0;i<fuzzyIdx.all.length;i++){
+        var s=0, seen={};
+        toks.forEach(function(w){
+          if(fuzzyIdx.tops[i][w] && !seen[w]){ seen[w]=1; s+=(1/fuzzyIdx.df[w])*(w.length>=6?1:0.7); }
+        });
+        if(s>bs){bs=s;best=fuzzyIdx.all[i];}
+      }
+      return bs>=0.5?best:null;
+    }
+
+    /* ---------- REKOMENDASI DARI KATALOG ---------- */
+    var teksKartu=null, namaKartu=null;
+    function dataKartu(card){ var d=card.querySelector(".detail-data"); return d?d.dataset:null; }
+    function bersihMerek(b){ var x=String(b||"").replace(/\s+(for|untuk)\s+.*$/i,"").trim(); return x||String(b||""); }
+    function padKata(t){ return " "+normalize(t||"").replace(/[^a-z0-9]+/g," ")+" "; }
+    function siapkanKartu(){
+      if(teksKartu) return;
+      teksKartu=[]; namaKartu=[];
+      cards.forEach(function(card){
+        var d=dataKartu(card)||{}, desc=String(d.desc||"");
+        var ma=/nada atas terdiri dari ([^;]*)/i.exec(desc), mt=/nada tengah terdiri dari ([^;]*)/i.exec(desc), md=/nada dasar terdiri dari ([^.]*)/i.exec(desc);
+        var acc=String(d.accord||""); if(acc.toLowerCase().indexOf("belum tersedia")>=0) acc="";
+        teksKartu.push({nama:padKata(String(d.name||"").split("|")[0]), accord:padKata(acc), atas:padKata(ma?ma[1]:""), tengah:padKata(mt?mt[1]:""), dasar:padKata(md?md[1]:""), semua:padKata(desc), adaNada:!!(ma||mt||md)});
+        var n=normalize(String(d.name||"").split("|")[0]).replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+        namaKartu.push(n.length>=6?n:"");
+      });
+    }
+    function adaNamaProduk(q){
+      siapkanKartu();
+      var qq=" "+q.replace(/[^a-z0-9]+/g," ")+" ";
+      for(var i=0;i<namaKartu.length;i++){ if(namaKartu[i] && qq.indexOf(" "+namaKartu[i]+" ")>=0) return true; }
+      return false;
+    }
+    function ringkasKartu(d){
+      var a=String(d.accord||"").trim();
+      if(a && a.toLowerCase().indexOf("belum tersedia")<0) return a;
+      var m=/nada dasar terdiri dari ([^.;]*)/i.exec(String(d.desc||""));
+      if(m) return "Nada dasar: "+m[1].replace(/\s+/g," ").trim().slice(0,90);
+      return "";
+    }
+    function deteksiProfil(q){
+      var hasil=[];
+      DETEKSI.forEach(function(p){ if(new RegExp(p[1]).test(q) && hasil.indexOf(p[0])<0) hasil.push(p[0]); });
+      return hasil;
+    }
+    function rekomendasi(question, profilPaksa){
+      var q=normalize(question);
+      var profil=deteksiProfil(q);
+      if(profilPaksa && profil.indexOf(profilPaksa)<0) profil.push(profilPaksa);
+      if(!profil.length) return null;
+      if(!profilPaksa){
+        if(/\b(kenapa|mengapa|bagaimana|gimana|cara|apakah|berapa|kok)\b/.test(q)) return null;
+        if(!/\b(rekomen\w*|saran\w*|cari\w*|ada|apa|mana|yang|buat|untuk|cocok|enak|bagus|terbaik|pilih\w*|sebaiknya)\b/.test(q)) return null;
+        if(adaNamaProduk(q)) return null;
+      }
+      siapkanKartu();
+      var qg=q.replace(/\bfemale\b/g," ");
+      var wantW=/wanita|cewek|perempuan|\bwomen\b|\bwoman\b|\bfemale\b|\bibu\b|istri|mama|nenek/.test(q);
+      var wantM=/\bpria\b|cowok|laki|\bmen\b|\bmale\b|ayah|bapak|suami|papa|kakek/.test(qg);
+      var skor=[];
+      cards.forEach(function(card,i){
+        var d=dataKartu(card); if(!d) return;
+        var g=normalize(d.gender||""), isW=g.indexOf("wanita")>=0, isM=g.indexOf("pria")>=0, isU=g.indexOf("unisex")>=0||(isW&&isM);
+        if(wantW && !wantM && !(isW||isU)) return;
+        if(wantM && !wantW && !(isM||isU)) return;
+        var s=0, t=teksKartu[i];
+        profil.forEach(function(p){
+          var hangat=(p==="malam"||p==="woody"||p==="manis"||p==="kencan"||p==="acara");
+          var wA=hangat?0.5:2, wT=1, wD=hangat?2:0.5;
+          if(p==="floral"){ wA=1; wT=2; wD=0.5; }
+          (PROFIL[p]||[]).forEach(function(w){
+            var k=" "+normalize(w);
+            if(t.nama.indexOf(k)>=0) s+=2;
+            if(t.accord.indexOf(k)>=0) s+=2;
+            if(t.adaNada){
+              if(t.atas.indexOf(k)>=0) s+=wA;
+              if(t.tengah.indexOf(k)>=0) s+=wT;
+              if(t.dasar.indexOf(k)>=0) s+=wD;
+            } else if(t.semua.indexOf(k)>=0) s+=1;
+          });
+          var lawan=(p==="malam")?["citrus","fresh","aquatic","lemon","segar","jeruk"]:((p==="siang")?["oud","gaharu","tembakau","tobacco","leather","gourmand","intense"]:[]);
+          lawan.forEach(function(w){ if(t.accord.indexOf(" "+w)>=0) s-=1.5; });
+        });
+        if(s>=1) skor.push({i:i,s:s,d:d});
+      });
+      if(!skor.length) return null;
+      skor.sort(function(a,b){ return b.s-a.s || a.i-b.i; });
+      var label=profil.map(function(p){return LABEL[p]||p;}).join(" + ");
+      var gen=(wantW&&!wantM)?" (wanita)":((wantM&&!wantW)?" (pria)":"");
+      var out="Rekomendasi dari katalog untuk "+label+gen+":\n";
+      var dipakai={}, n=0;
+      for(var z=0;z<skor.length && n<5;z++){
+        var x=skor[z], kunci=normalize((x.d.name||"")+"|"+(x.d.brand||""));
+        if(dipakai[kunci]) continue; dipakai[kunci]=1; n++;
+        var r=ringkasKartu(x.d);
+        out+=n+". "+(x.d.name||"Parfum")+" — "+bersihMerek(x.d.brand)+(r?"\n   "+r:"")+"\n";
+      }
+      out+="\nTekan tombol pesan di kartu parfum untuk memesan. Mau lebih spesifik? Tambahkan pria/wanita atau karakter aroma (manis, segar, woody).";
+      return out;
+    }
+
+    function aiAnswer(question){
+      var hit=cariJawaban(question);
+      if(hit && !hit.lanjut) return hit.jawab;
+      var rec=rekomendasi(question, hit && hit.profil);
+      if(hit){
+        if(rec) return hit.umum?rec:hit.jawab+"\n\n"+rec;
+        if(!hit.profil){
+          var k=aiKatalog(question);
+          if(k && k.indexOf("Aku bisa membantu soal")!==0) return hit.jawab+"\n\n"+k;
+        }
+        return hit.jawab;
+      }
+      if(rec) return rec;
+      var fz=cariFuzzy(question);
+      if(fz){
+        if(fz.lanjut){ var r2=rekomendasi(question, fz.profil); if(r2) return fz.jawab+"\n\n"+r2; }
+        return fz.jawab;
+      }
+      return aiKatalog(question);
+    }
+        jawabanParfum = jawabanParfum.concat([
+      Q("alergi,kulit sensitif,gatal,iritasi,ruam,perih,kulit memerah","Kalau kulitmu sensitif, coba semprot sedikit di area kecil (misalnya pergelangan tangan) dan tunggu 24 jam. Atau semprot ke pakaian, bukan ke kulit. Jika muncul gatal, merah, atau perih, hentikan pemakaian dan konsultasi ke dokter."),
+      Q("asma,sesak napas,sesak nafas,alergi hidung,bersin","Kalau kamu punya asma atau mudah bersin karena aroma kuat, pilih aroma yang ringan, semprot sedikit di ruang terbuka, dan hindari menyemprot di ruangan tertutup. Untuk kondisi medis, sebaiknya konsultasi ke dokter."),
+      Q("pusing,sakit kepala,mual,migrain","Kalau parfum membuat pusing atau mual, hentikan pemakaian dan cari udara segar. Bisa jadi kamu sensitif pada aroma tertentu atau terlalu banyak semprot. Coba aroma lebih ringan dan kurangi semprotan. Kalau sering terjadi, konsultasi ke dokter."),
+      Q("ibu hamil,hamil,sedang hamil,ibu menyusui,menyusui","Ibu hamil dan menyusui sebaiknya konsultasi dulu ke dokter. Banyak orang jadi lebih sensitif pada aroma saat hamil, jadi pilih yang ringan dan pakai secukupnya."),
+      Q("untuk anak,anak kecil,bayi,balita,parfum anak","Untuk bayi dan balita, hindari parfum dewasa karena kulitnya sangat sensitif dan aromanya bisa terlalu kuat. Untuk anak yang lebih besar, pilih aroma ringan dan semprot ke pakaian saja."),
+      Q("kucing,anjing,hewan peliharaan,hewan","Jangan menyemprot parfum ke hewan peliharaan atau tepat di dekat mereka. Penciuman hewan jauh lebih tajam, dan aroma pekat atau alkohol bisa mengganggu mereka."),
+      Q("mengandung alkohol,ada alkohol,bahan parfum,bahan bahan parfum,halal,boleh dipakai sholat,parfum saat puasa,hukum parfum","Sebagian besar parfum memakai alkohol sebagai pelarut. Soal hukum memakainya (misalnya untuk ibadah), pandangan bisa berbeda-beda, jadi sebaiknya tanyakan ke ustaz atau ulama yang kamu percaya. Untuk detail bahan produk di toko ini, tanya admin lewat WhatsApp 0882005034977."),
+      Q("kulit kering,kulit berminyak,lotion,pelembap,pelembab,moisturizer","Kulit kering cenderung membuat aroma cepat hilang. Oleskan lotion tanpa aroma sebelum menyemprot supaya lebih awet. Kulit berminyak biasanya menahan aroma lebih lama."),
+      Q("beda edp,perbedaan edp,edp dan edt,edp atau edt,eau de toilette,eau de parfum,konsentrasi parfum,jenis parfum,tingkat konsentrasi,apa itu edc,apa itu edt,apa itu edp,edt itu,edp itu,perbedaan konsentrasi","Perbedaan utamanya ada di kadar minyak parfum (angkanya kira-kira, tiap merek bisa berbeda):\nEDC → sekitar 2-5%, paling ringan\nEDT → sekitar 5-15%, ringan dan segar\nEDP → sekitar 15-20%, seimbang dan serbaguna\nLe Parfum / Extrait → sekitar 20-30% atau lebih, paling pekat\nMakin tinggi kadarnya, biasanya makin pekat dan awet, tapi tetap tergantung formula dan kulitmu."),
+      Q("apa itu le parfum,le parfum itu,beda le parfum,apa itu extrait,extrait itu,extrait de parfum,beda extrait,pure parfum,parfum extract","Le Parfum dan Extrait de Parfum adalah tingkat konsentrasi tinggi. Biasanya aromanya lebih pekat dan lebih awet dibanding EDP, jadi 1-3 semprotan sudah cukup. Meski begitu, tiap produk berbeda, jadi ketahanannya tidak bisa dijamin hanya dari namanya."),
+      Q("top note,middle note,heart note,base note,apa itu notes,apa itu note,piramida aroma,note parfum,notes parfum,tahapan aroma","Aroma parfum berkembang dalam 3 tahap:\nTop note → kesan pertama, sekitar 5-15 menit (biasanya segar seperti citrus)\nMiddle/heart note → inti aroma, bertahan beberapa jam (bunga, rempah, buah)\nBase note → dasar aroma, paling lama menempel (kayu, vanilla, musk, amber)\nKarena itu, wangi 15 menit pertama bisa beda dari wangi beberapa jam kemudian."),
+      Q("apa itu accord,accord itu,main accord,arti accord","Accord adalah gabungan beberapa bahan aroma yang menciptakan satu kesan, misalnya 'woody', 'sweet', atau 'fresh'. Di detail tiap parfum, accord menunjukkan karakter utama aromanya."),
+      Q("sillage,projection,proyeksi,jejak aroma,aroma menyebar,seberapa jauh tercium","Sillage adalah jejak aroma yang tertinggal saat kamu lewat, sedangkan projection adalah seberapa jauh aroma tercium dari tubuh. Konsentrasi tinggi biasanya lebih kuat, tapi tidak selalu, karena tergantung formula parfumnya."),
+      Q("dry down,drydown,aroma akhir,akhir aroma,aroma setelah beberapa jam","Dry down adalah tahap akhir aroma setelah top dan middle note memudar, saat base note mendominasi. Itu aroma yang paling lama menempel di kulit, jadi penting untuk dicoba berjam-jam sebelum memutuskan."),
+      Q("apa itu unisex,unisex artinya,arti unisex,parfum unisex","Unisex artinya aromanya bisa dipakai siapa saja, tidak terikat gender. Biasanya berkarakter netral seperti kayu, citrus, atau musk, jadi fleksibel untuk dipakai bergantian."),
+      Q("niche,parfum niche,designer,parfum designer,apa itu niche,beda niche","Parfum designer biasanya dari rumah mode besar dan mudah ditemukan. Parfum niche biasanya dari rumah parfum khusus dengan aroma lebih unik dan distribusi lebih terbatas. Keduanya bisa bagus, tergantung selera."),
+      Q("batch code,kode batch,cek keaslian,cara cek asli,cara membedakan asli,ciri parfum asli","Kode batch adalah kode produksi yang biasanya tercetak di kemasan atau botol dan bisa dicek di situs pengecekan batch. Untuk kepastian soal sumber dan kualitas produk di toko ini, tanyakan langsung ke admin lewat WhatsApp 0882005034977."),
+      Q("parfum minyak,minyak wangi,attar,roll on,parfum roll,non alkohol,tanpa alkohol,bebas alkohol,parfum oil","Parfum minyak (oil/attar) biasanya tanpa alkohol, aromanya lebih menempel di kulit dan lebih lembut, dengan sillage yang cenderung lebih dekat ke badan. Parfum semprot beralkohol biasanya lebih menyebar."),
+      Q("body mist,body spray,beda body mist,body mist atau parfum,cologne","Body mist paling ringan dan cepat hilang, cologne/EDT sedang, EDP dan seterusnya lebih pekat dan awet. Kalau mau wangi yang bertahan lebih lama, pilih EDP ke atas."),
+      Q("bibit parfum,bibit,fixative,apa itu bibit","Bibit parfum adalah konsentrat minyak aroma yang dicampur pelarut dan bahan penahan (fixative) hingga menjadi parfum jadi. Untuk detail produk di toko ini, tanya admin lewat WhatsApp 0882005034977."),
+      Q("apa itu refill,parfum refill,refill itu,bedanya refill,refill aman,isi ulang parfum","Refill artinya parfum dituang ke botol baru dari stok lebih besar, jadi kamu bisa beli sesuai kebutuhan (30/50/100 ml). Untuk detail sumber dan kualitas produk, tanya admin lewat WhatsApp 0882005034977."),
+      Q("awet,tahan lama,tahan berapa jam,berapa jam,cepat hilang,gampang hilang,biar wangi tahan,supaya tahan,wangi seharian,wangi sampai sore,biar tidak cepat hilang,berapa lama bertahan,bertahan berapa lama,tahan berapa lama,berapa lama tahan,berapa lama wangi,berapa lama parfum bertahan,parfum bertahan,kenapa cepat hilang,kenapa wangi hilang","Tips biar wangi lebih awet:\n1. Semprot di kulit yang lembap (setelah mandi)\n2. Oleskan lotion tanpa aroma dulu\n3. Semprot di titik nadi\n4. Pilih konsentrasi lebih tinggi (EDP/Le Parfum/Extrait)\n5. Semprot juga ke pakaian (hati-hati noda)\nDurasi tetap berbeda tiap orang, cuaca, dan formula.",1,"malam"),
+      Q("cara pakai,cara memakai,cara semprot,semprot dimana,semprot di mana,titik nadi,bagian tubuh,pakai parfum yang benar,cara pakai parfum","Semprot di titik nadi: leher, belakang telinga, pergelangan tangan, dan lipatan siku. Jaraknya sekitar 15-20 cm dari kulit. Bagian itu lebih hangat sehingga aroma menyebar lebih baik."),
+      Q("berapa semprot,berapa kali semprot,jumlah semprot,berapa spray,berapa kali spray","Umumnya 2-4 semprotan cukup. Untuk EDP/Le Parfum/Extrait yang pekat, 1-3 saja sudah terasa. Di cuaca panas atau ruangan tertutup, kurangi supaya tidak menyengat."),
+      Q("digosok,gosok parfum,usap parfum,jangan digosok,tepuk tepuk","Sebaiknya jangan digosok setelah menyemprot. Gesekan bisa mengubah cara aroma berkembang sehingga top note cepat hilang. Cukup biarkan mengering sendiri."),
+      Q("sebelum atau sesudah baju,parfum sebelum baju,urutan pakai parfum,sebelum pakai baju,sesudah pakai baju,urutan memakai parfum","Urutan yang pas: mandi → keringkan badan → deodoran/lotion tanpa aroma → parfum. Menyemprot setelah berpakaian boleh, tapi hati-hati supaya tidak menimbulkan noda di kain."),
+      Q("semprot baju,semprot pakaian,parfum di baju,parfum ke baju,semprot kain","Boleh, aroma biasanya lebih awet di kain. Semprot dari jarak 20-30 cm. Hati-hati pada sutra atau kain berwarna terang karena bisa meninggalkan noda. Coba dulu di bagian dalam."),
+      Q("noda parfum,cuci noda,hilangkan noda parfum,bekas parfum di baju","Cuci noda parfum secepatnya dengan air dan sabun lembut sebelum mengering. Kain halus seperti sutra sebaiknya dibawa ke laundry."),
+      Q("perhiasan,mutiara,sutra,meninggalkan noda,bikin noda,merusak kain","Hindari menyemprot parfum langsung ke perhiasan (terutama mutiara), kain sutra, atau permukaan plastik/kayu yang dipoles, karena alkohol dan minyak aromanya bisa membuat noda atau merusaknya."),
+      Q("semprot rambut,parfum rambut,hair mist,untuk rambut,parfum di rambut","Parfum beralkohol bisa membuat rambut kering. Lebih aman semprot ke udara lalu lewati, atau semprot ke sisir. Atau pakai hair mist khusus rambut."),
+      Q("bau badan,bau ketiak,deodoran,deodorant,parfum atau deodoran,pengganti deodoran","Parfum tidak menggantikan deodoran. Urutan yang baik: mandi → deodoran → parfum. Mencampur bau badan dengan parfum malah bisa menghasilkan aroma yang aneh."),
+      Q("tidak tercium,hidung kebal,gak kecium,ga kecium,nggak kecium,anosmia,tidak bau lagi,nose blind,olfactory fatigue","Itu wajar, namanya olfactory fatigue: hidung terbiasa dengan aroma yang terus-menerus dicium, bukan berarti wanginya hilang. Tanyakan pendapat orang lain, atau jeda beberapa saat dan cium aroma netral seperti kopi untuk menyegarkan hidung."),
+      Q("beda di kulit,beda di kulitku,aromanya berubah,kenapa beda wanginya,wanginya beda,beda di tiap orang,kok beda","Aroma bisa berbeda di tiap orang karena pH kulit, suhu tubuh, makanan, dan hormon. Karena itu parfum yang sama bisa terasa lain. Coba dulu di kulitmu sebelum membeli ukuran besar."),
+      Q("bau alkohol,alkohol menyengat,awalnya menyengat,tajam di awal,bau tajam,menusuk hidung","Aroma tajam di awal itu normal: alkohol dan top note menguap duluan. Tunggu sekitar 10-15 menit sampai aroma berkembang. Kalau tetap terlalu tajam, kurangi semprotan."),
+      Q("terlalu menyengat,menyengat,kebanyakan semprot,hilangkan bau parfum,menghilangkan bau parfum,kebanyakan parfum","Kalau kebanyakan, cuci area itu dengan sabun dan air hangat, atau usap dengan kapas yang diberi sedikit alkohol. Lain kali kurangi semprotan."),
+      Q("layering,campur parfum,mix parfum,tumpuk parfum,gabung parfum,campuran parfum","Layering itu menumpuk dua aroma agar unik. Mulai dari aroma lebih ringan di bawah, lalu aroma lebih pekat di atas. Coba dulu di kulit atau kertas uji untuk melihat hasilnya cocok atau tidak."),
+      Q("olahraga,gym,futsal,lari pagi,berlari,buat olahraga","Untuk olahraga, pilih aroma fresh/citrus/aquatic yang ringan dan semprot sedikit saja. Aroma pekat plus keringat bisa terasa berat. Lebih baik pakai setelah mandi, bukan sebelum olahraga.",1,"siang"),
+      Q("ganti ganti parfum,rotasi parfum,satu parfum terus,bosan parfum,pakai satu parfum","Boleh bergantian. Banyak orang punya beberapa parfum untuk suasana berbeda: segar untuk siang, hangat untuk malam. Mengganti parfum juga membantu hidung tidak cepat terbiasa."),
+      Q("simpan parfum,penyimpanan,disimpan,kena matahari,taruh parfum,tempat parfum,cara simpan,cara menyimpan,simpan di mana,simpan dimana","Simpan di tempat sejuk, gelap, dan kering, jauh dari sinar matahari langsung. Kamar mandi kurang cocok karena lembap dan suhunya berubah-ubah. Tutup rapat setelah dipakai."),
+      Q("kadaluarsa,kedaluwarsa,expired,masa simpan,umur parfum,basi,parfum basi,tanggal kedaluwarsa","Parfum yang disimpan dengan baik biasanya bertahan sekitar 3-5 tahun atau lebih. Tanda mulai rusak: aroma berubah asam atau tajam, warna menggelap, atau muncul endapan."),
+      Q("kulkas,freezer,lemari es,simpan di kulkas,parfum dingin","Tidak wajib. Yang terpenting suhu stabil dan tempatnya gelap. Kulkas boleh kalau tidak ada tempat sejuk lain, tapi hindari perubahan suhu yang tiba-tiba karena bisa mempengaruhi aroma."),
+      Q("dikocok,mengocok,kocok parfum,kocok botol","Tidak perlu dikocok. Mengocok botol tidak membuat parfum lebih baik dan bisa memasukkan udara yang mempercepat perubahan aroma."),
+      Q("warna berubah,berubah warna,mengendap,keruh,endapan,berawan,ada gumpalan,warna menggelap","Warna yang sedikit menggelap seiring waktu cukup wajar, terutama jika terkena cahaya. Tapi kalau muncul endapan atau aromanya berubah asam, sebaiknya jangan dipakai dan hubungi admin lewat WhatsApp 0882005034977."),
+      Q("isi ulang sendiri,refill sendiri,tuang parfum,pindah botol,pindahkan ke botol,pindah ke botol","Kalau memindahkan parfum ke botol lain, pakai botol yang bersih dan kering, tuang perlahan, dan tutup rapat. Hindari terlalu sering membuka karena udara bisa mempercepat perubahan aroma."),
+      Q("di mobil,dalam mobil,simpan di mobil,parfum di mobil,tinggal di mobil","Jangan menyimpan parfum di dalam mobil, terutama saat parkir di bawah matahari. Panas tinggi merusak aroma dan botol, dan bisa berbahaya karena parfum mudah terbakar."),
+      Q("pesawat,bagasi,kabin,bawa naik pesawat,naik pesawat","Aturan tiap maskapai bisa berbeda. Biasanya cairan di kabin dibatasi per wadah (sekitar 100 ml), jadi ukuran 30 atau 50 ML lebih aman. Sebaiknya cek aturan maskapai sebelum berangkat."),
+      Q("dibawa bepergian,traveling pakai parfum,bawa parfum,botol kecil,parfum travel","Untuk dibawa bepergian, ukuran 30 ML paling praktis. Pastikan tutup rapat dan simpan di tas yang tidak terkena panas."),
+      Q("apa itu fresh,fresh itu,aroma fresh,arti fresh,wangi segar itu","Aroma fresh itu ringan, bersih, dan menyegarkan, biasanya dari citrus, aquatic, mint, atau green notes. Cocok untuk siang hari dan cuaca panas.",1,"siang"),
+      Q("apa itu bergamot,bergamot itu,apa itu citrus,citrus itu,aroma citrus,aroma jeruk,wangi jeruk,lemon","Citrus (jeruk, lemon, bergamot) memberi kesan segar, cerah, dan bersih. Cocok untuk siang hari, tapi biasanya tidak setahan aroma kayu atau vanilla.",1,"siang"),
+      Q("apa itu floral,floral itu,aroma floral,wangi bunga,aroma bunga,parfum bunga,bunga bunga","Floral adalah aroma bunga seperti mawar, melati, atau peony. Kesannya lembut, anggun, dan feminin, tapi ada juga floral yang fresh atau powdery.",1,"floral"),
+      Q("aroma mawar,wangi mawar,parfum mawar,apa itu rose,rose itu","Mawar memberi kesan elegan, romantis, dan bisa terasa manis, segar, atau sedikit gelap tergantung campurannya.",1,"floral"),
+      Q("aroma melati,wangi melati,parfum melati,jasmine,apa itu jasmine,jasmine itu","Melati (jasmine) beraroma bunga putih yang manis, hangat, dan kuat. Memberi kesan feminin dan sensual.",1,"floral"),
+      Q("lavender,aroma lavender,wangi lavender,parfum lavender","Lavender beraroma bunga herbal yang bersih dan menenangkan. Sering dipakai di parfum pria klasik dan terasa segar sekaligus sedikit hangat.",1,"kantor")
+    ]);
+
+    function aiKatalog(question){
+      var q=normalize(question), found=[];
       var wantsWomen=/wanita|cewek|perempuan|women|female/i.test(q), wantsMen=/pria|cowok|laki|men|male/i.test(q);
       var wantsFresh=/fresh|segar|clean|bersih|aquatic|laut|citrus|citrusy|panas|siang/i.test(q);
       var wantsSweet=/manis|sweet|gourmand|vanilla|creamy|caramel|coffee|kopi|coklat/i.test(q);
