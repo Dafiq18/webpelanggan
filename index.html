@@ -7164,95 +7164,165 @@ async function askAI(){
   }
 }
 
-        /* ---------- SUARA AI ---------- */
+       /* ---------- SUARA AI (versi jernih): selalu menyala, Bahasa Indonesia ---------- */
     var suaraBisa = ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
-    var suaraAktif = true;
-    try{ if(localStorage.getItem("aromaSuara")==="off") suaraAktif=false; }catch(e){}
-    function pilihSuara(){
-      var vs = window.speechSynthesis.getVoices() || [];
-      for(var i=0;i<vs.length;i++){ if(/^id([-_]|$)/i.test(vs[i].lang)) return vs[i]; }
-      return null;
+    var suaraAntrean = 0, suaraGen = 0, suaraPulsa = 0, suaraMengetikAt = 0, suaraLewati = null;
+
+    function skorSuara(v){
+      var n = (v.name || "").toLowerCase(), l = (v.lang || "").toLowerCase().replace("_","-"), s = 0;
+      if(/^(id|in)(-|$)/.test(l) || /indonesia/.test(n)) s += 1000;
+      else if(/^ms(-|$)/.test(l)) s += 300;
+      else return -1;
+      if(/natural|neural/.test(n)) s += 60;
+      if(/gadis|ardi/.test(n)) s += 20;
+      if(/google/.test(n)) s += 30;
+      if(/online/.test(n)) s += 25;
+      if(!v.localService) s += 5;
+      return s;
     }
-    function bersihkanUntukSuara(t){
-      t = String(t||"")
-        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu," ")
-        .replace(/[•→·]/g,",").replace(/\s+—\s+/g,", ")
-        .replace(/\n+/g,". ").replace(/\s+/g," ").trim();
-      
-if (t.length > 1800) {
-  var cut = t.slice(0, 1800);
-  var p = Math.max(
-    cut.lastIndexOf(". "),
-    cut.lastIndexOf("? "),
-    cut.lastIndexOf("! ")
-  );
-
-  t = p > 900 ? cut.slice(0, p + 1) : cut;
-}
-
+    function pilihSuara(){
+      var vs = [];
+      try{ vs = window.speechSynthesis.getVoices() || []; }catch(e){}
+      var best = null, bs = -1;
+      vs.forEach(function(v){ var s = skorSuara(v); if(s > bs){ bs = s; best = v; } });
+      return best;
+    }
+    function ringkasUntukSuara(t){
+      t = String(t || "");
+      var i = t.search(/Rekomendasi dari katalog|Aku sudah mencocokkan pertanyaanmu/);
+      if(i >= 0){
+        var depan = t.slice(0,i).trim();
+        t = (depan ? depan + " " : "") + "Aku sudah menyiapkan rekomendasi parfum yang cocok. Silakan lihat daftarnya di layar.";
+      }
       return t;
     }
-    
-function bicara(teks) {
-  if (!suaraBisa || !suaraAktif) return;
-
-  try {
-    var s = window.speechSynthesis;
-
-    // Hentikan suara sebelumnya agar tidak bertumpuk
-    s.cancel();
-
-    // Bersihkan emoji dan format yang sulit dibacakan
-    var kalimat = bersihkanUntukSuara(teks);
-    if (!kalimat) return;
-
-    var u = new SpeechSynthesisUtterance(kalimat);
-
-    // Gunakan bahasa Indonesia
-    u.lang = "id-ID";
-
-    // Pilih suara Indonesia jika tersedia
-    var suara = pilihSuara();
-    if (suara) {
-      u.voice = suara;
+    function bersihkanUntukSuara(t){
+      t = ringkasUntukSuara(t)
+        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu," ")
+        .replace(/https?:\/\/\S+/g," ").replace(/\*\*/g,"")
+        .replace(/\b0\d{9,12}\b/g, function(n){ return n.split("").join(" "); })
+        .replace(/Rp\s?([\d.]+)/gi, function(m,n){ return n.replace(/\./g,"") + " rupiah"; })
+        .replace(/\bEDP\b/g,"E D P").replace(/\bEDT\b/g,"E D T").replace(/\bEDC\b/g,"E D C")
+        .replace(/\s*\/\s*/g," atau ").replace(/\s*&\s*/g," dan ").replace(/\s+\+\s+/g," dan ")
+        .replace(/(\d+)\s*ml\b/gi,"$1 mililiter").replace(/%/g," persen")
+        .replace(/[()]/g,", ").replace(/[•→·]/g,",").replace(/\s+—\s+/g,", ")
+        .replace(/:\s*\n+/g,". ").replace(/\n+/g,". ")
+        .replace(/\.{2,}/g,".").replace(/:\./g,":").replace(/,\s*,/g,",").replace(/\s+/g," ").trim();
+      if(t.length > 900){
+        var cut = t.slice(0,900), p = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("? "), cut.lastIndexOf("! "));
+        t = (p > 400) ? cut.slice(0,p+1) : cut;
+      }
+      return t;
     }
-
-    // Kecepatan dan nada suara
-    u.rate = 0.92;
-    u.pitch = 1;
-    u.volume = 1;
-
-    s.speak(u);
-
-  } catch (error) {
-    console.warn("Suara AI bermasalah:", error);
-  }
-}
-
-    function hentikanSuara(){ try{ if(suaraBisa) window.speechSynthesis.cancel(); }catch(e){} }
+    function pecahKalimat(t){
+      var bagian = t.match(/[^.!?]+[.!?]*\s*/g) || [t], out = [], cur = "";
+      bagian.forEach(function(b){
+        if(cur && (cur + b).length > 170){ out.push(cur.trim()); cur = b; } else { cur += b; }
+      });
+      if(cur.trim()) out.push(cur.trim());
+      return out;
+    }
+    function hentikanSuara(){
+      suaraGen++; suaraAntrean = 0;
+      try{ if(suaraBisa) window.speechSynthesis.cancel(); }catch(e){}
+    }
+    function bicaraLangsung(teks){
+      if(!suaraBisa) return;
+      var kalimat = bersihkanUntukSuara(teks); if(!kalimat) return;
+      try{
+        var s = window.speechSynthesis; s.cancel();
+        var gen = ++suaraGen; suaraAntrean = 0;
+        var suara = pilihSuara();
+        pecahKalimat(kalimat).forEach(function(bag){
+          var u = new SpeechSynthesisUtterance(bag);
+          u.lang = suara && suara.lang ? suara.lang : "id-ID";
+          if(suara) u.voice = suara;
+          u.rate = 0.95; u.pitch = 1; u.volume = 1;
+          u.onstart = function(){ if(gen === suaraGen) suaraPulsa = 1; };
+          u.onboundary = function(){ if(gen === suaraGen) suaraPulsa = 1; };
+          u.onend = u.onerror = function(){ if(gen === suaraGen) suaraAntrean = Math.max(0, suaraAntrean - 1); };
+          suaraAntrean++;
+          s.speak(u);
+        });
+      }catch(err){ suaraAntrean = 0; }
+    }
+    /* dipanggil oleh askAI setelah teks selesai tampil; kalau suaranya sudah mulai duluan, dilewati */
+    function bicara(teks){
+      if(suaraLewati !== null && String(teks) === suaraLewati){ suaraLewati = null; return; }
+      bicaraLangsung(teks);
+    }
     function bukaKunciSuara(){
-      if(!suaraBisa || !suaraAktif) return;
+      if(!suaraBisa) return;
       try{ var u = new SpeechSynthesisUtterance(" "); u.volume = 0; window.speechSynthesis.speak(u); }catch(e){}
     }
-    if(suaraBisa){
-      var tombolSuara = document.createElement("button");
-      tombolSuara.type = "button";
-      tombolSuara.setAttribute("aria-label","Nyalakan atau matikan suara AI");
-      tombolSuara.style.cssText = "margin-top:6px;padding:4px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:none;color:inherit;font:inherit;font-size:12px;cursor:pointer";
-      var labelSuara = function(){ tombolSuara.textContent = suaraAktif ? "🔊 Suara: nyala" : "🔇 Suara: mati"; };
-      labelSuara();
-      tombolSuara.onclick = function(){
-        suaraAktif = !suaraAktif;
-        try{ localStorage.setItem("aromaSuara", suaraAktif ? "on" : "off"); }catch(e){}
-        if(suaraAktif) bukaKunciSuara(); else hentikanSuara();
-        labelSuara();
-      };
-      var statusAI = aiModal.querySelector(".ai-status");
-      if(statusAI && statusAI.parentNode) statusAI.parentNode.appendChild(tombolSuara);
-      aiSend.addEventListener("click", bukaKunciSuara);
-      aiInput.addEventListener("keydown", function(e){ if(e.key==="Enter") bukaKunciSuara(); });
-      aiClose.addEventListener("click", hentikanSuara);
+    /* suara mulai bersamaan dengan teks jawaban */
+    var addAIAsli = addAI;
+    addAI = function(text, who){
+      if(who === "bot"){ bicaraLangsung(text); suaraLewati = String(text); }
+      return addAIAsli(text, who);
+    };
+    aiSend.addEventListener("click", bukaKunciSuara);
+    aiInput.addEventListener("keydown", function(e){ if(e.key === "Enter") bukaKunciSuara(); });
+    aiFab.addEventListener("click", bukaKunciSuara);
+    aiClose.addEventListener("click", hentikanSuara);
+    try{ window.speechSynthesis.getVoices(); }catch(e){}
+
+    /* tampilan: hapus tombol Nyala/Mati dan tombol saran, tambah gelombang suara */
+    var saranAI = aiModal.querySelector(".ai-suggestions");
+    if(saranAI && saranAI.parentNode) saranAI.parentNode.removeChild(saranAI);
+    var statusTeks = aiModal.querySelector(".ai-status");
+    if(statusTeks) statusTeks.textContent = "● Aktif • menjawab dengan suara";
+    var gelCanvas = document.createElement("canvas");
+    gelCanvas.setAttribute("aria-hidden","true");
+    gelCanvas.style.cssText = "display:block;flex:0 0 100%;width:100%;height:48px;margin:0";
+    var kepalaAI = aiModal.querySelector(".shop-head");
+    if(kepalaAI){ kepalaAI.style.flexWrap = "wrap"; kepalaAI.appendChild(gelCanvas); }
+    else { aiMessages.parentNode.insertBefore(gelCanvas, aiMessages); }
+    aiMessages.style.height = "min(calc(60vh - 30px), 520px)";
+    var gelCtx = gelCanvas.getContext("2d"), gelAmp = 0, gelLebar = 0, GEL_BAR = 44, GEL_TINGGI = 48;
+    try{
+      new MutationObserver(function(){ suaraMengetikAt = performance.now(); })
+        .observe(aiMessages, {childList:true, characterData:true, subtree:true});
+    }catch(e){}
+    function gelBar(x,y,w,h,r){
+      gelCtx.beginPath(); gelCtx.moveTo(x+r,y);
+      gelCtx.arcTo(x+w,y,x+w,y+h,r); gelCtx.arcTo(x+w,y+h,x,y+h,r);
+      gelCtx.arcTo(x,y+h,x,y,r); gelCtx.arcTo(x,y,x+w,y,r);
+      gelCtx.closePath(); gelCtx.fill();
     }
+    function gelombangGambar(now){
+      requestAnimationFrame(gelombangGambar);
+      if(!aiModal.classList.contains("open")) return;
+      var r = gelCanvas.getBoundingClientRect(); if(!r.width) return;
+      var dpr = window.devicePixelRatio || 1;
+      if(gelLebar !== Math.round(r.width * dpr)){
+        gelLebar = Math.round(r.width * dpr);
+        gelCanvas.width = gelLebar; gelCanvas.height = Math.round(GEL_TINGGI * dpr);
+      }
+      gelCtx.setTransform(dpr,0,0,dpr,0,0);
+      gelCtx.clearRect(0,0,r.width,GEL_TINGGI);
+      var bicaraNow = suaraAntrean > 0, mengetik = (now - suaraMengetikAt) < 300;
+      suaraPulsa *= 0.9;
+      if(bicaraNow && Math.random() < 0.12) suaraPulsa = Math.max(suaraPulsa, 0.5 + Math.random() * 0.5);
+      var target = bicaraNow ? 0.30 + 0.70 * suaraPulsa : (mengetik ? 0.28 : 0.04);
+      gelAmp += (target - gelAmp) * 0.18;
+      var w = r.width, gap = 3, bw = (w - gap * (GEL_BAR - 1)) / GEL_BAR, t = now / 1000;
+      var g = gelCtx.createLinearGradient(0,0,w,0);
+      g.addColorStop(0,"#22d3ee"); g.addColorStop(0.5,"#8b5cf6"); g.addColorStop(1,"#f472b6");
+      gelCtx.fillStyle = g;
+      gelCtx.shadowColor = "rgba(139,92,246,.55)"; gelCtx.shadowBlur = 14 * Math.min(1, gelAmp * 2);
+      gelCtx.globalAlpha = 0.35 + 0.65 * Math.min(1, gelAmp * 2.2);
+      for(var i = 0; i < GEL_BAR; i++){
+        var pos = i / (GEL_BAR - 1);
+        var env = Math.pow(Math.sin(Math.PI * (0.06 + 0.88 * pos)), 0.9);
+        var gel = 0.5 + 0.5 * (0.55 * Math.sin(t * 7 + i * 0.6) + 0.45 * Math.sin(t * 11.3 - i * 1.1));
+        var bh = 3 + (GEL_TINGGI - 6) * gelAmp * env * (0.25 + 0.75 * gel);
+        gelBar(i * (bw + gap), (GEL_TINGGI - bh) / 2, bw, bh, Math.min(bw / 2, bh / 2));
+      }
+      gelCtx.globalAlpha = 1; gelCtx.shadowBlur = 0;
+    }
+    requestAnimationFrame(gelombangGambar);
+    
     aiFab.onclick=function(){aiModal.classList.add("open");body.classList.add("modal-open");aiInput.focus();};
     aiClose.onclick=function(){aiModal.classList.remove("open");if(!shopModal.classList.contains("open")&&!modal.classList.contains("open"))body.classList.remove("modal-open");};
     aiModal.onclick=function(e){if(e.target===aiModal)aiClose.onclick();};
@@ -7277,7 +7347,366 @@ function bicara(teks) {
       });
     });
 
-    loadCart();
+      /* ================================================================
+       KODE TOKO: PILIH BOTOL + PROMO DISKON + VOUCHER
+       (tempel di atas baris:  loadCart();  )
+       ================================================================ */
+
+    /* ====== 1) PENGATURAN — BOLEH KAMU UBAH SENDIRI ====== */
+
+    /* PROMO DISKON OTOMATIS (dipotong dari harga parfum)
+       - Ganti angka persen: misalnya 30 untuk diskon 30%
+       - Mau dimatikan: ubah aktif:true menjadi aktif:false
+       - sampai: tanggal berakhir, contoh "2026-12-31" (kosongkan "" kalau tanpa batas) */
+    var PROMO = { aktif:true, persen:50, teks:"PROMO DISKON 50%", sampai:"" };
+
+    /* true  = promo + voucher dijumlah
+       false = dipakai salah satu saja yang potongannya paling besar */
+    var GABUNG_PROMO_VOUCHER = false;
+
+    /* PILIHAN BOTOL — ini hanya CONTOH, ganti dengan botol dan harga tokomu
+       - nama  : nama botol yang tampil ke pelanggan
+       - harga : tambahan harga per botol (0 = gratis)
+       - ukuran: (boleh dihapus) botol ini hanya untuk ukuran tertentu */
+    var DAFTAR_BOTOL = [
+      { nama:"Botol standar (bawaan)", harga:0 },
+      { nama:"Botol kaca polos", harga:5000 },
+      { nama:"Botol travel spray", harga:8000, ukuran:["30 ML"] }
+    ];
+
+    /* VOUCHER
+       - kode   : kode voucher (huruf besar)
+       - judul  : nama yang tampil
+       - tipe   : "persen" atau "nominal"
+       - nilai  : 10 (artinya 10%) atau 20000 (artinya Rp20.000)
+       - min    : minimal belanja (0 = tanpa minimal)
+       - maks   : batas potongan maksimal untuk tipe persen (boleh dihapus)
+       - sampai : tanggal berakhir, contoh "2026-12-31" ("" = tanpa batas)
+       - publik : true  = tampil di keranjang dan bisa diklaim pelanggan
+                  false = rahasia, hanya bisa dipakai kalau pelanggan mengetik kodenya */
+    var DAFTAR_VOUCHER = [
+      { kode:"HEMAT10",   judul:"Diskon 10%",        tipe:"persen",  nilai:10,    min:100000, maks:50000, sampai:"2026-12-31", publik:true },
+      { kode:"POTONG20K", judul:"Potongan Rp20.000", tipe:"nominal", nilai:20000, min:150000,             sampai:"2026-12-31", publik:true },
+      { kode:"TEMANKU",   judul:"Voucher teman",     tipe:"persen",  nilai:15,    min:0,      maks:40000, sampai:"",           publik:false }
+    ];
+
+    /* ====== 2) BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+
+    function hitungTotal(items,cfg){
+      var sub=0,botol=0,i;
+      for(i=0;i<items.length;i++){ sub+=items[i].price*items[i].qty; botol+=(items[i].botolHarga||0)*items[i].qty; }
+      var promo=0,vou=0,vMin=0,v=cfg.voucher;
+      if(cfg.promoAktif) promo=Math.round(sub*cfg.promoPersen/100);
+      if(v){
+        if(sub<(v.min||0)){ vMin=v.min; }
+        else{
+          var dasar=cfg.gabung?(sub-promo):sub;
+          vou=v.tipe==="persen"?Math.round(dasar*v.nilai/100):v.nilai;
+          if(v.maks) vou=Math.min(vou,v.maks);
+          vou=Math.max(0,Math.min(vou,dasar));
+        }
+      }
+      if(!cfg.gabung && promo>0 && vou>0){ if(vou>promo) promo=0; else vou=0; }
+      var pot=Math.min(sub,promo+vou);
+      return {sub:sub,botol:botol,potPromo:promo,potVoucher:vou,vouMin:vMin,total:Math.max(0,sub-pot)+botol};
+    }
+
+    function bacaJson(k,d){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):d; }catch(e){ return d; } }
+    function tulisJson(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+    function masihBerlaku(s){
+      if(!s) return true;
+      var d=new Date(s+"T23:59:59");
+      return isNaN(d.getTime()) || Date.now()<=d.getTime();
+    }
+    function tglIndo(s){ var p=String(s).split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):s; }
+    function promoAktif(){ return !!(PROMO.aktif && PROMO.persen>0 && masihBerlaku(PROMO.sampai)); }
+
+    /* ukuran yang tersedia untuk satu isi keranjang */
+    function ukuranItem(item,type){
+      var h=item.allPrices&&item.allPrices[type];
+      return ["30 ML","50 ML","100 ML"].filter(function(z){ return h && h[z]>0; });
+    }
+
+    /* --- botol --- */
+    function cariBotol(nama){ for(var i=0;i<DAFTAR_BOTOL.length;i++){ if(DAFTAR_BOTOL[i].nama===nama) return DAFTAR_BOTOL[i]; } return null; }
+    function botolBoleh(b,size){ return !b.ukuran || b.ukuran.indexOf(size)!==-1; }
+    function botolPertama(size){ for(var i=0;i<DAFTAR_BOTOL.length;i++){ if(botolBoleh(DAFTAR_BOTOL[i],size)) return DAFTAR_BOTOL[i]; } return DAFTAR_BOTOL[0]; }
+    function pastikanBotol(item){
+      if(!DAFTAR_BOTOL.length){ item.botol=""; item.botolHarga=0; return item; }
+      var b=cariBotol(item.botol);
+      if(!b || !botolBoleh(b,item.size)) b=botolPertama(item.size);
+      item.botol=b.nama; item.botolHarga=b.harga||0;
+      return item;
+    }
+
+    /* --- voucher --- */
+    var vouKlaim=bacaJson("aromaVoucherKlaim",[]); if(!Array.isArray(vouKlaim)) vouKlaim=[];
+    var vouPakai=bacaJson("aromaVoucherPakai",""); if(typeof vouPakai!=="string") vouPakai="";
+    function cariVoucher(kode){
+      kode=String(kode||"").trim().toUpperCase();
+      for(var i=0;i<DAFTAR_VOUCHER.length;i++){ if(String(DAFTAR_VOUCHER[i].kode).toUpperCase()===kode) return DAFTAR_VOUCHER[i]; }
+      return null;
+    }
+    function infoVoucher(v){
+      var t=v.tipe==="persen"?("Diskon "+v.nilai+"%"):("Potongan "+rupiah(v.nilai));
+      if(v.tipe==="persen" && v.maks) t+=" (maks. "+rupiah(v.maks)+")";
+      if(v.min) t+=" • min. belanja "+rupiah(v.min);
+      if(v.sampai) t+=" • s/d "+tglIndo(v.sampai);
+      return t;
+    }
+    function cfgHitung(){
+      var v=cariVoucher(vouPakai);
+      if(v && !masihBerlaku(v.sampai)) v=null;
+      return {
+        promoAktif:promoAktif(), promoPersen:PROMO.persen, gabung:!!GABUNG_PROMO_VOUCHER,
+        voucher: v ? {kode:v.kode,tipe:v.tipe,nilai:v.nilai,min:v.min||0,maks:v.maks||0} : null
+      };
+    }
+    function klaimVoucher(k){ if(vouKlaim.indexOf(k)===-1) vouKlaim.push(k); tulisJson("aromaVoucherKlaim",vouKlaim); }
+    function pakaiVoucher(k){ vouPakai=k; tulisJson("aromaVoucherPakai",k); }
+
+    /* --- gaya tampilan tambahan --- */
+    var gayaToko=document.createElement("style");
+    gayaToko.textContent=
+      ".vk-promo{margin:6px 0 12px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(239,68,68,.18));border:1px solid rgba(251,191,36,.45);font-size:13px;line-height:1.5}"+
+      ".vk-promo b{color:#fde68a}"+
+      ".vk-box{margin-top:12px;padding:13px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line)}"+
+      ".vk-head{font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:#cbd5e1;margin-bottom:9px}"+
+      ".vk-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px dashed rgba(255,255,255,.14)}"+
+      ".vk-item:first-of-type{border-top:0}"+
+      ".vk-item b{display:block;font-size:14px}.vk-item small{display:block;color:#94a3b8;font-size:11px;line-height:1.5;margin-top:2px}"+
+      ".vk-btn{border:0;border-radius:10px;padding:8px 14px;font:inherit;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,#7c3aed,#0891b2);cursor:pointer;white-space:nowrap}"+
+      ".vk-btn.alt{background:rgba(255,255,255,.1);border:1px solid var(--line)}"+
+      ".vk-btn.on{background:#16a34a}"+
+      ".vk-kode{display:flex;gap:8px;margin-top:10px}"+
+      ".vk-kode input{flex:1;min-width:0;border:1px solid var(--line);outline:none;border-radius:10px;background:rgba(255,255,255,.05);color:#fff;padding:10px 12px;font:inherit;font-size:13px;text-transform:uppercase}"+
+      ".vk-kode input::placeholder{text-transform:none}"+
+      ".vk-warn{margin-top:8px;font-size:12px;color:#fcd34d;line-height:1.5}"+
+      ".vk-ket{margin-top:8px;font-size:11px;color:#94a3b8;line-height:1.5}";
+    document.head.appendChild(gayaToko);
+
+    function htmlVoucher(hasil){
+      var daftar=[],i,v;
+      for(i=0;i<DAFTAR_VOUCHER.length;i++){
+        v=DAFTAR_VOUCHER[i];
+        if(!masihBerlaku(v.sampai)) continue;
+        if(v.publik || vouKlaim.indexOf(v.kode)!==-1 || vouPakai===v.kode) daftar.push(v);
+      }
+      var h='<div class="vk-box"><div class="vk-head">🎟️ Voucher</div>';
+      if(!daftar.length) h+='<small style="color:#94a3b8">Belum ada voucher yang tersedia.</small>';
+      daftar.forEach(function(v){
+        var dipakai=(vouPakai===v.kode), sudah=vouKlaim.indexOf(v.kode)!==-1;
+        var tombol=dipakai?'<button type="button" class="vk-btn on" data-vk="lepas" data-kode="'+escapeHtml(v.kode)+'">✓ Dipakai • Lepas</button>'
+                  :(sudah?'<button type="button" class="vk-btn" data-vk="pakai" data-kode="'+escapeHtml(v.kode)+'">Pakai</button>'
+                         :'<button type="button" class="vk-btn" data-vk="klaim" data-kode="'+escapeHtml(v.kode)+'">Klaim</button>');
+        h+='<div class="vk-item"><div><b>'+escapeHtml(v.judul||v.kode)+'</b><small>Kode: '+escapeHtml(v.kode)+' • '+escapeHtml(infoVoucher(v))+'</small></div>'+tombol+'</div>';
+      });
+      h+='<div class="vk-kode"><input id="vkInput" type="text" placeholder="Ketik kode voucher" autocomplete="off"><button type="button" class="vk-btn alt" id="vkApply">Pakai kode</button></div>';
+      if(hasil && hasil.vouMin) h+='<div class="vk-warn">Voucher belum bisa dipakai: belanja parfum minimal '+rupiah(hasil.vouMin)+'.</div>';
+      h+='</div>';
+      return h;
+    }
+
+    function pasangEventVoucher(){
+      cartItems.querySelectorAll("[data-vk]").forEach(function(btn){
+        btn.onclick=function(){
+          var aksi=btn.getAttribute("data-vk"), k=btn.getAttribute("data-kode");
+          if(aksi==="klaim"){ klaimVoucher(k); pakaiVoucher(k); showToast("Voucher "+k+" berhasil diklaim dan dipakai."); }
+          else if(aksi==="pakai"){ pakaiVoucher(k); showToast("Voucher "+k+" dipakai."); }
+          else { pakaiVoucher(""); showToast("Voucher dilepas."); }
+          renderCart();
+        };
+      });
+      var vkInput=document.getElementById("vkInput"), vkApply=document.getElementById("vkApply");
+      function pakaiKode(){
+        var v=cariVoucher(vkInput.value);
+        if(!vkInput.value.trim()){ showToast("Ketik kode voucher dulu ya."); return; }
+        if(!v){ showToast("Kode voucher tidak ditemukan."); return; }
+        if(!masihBerlaku(v.sampai)){ showToast("Voucher ini sudah berakhir."); return; }
+        klaimVoucher(v.kode); pakaiVoucher(v.kode); showToast("Voucher "+v.kode+" dipakai."); renderCart();
+      }
+      if(vkApply) vkApply.onclick=pakaiKode;
+      if(vkInput) vkInput.addEventListener("keydown",function(e){ if(e.key==="Enter") pakaiKode(); });
+    }
+
+    function htmlRingkasan(hasil,cfg){
+      var s='<div class="summary-box">'+
+        '<div class="summary-line"><span>Subtotal parfum</span><strong>'+rupiah(hasil.sub)+'</strong></div>';
+      if(hasil.botol>0) s+='<div class="summary-line"><span>Biaya botol</span><strong>+ '+rupiah(hasil.botol)+'</strong></div>';
+      if(hasil.potPromo>0) s+='<div class="summary-line discount"><span>'+escapeHtml(PROMO.teks||"Promo")+'</span><strong>− '+rupiah(hasil.potPromo)+'</strong></div>';
+      if(hasil.potVoucher>0) s+='<div class="summary-line discount"><span>Voucher '+escapeHtml(cfg.voucher.kode)+'</span><strong>− '+rupiah(hasil.potVoucher)+'</strong></div>';
+      s+='<div class="summary-line total"><span>Total bayar</span><strong>'+rupiah(hasil.total)+'</strong></div></div>';
+      return s;
+    }
+        /* --- keranjang baru: ada pilihan botol, promo, voucher --- */
+    renderCart=function(){
+      cart.forEach(pastikanBotol);
+      saveCart();
+      var cfg=cfgHitung(), hasil=hitungTotal(cart,cfg);
+      var totalQty=cart.reduce(function(sum,item){ return sum+item.qty; },0);
+      cartCount.textContent=totalQty;
+      cartTotal.textContent=rupiah(hasil.total);
+
+      var banner=promoAktif()
+        ? '<div class="vk-promo">🔥 <b>'+escapeHtml(PROMO.teks||"Promo")+'</b> — potongan '+PROMO.persen+'% otomatis dari harga parfum'+(PROMO.sampai?(' (sampai '+tglIndo(PROMO.sampai)+')'):'')+'.'+
+          ((!GABUNG_PROMO_VOUCHER && cfg.voucher)?'<br><small>Kalau memakai voucher, yang dipakai adalah potongan yang paling besar.</small>':'')+'</div>'
+        : '';
+
+      if(!cart.length){
+        cartItems.innerHTML=banner+'<div class="cart-empty">🛒 Keranjang masih kosong.<br>Pilih parfum lalu tekan "Tambah ke keranjang".</div>'+htmlVoucher(hasil);
+        pasangEventVoucher();
+        return;
+      }
+
+      cartItems.innerHTML=banner+cart.map(function(item,index){
+        var types=Object.keys(item.allPrices||{});
+        var typeOptions=types.map(function(type){
+          return '<option value="'+escapeHtml(type)+'"'+(type===item.type?' selected':'')+'>'+escapeHtml(type)+'</option>';
+        }).join("");
+        var sizeOptions=ukuranItem(item,item.type).map(function(size){
+          return '<option value="'+size+'"'+(size===item.size?' selected':'')+'>'+size+' — '+rupiah(item.allPrices[item.type][size])+'</option>';
+        }).join("");
+        var botolHTML="";
+        if(DAFTAR_BOTOL.length){
+          botolHTML='<div class="variant-title" style="margin-top:9px">Pilih botol</div><select class="variant-select" data-botol-index="'+index+'">'+
+            DAFTAR_BOTOL.filter(function(b){ return botolBoleh(b,item.size); }).map(function(b){
+              return '<option value="'+escapeHtml(b.nama)+'"'+(b.nama===item.botol?' selected':'')+'>'+escapeHtml(b.nama)+(b.harga?(' (+'+rupiah(b.harga)+')'):' (gratis)')+'</option>';
+            }).join("")+'</select>';
+        }
+        return '<div class="cart-item">'+
+          '<div>'+
+            '<h4>'+escapeHtml(item.name)+'</h4>'+
+            '<div class="cart-meta">'+escapeHtml(item.brand)+' • '+escapeHtml(item.code)+'</div>'+
+            '<div class="variant-box">'+
+              '<div class="variant-title">Jenis</div><select class="variant-select" data-type-index="'+index+'">'+typeOptions+'</select>'+
+              '<div class="variant-title" style="margin-top:9px">Ukuran</div><select class="variant-select" data-size-index="'+index+'">'+sizeOptions+'</select>'+
+              botolHTML+
+              '<div class="qty"><button type="button" data-minus="'+index+'">−</button><span>'+item.qty+'</span><button type="button" data-plus="'+index+'">+</button></div>'+
+              '<button class="remove-item" type="button" data-remove="'+index+'">Hapus produk</button>'+
+            '</div>'+
+          '</div>'+
+          '<div class="cart-price">'+rupiah((item.price+(item.botolHarga||0))*item.qty)+'</div>'+
+        '</div>';
+      }).join("")+htmlVoucher(hasil)+htmlRingkasan(hasil,cfg)+
+      '<div class="vk-ket">Diskon dihitung dari harga parfum (biaya botol tidak didiskon).</div>';
+
+      cartItems.querySelectorAll("[data-minus]").forEach(function(btn){
+        btn.onclick=function(){ var i=Number(btn.dataset.minus); cart[i].qty--; if(cart[i].qty<=0) cart.splice(i,1); renderCart(); };
+      });
+      cartItems.querySelectorAll("[data-plus]").forEach(function(btn){
+        btn.onclick=function(){ cart[Number(btn.dataset.plus)].qty++; renderCart(); };
+      });
+      cartItems.querySelectorAll("[data-remove]").forEach(function(btn){
+        btn.onclick=function(){ cart.splice(Number(btn.dataset.remove),1); renderCart(); };
+      });
+      cartItems.querySelectorAll("[data-type-index]").forEach(function(sel){
+        sel.onchange=function(){
+          var i=Number(sel.dataset.typeIndex), item=cart[i], type=sel.value;
+          var sizes=ukuranItem(item,type);
+          var size=sizes.indexOf(item.size)!==-1?item.size:sizes[0];
+          updateVariant(item,i,type,size);
+        };
+      });
+      cartItems.querySelectorAll("[data-size-index]").forEach(function(sel){
+        sel.onchange=function(){
+          var i=Number(sel.dataset.sizeIndex), item=cart[i], botolLama=item.botol;
+          item.size=sel.value; item.price=item.allPrices[item.type][item.size];
+          pastikanBotol(item);
+          if(botolLama && item.botol!==botolLama) showToast("Botol diganti ke "+item.botol+" (cocok untuk ukuran "+item.size+").");
+          renderCart();
+        };
+      });
+      cartItems.querySelectorAll("[data-botol-index]").forEach(function(sel){
+        sel.onchange=function(){ var item=cart[Number(sel.dataset.botolIndex)]; item.botol=sel.value; pastikanBotol(item); renderCart(); };
+      });
+      pasangEventVoucher();
+    };
+
+    /* --- tombol "Masukkan ke keranjang" (memperbaiki error kecil di kode lama) --- */
+    addSelectedToCart=function(){
+      if(!pendingProduct) return;
+      var produk=pendingProduct, jenis=pendingType, ukuran=pendingSize;
+      var harga=(produk.prices[jenis]||{})[ukuran]||0;
+      if(!harga){ showToast("Varian belum tersedia."); return; }
+      var ada=cart.find(function(i){ return i.code===produk.code && i.type===jenis && i.size===ukuran; });
+      if(ada) ada.qty++;
+      else cart.push(pastikanBotol({code:produk.code,name:produk.name,brand:produk.brand,type:jenis,size:ukuran,price:harga,allPrices:produk.prices,qty:1}));
+      closePicker(); renderCart(); shopModal.classList.add("open"); body.classList.add("modal-open");
+      showToast(produk.name+" • "+ukuran+" • "+jenis+" ditambahkan.");
+    };
+    pickerConfirm.onclick=addSelectedToCart;
+
+    /* --- halaman checkout baru (tab baru) --- */
+    window.__aromaCart={
+      remove:function(c,t,s,b){ cart=cart.filter(function(i){ return !(i.code===c && i.type===t && i.size===s && (i.botol||"")===(b||"")); }); renderCart(); },
+      clear:function(){ cart=[]; renderCart(); }
+    };
+
+    function skripCheckoutBaru(D){
+      var $=function(id){ return document.getElementById(id); };
+      var rp=function(n){ return "Rp"+Number(n||0).toLocaleString("id-ID"); };
+      function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+      function sync(fn,args){ try{ var a=window.opener&&window.opener.__aromaCart; if(a) a[fn].apply(a,args); }catch(e){} }
+      function hit(){ return hitungTotal(D.items,D.cfg); }
+      function teks(){
+        var H=hit(), L=["HALO AROMA SEMARANG, SAYA MAU PESAN:","","👤 Nama: "+D.name,"📱 WhatsApp: "+D.phone,"📍 Alamat/Keterangan: "+D.address,"","🛍️ DAFTAR PESANAN:"];
+        D.items.forEach(function(i,k){
+          L.push((k+1)+". "+i.name+" ("+i.code+") — "+i.type+" "+i.size+(i.botol?(" • Botol: "+i.botol):"")+" x"+i.qty+" = "+rp((i.price+(i.botolHarga||0))*i.qty));
+        });
+        L.push("","Subtotal parfum: "+rp(H.sub));
+        if(H.botol>0) L.push("Biaya botol: "+rp(H.botol));
+        if(H.potPromo>0) L.push((D.promoTeks||"Promo")+": −"+rp(H.potPromo));
+        if(H.potVoucher>0) L.push("Voucher "+D.cfg.voucher.kode+": −"+rp(H.potVoucher));
+        L.push("💰 TOTAL: "+rp(H.total),"","Pesanan dikirim dari website Aroma Semarang.");
+        return L.join("\n");
+      }
+      function render(){
+        var H=hit(), ada=D.items.length>0;
+        $("cust").innerHTML="<b>"+esc(D.name)+"</b><small>📱 "+esc(D.phone)+"</small><small>📍 "+esc(D.address)+"</small>";
+        $("list").innerHTML=ada?D.items.map(function(i,k){
+          return '<div class="it"><div><b>'+esc(i.name)+'</b><small>'+esc(i.type)+' • '+esc(i.size)+' • x'+i.qty+'</small>'+(i.botol?'<small>🍼 Botol: '+esc(i.botol)+'</small>':'')+'</div><div class="pr">'+rp((i.price+(i.botolHarga||0))*i.qty)+'<button data-k="'+k+'">Hapus</button></div></div>';
+        }).join(""):"<small>Pesanan kosong.</small>";
+        var baris='<div class="row"><span>Subtotal parfum</span><span>'+rp(H.sub)+'</span></div>';
+        if(H.botol>0) baris+='<div class="row"><span>Biaya botol</span><span>+ '+rp(H.botol)+'</span></div>';
+        if(H.potPromo>0) baris+='<div class="row hijau"><span>'+esc(D.promoTeks||"Promo")+'</span><span>− '+rp(H.potPromo)+'</span></div>';
+        if(H.potVoucher>0) baris+='<div class="row hijau"><span>Voucher '+esc(D.cfg.voucher.kode)+'</span><span>− '+rp(H.potVoucher)+'</span></div>';
+        baris+='<div class="row tot"><span>Total bayar</span><span id="tot">'+rp(H.total)+'</span></div>';
+        $("ring").innerHTML=baris;
+        $("wa").disabled=$("em").disabled=!ada;
+      }
+      $("list").onclick=function(e){
+        var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
+        var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
+      };
+      $("wa").onclick=function(){ window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teks()),"_blank"); };
+      $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru Aroma Semarang")+"&body="+encodeURIComponent(teks()); };
+      $("pr").onclick=function(){ window.print(); };
+      $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
+      $("bk").onclick=function(){ window.close(); };
+      render();
+    }
+    function halamanCheckoutBaru(D){
+      var css='*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#fff;padding:16px}.box{max-width:560px;margin:0 auto}h1{font-size:22px;margin:4px 0 14px}.card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:14px;margin-bottom:12px}small{display:block;color:#aebbd0;margin-top:3px}.it{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}.it:last-child{border:0}.pr{text-align:right;font-weight:800;white-space:nowrap}.pr button{display:block;margin:6px 0 0 auto;background:none;border:1px solid #ff6b6b;color:#ff8a8a;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px}.row{display:flex;justify-content:space-between;padding:4px 0}.hijau{color:#86efac}.tot{font-size:18px;font-weight:900;border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:10px}.btns{display:grid;gap:10px}.btns button{border:0;border-radius:14px;padding:14px;font:inherit;font-weight:800;color:#fff}.btns button:disabled{opacity:.4}#wa{background:#1fa855}#em{background:#3b6fd8}#pr{background:#475569}#cl{background:#b3261e}#bk{background:none;border:1px solid rgba(255,255,255,.25)!important}@media print{.btns,.pr button{display:none}}';
+      return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Checkout • Aroma Semarang</title><style>'+css+'</style></head><body><div class="box"><h1>🧾 Checkout Pesanan</h1><div class="card" id="cust"></div><div class="card" id="list"></div><div class="card" id="ring"></div><div class="btns"><button id="wa">📱 Kirim ke WhatsApp</button><button id="em">✉️ Kirim via Email</button><button id="pr">🖨️ Cetak / Simpan PDF</button><button id="cl">🗑️ Hapus semua pesanan</button><button id="bk">← Kembali ke toko</button></div></div><script>var hitungTotal=('+hitungTotal.toString()+');('+skripCheckoutBaru.toString()+')('+JSON.stringify(D).replace(/</g,"\\u003c")+');<\/script></body></html>';
+    }
+    function bukaCheckoutBaru(){
+      if(!cart.length){ showToast("Keranjang masih kosong."); return; }
+      var name=customerName.value.trim(), phone=customerPhone.value.trim();
+      if(!name||!phone){ showToast("Isi nama dan nomor WhatsApp dulu ya."); (name?customerPhone:customerName).focus(); return; }
+      var w=window.open("","_blank");
+      if(!w){ showToast("Pop-up diblokir. Izinkan pop-up lalu coba lagi."); return; }
+      cart.forEach(pastikanBotol);
+      var D={
+        name:name, phone:phone, address:customerAddress.value.trim()||"-",
+        wa:"62882005034977", mail:"kamu97834@gmail.com",
+        cfg:cfgHitung(), promoTeks:PROMO.teks||"Promo",
+        items:cart.map(function(i){ return {code:i.code,name:i.name,type:i.type,size:i.size,botol:i.botol||"",botolHarga:i.botolHarga||0,price:i.price,qty:i.qty}; })
+      };
+      w.document.open(); w.document.write(halamanCheckoutBaru(D)); w.document.close();
+    }
+    document.getElementById("goCheckout").onclick=bukaCheckoutBaru;
+    
+  loadCart();
     searchProduct();
     renderCart();
   }
