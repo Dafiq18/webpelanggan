@@ -1,0 +1,14 @@
+{
+  "promo": { "aktif": true, "persen": 50, "teks": "PROMO DISKON 50%", "sampai": "" },
+  "gabung": false,
+  "botol": [
+    { "nama": "Botol standar (bawaan)", "harga": 0 },
+    { "nama": "Botol kaca polos", "harga": 5000 },
+    { "nama": "Botol travel spray", "harga": 8000, "ukuran": ["30 ML"] }
+  ],
+  "voucher": [
+    { "kode": "HEMAT10", "judul": "Diskon 10%", "tipe": "persen", "nilai": 10, "min": 100000, "maks": 50000, "sampai": "2026-12-31", "publik": true },
+    { "kode": "POTONG20K", "judul": "Potongan Rp20.000", "tipe": "nominal", "nilai": 20000, "min": 150000, "sampai": "2026-12-31", "publik": true },
+    { "kode": "TEMANKU", "judul": "Voucher teman", "tipe": "persen", "nilai": 15, "min": 0, "maks": 40000, "sampai": "", "publik": false }
+  ]
+}
