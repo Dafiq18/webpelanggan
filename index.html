@@ -7708,7 +7708,7 @@ async function askAI(){
 
         /* ================================================================
        KODE AKUN: LOGIN EMAIL + ALAMAT TERSIMPAN + CHECKOUT ALA SHOPEE
-       (tempel di atas baris:  loadCart();  — SETELAH kode TOKO 1 dan TOKO 2)
+       (tempel di atas baris:  loadCart()  — SETELAH kode TOKO 1 dan TOKO 2)
        ================================================================ */
     (function(){
       if(typeof hitungTotal!=="function" || typeof halamanCheckoutBaru!=="function"){
@@ -8371,7 +8371,7 @@ async function askAI(){
 
         /* ================================================================
        KODE MENU: bilah atas + menu 3 garis (☰) + nama kategori yang lebih simpel
-       (tempel di atas baris:  loadCart();  — paling bawah, setelah kode lain)
+       (tempel di atas baris:  loadCart()  — paling bawah, setelah kode lain)
        ================================================================ */
     (function(){
       /* ====== PENGATURAN — BOLEH KAMU UBAH ====== */
@@ -8527,7 +8527,7 @@ async function askAI(){
     
       /* ================================================================
        KODE KONFIG: web membaca pengaturan dari config.json (diatur lewat admin.html)
-       (tempel di atas baris:  loadCart();  — paling bawah, setelah kode lain)
+       (tempel di atas baris:  loadCart()  — paling bawah, setelah kode lain)
        ================================================================ */
     (function(){
       if(typeof PROMO==="undefined" || typeof DAFTAR_BOTOL==="undefined" || typeof DAFTAR_VOUCHER==="undefined" || !window.fetch) return;
@@ -8566,6 +8566,178 @@ async function askAI(){
         .catch(function(){});
     })();
     /* ===== AKHIR KODE KONFIG ===== */
+    
+      /* ================================================================
+       KODE TAMPILAN: header ala Shopee (logo + pencarian + menu), banner promo + hitung mundur,
+       voucher yang bisa diklaim, kategori bulat, dan lencana diskon di kartu parfum
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE MENU)
+       ================================================================ */
+    (function(){
+      /* ====== PENGATURAN — BOLEH KAMU UBAH ====== */
+      /* Logo toko: isi dengan nama file logo yang kamu unggah ke repo, contoh "logo.png".
+         Kosongkan ("") kalau belum punya logo: akan tampil ikon bunga 🌸 */
+      var LOGO_URL = "";
+      var TAMPIL_BANNER_PROMO = true;     /* banner promo + hitung mundur */
+      var TAMPIL_VOUCHER      = true;     /* deretan voucher yang bisa diklaim */
+      var TAMPIL_LENCANA      = true;     /* lencana "-50%" di foto parfum */
+
+      /* ====== BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+      var bar=document.querySelector(".mn-top");
+      if(!bar){ try{ console.warn("KODE TAMPILAN: tempel dulu KODE MENU di atasnya."); }catch(e){} return; }
+      function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+      function rb(n){ return n>=1000 ? ("Rp"+Math.round(n/1000)+"rb") : ("Rp"+n); }
+      function tglId(s){ var p=String(s).split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):s; }
+      function ada(f){ return typeof f==="function"; }
+
+      /* --- gaya --- */
+      var st=document.createElement("style");
+      st.textContent=[
+        /* header */
+        ".mn-top{gap:10px!important;padding:9px 12px!important;background:rgba(14,9,24,.9)!important;border-bottom:1px solid rgba(255,255,255,.1)!important}",
+        ".mn-top .mn-brand{flex:0 0 auto}",
+        ".mn-top .mn-logo{width:42px;height:42px;border-radius:13px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);box-shadow:none}",
+        ".mn-top .mn-logo img{width:100%;height:100%;object-fit:contain;display:block}",
+        ".mn-top .mn-nama{display:none}",
+        ".mn-top .search{flex:1;min-width:0;margin:0;padding:0 14px;height:44px;border-radius:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);box-shadow:none;backdrop-filter:none}",
+        ".mn-top .search input{min-height:0!important;height:42px;font-size:16px;padding:0}",
+        ".mn-top .search .count{display:none}",
+        ".mn-top .mn-btn{flex:0 0 auto}",
+        ".toolbar.tm-kosong{display:none!important}",
+        "@media(min-width:760px){.mn-top{padding:10px max(18px,calc((100% - 1180px)/2))!important;gap:18px!important}.mn-top .mn-nama{display:inline;font-size:18px}.mn-top .search{max-width:640px;margin:0 auto}}",
+        /* kategori bulat */
+        ".category-nav{position:static!important;background:none!important;backdrop-filter:none!important;padding:16px 0 8px!important;gap:6px!important}",
+        ".category-nav .category-pill{flex:0 0 auto;flex-direction:column!important;align-items:center!important;gap:7px;min-width:74px!important;padding:4px 2px!important;background:none!important;border:0!important;box-shadow:none!important;transform:none!important;font-size:12.5px!important;font-weight:800!important;color:#cbd5e1;text-align:center}",
+        ".category-nav .category-pill .kt-ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.14);transition:.2s}",
+        ".category-nav .category-pill:hover .kt-ic{transform:translateY(-2px)}",
+        ".category-nav .category-pill.active{color:#fff}",
+        ".category-nav .category-pill.active .kt-ic{background:linear-gradient(135deg,#8b5cf6,#22d3ee);border-color:transparent;box-shadow:0 8px 22px rgba(139,92,246,.45)}",
+        "@media(min-width:760px){.category-nav{justify-content:center}.category-nav .category-pill .kt-ic{width:62px;height:62px;font-size:29px}}",
+        /* banner promo */
+        ".tm-promo{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0 6px;padding:16px 18px;border-radius:20px;background:linear-gradient(120deg,#ff7337,#ee4d2d 55%,#c2255c);color:#fff;box-shadow:0 14px 36px rgba(238,77,45,.32)}",
+        ".tm-promo::after{content:'';position:absolute;right:-30px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.14)}",
+        ".tm-promo .tx{position:relative;z-index:1;min-width:0}",
+        ".tm-promo .t1{font-size:12px;font-weight:900;letter-spacing:.12em;opacity:.9}",
+        ".tm-promo .t2{font-size:clamp(20px,5vw,30px);font-weight:950;letter-spacing:-.02em;line-height:1.1;margin-top:3px}",
+        ".tm-promo .t3{font-size:12.5px;opacity:.92;margin-top:5px}",
+        ".tm-promo .cd{position:relative;z-index:1;flex:none;text-align:center}",
+        ".tm-promo .cd small{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;margin-bottom:5px;opacity:.95}",
+        ".tm-promo .cd div{display:flex;gap:5px;justify-content:center}",
+        ".tm-promo .cd b{min-width:40px;padding:7px 5px;border-radius:9px;background:rgba(0,0,0,.28);font-size:17px;font-variant-numeric:tabular-nums}",
+        ".tm-promo .cd i{font-style:normal;display:block;font-size:9px;font-weight:700;opacity:.85;margin-top:1px}",
+        "@media(max-width:480px){.tm-promo{padding:14px}.tm-promo .cd b{min-width:34px;font-size:15px}}",
+        /* voucher */
+        ".tm-vou{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;scrollbar-width:none;scroll-snap-type:x proximity}",
+        ".tm-vou::-webkit-scrollbar{display:none}",
+        ".vt{flex:0 0 auto;display:flex;width:280px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);scroll-snap-align:start}",
+        ".vt .l{flex:0 0 86px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 6px;background:linear-gradient(160deg,#ff7337,#ee4d2d);color:#fff;text-align:center;position:relative}",
+        ".vt .l::after{content:'';position:absolute;right:-6px;top:0;bottom:0;width:12px;background:radial-gradient(circle at 6px 8px,#140d1d 4px,transparent 4.5px) 0 0/12px 16px repeat-y}",
+        ".vt .l b{font-size:19px;font-weight:950;line-height:1}.vt .l small{font-size:10px;font-weight:800;letter-spacing:.08em;margin-top:4px}",
+        ".vt .r{flex:1;min-width:0;padding:10px 12px 10px 16px;display:flex;flex-direction:column;justify-content:center;gap:2px}",
+        ".vt .r strong{font-size:13.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+        ".vt .r small{font-size:11px;color:#a9b5c8;line-height:1.4}",
+        ".vt .r button{align-self:flex-start;margin-top:5px;border:0;border-radius:8px;padding:6px 14px;font:inherit;font-size:12px;font-weight:900;color:#fff;background:linear-gradient(135deg,#ff7337,#ee4d2d);cursor:pointer}",
+        ".vt .r button.on{background:#16a34a}.vt .r button.alt{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2)}",
+        /* lencana diskon di foto */
+        "body.tm-ada-promo .bottle-wrap::after{content:var(--tm-lencana);position:absolute;right:10px;top:10px;padding:5px 9px;border-radius:9px;background:linear-gradient(135deg,#ff7337,#ee4d2d);color:#fff;font-size:12px;font-weight:950;box-shadow:0 6px 16px rgba(238,77,45,.4)}"
+      ].join("\n");
+      document.head.appendChild(st);
+
+      /* --- logo --- */
+      var tempatLogo=bar.querySelector(".mn-logo"), namaEl=bar.querySelector(".mn-brand span:last-child");
+      if(namaEl) namaEl.classList.add("mn-nama");
+      if(tempatLogo && LOGO_URL){
+        var im=document.createElement("img"); im.alt="Logo"; im.src=LOGO_URL;
+        im.onerror=function(){ tempatLogo.textContent="🌸"; };
+        tempatLogo.textContent=""; tempatLogo.appendChild(im);
+      }
+
+      /* --- pencarian pindah ke header --- */
+      var tb=document.querySelector(".toolbar"), sr=tb&&tb.querySelector(".search"), btnMenu=document.getElementById("mnBuka");
+      if(sr && btnMenu){
+        bar.insertBefore(sr,btnMenu);
+        var inp=sr.querySelector("input"); if(inp) inp.placeholder="Cari parfum, brand, atau kode…";
+        tb.classList.add("tm-kosong");
+      }
+
+      /* --- kategori bulat: ikon di atas, nama di bawah --- */
+      document.querySelectorAll(".category-pill").forEach(function(p){
+        var t=p.textContent.trim(), i=t.indexOf(" ");
+        if(i<1 || p.querySelector(".kt-ic")) return;
+        p.innerHTML='<span class="kt-ic">'+esc(t.slice(0,i))+'</span><span class="kt-tx">'+esc(t.slice(i+1))+'</span>';
+        p.style.flexDirection="column"; p.style.alignItems="center";
+      });
+
+      /* --- banner promo + voucher (disisipkan di atas kategori) --- */
+      var nav=document.querySelector(".category-nav"), wadah=document.createElement("div");
+      if(nav && nav.parentNode) nav.parentNode.insertBefore(wadah,nav);
+      var sigLama="", cdEl=null;
+
+      function sisaWaktu(){
+        if(typeof PROMO==="undefined" || !PROMO.sampai) return null;
+        var d=new Date(PROMO.sampai+"T23:59:59"), s=Math.floor((d.getTime()-Date.now())/1000);
+        return isNaN(s)?null:Math.max(0,s);
+      }
+      function p2(n){ return (n<10?"0":"")+n; }
+      function htmlCd(s){
+        var h=Math.floor(s/3600), m=Math.floor(s%3600/60), dt=s%60, hari=Math.floor(h/24);
+        if(hari>=1) return '<b>'+hari+'<i>HARI</i></b><b>'+p2(h%24)+'<i>JAM</i></b><b>'+p2(m)+'<i>MNT</i></b><b>'+p2(dt)+'<i>DTK</i></b>';
+        return '<b>'+p2(h)+'<i>JAM</i></b><b>'+p2(m)+'<i>MNT</i></b><b>'+p2(dt)+'<i>DTK</i></b>';
+      }
+      function dataVoucher(){
+        if(typeof DAFTAR_VOUCHER==="undefined") return [];
+        return DAFTAR_VOUCHER.filter(function(v){ return v.publik && (!ada(masihBerlaku)||masihBerlaku(v.sampai)); });
+      }
+      function status(k){
+        try{
+          if(typeof vouPakai!=="undefined" && vouPakai===k) return "pakai";
+          if(typeof vouKlaim!=="undefined" && vouKlaim.indexOf(k)!==-1) return "punya";
+        }catch(e){}
+        return "baru";
+      }
+      function gambar(){
+        var aktif=(TAMPIL_BANNER_PROMO && typeof PROMO!=="undefined" && ada(promoAktif) && promoAktif());
+        var vs=TAMPIL_VOUCHER?dataVoucher():[];
+        var sig=JSON.stringify([aktif,aktif&&PROMO.teks,aktif&&PROMO.persen,aktif&&PROMO.sampai,vs.map(function(v){return [v.kode,v.judul,v.nilai,v.tipe,v.min,v.sampai,status(v.kode)];})]);
+        if(sig===sigLama) return; sigLama=sig;
+        var h="";
+        if(aktif){
+          var s=sisaWaktu();
+          h+='<div class="tm-promo"><div class="tx"><div class="t1">🔥 PROMO SPESIAL</div><div class="t2">'+esc(PROMO.teks||"Promo")+'</div><div class="t3">Potongan '+PROMO.persen+'% otomatis di keranjang'+(PROMO.sampai?(' • sampai '+tglId(PROMO.sampai)):'')+'</div></div>'+
+            (s!==null?'<div class="cd"><small>BERAKHIR DALAM</small><div id="tmCd">'+htmlCd(s)+'</div></div>':'')+'</div>';
+        }
+        if(vs.length){
+          h+='<div class="tm-vou">'+vs.map(function(v){
+            var st=status(v.kode), nilai=v.tipe==="persen"?(v.nilai+"%"):rb(v.nilai);
+            var info=(v.min?("Min. belanja "+rb(v.min)):"Tanpa minimal")+(v.sampai?(" • s/d "+tglId(v.sampai)):"");
+            var tomb=st==="pakai"?'<button class="on" data-k="'+esc(v.kode)+'" data-a="lepas">✓ Dipakai</button>':(st==="punya"?'<button class="alt" data-k="'+esc(v.kode)+'" data-a="pakai">Pakai</button>':'<button data-k="'+esc(v.kode)+'" data-a="klaim">Klaim</button>');
+            return '<div class="vt"><div class="l"><b>'+esc(nilai)+'</b><small>DISKON</small></div><div class="r"><strong>'+esc(v.judul||v.kode)+'</strong><small>'+esc(info)+'</small>'+tomb+'</div></div>';
+          }).join("")+'</div>';
+        }
+        wadah.innerHTML=h; cdEl=document.getElementById("tmCd");
+        wadah.querySelectorAll("button[data-k]").forEach(function(b){
+          b.onclick=function(){
+            var k=b.getAttribute("data-k"), a=b.getAttribute("data-a");
+            try{
+              if(a==="klaim"){ klaimVoucher(k); pakaiVoucher(k); if(ada(showToast)) showToast("Voucher "+k+" berhasil diklaim dan dipakai."); }
+              else if(a==="pakai"){ pakaiVoucher(k); if(ada(showToast)) showToast("Voucher "+k+" dipakai."); }
+              else { pakaiVoucher(""); if(ada(showToast)) showToast("Voucher dilepas."); }
+              if(ada(renderCart)) renderCart();
+            }catch(e){}
+            gambar();
+          };
+        });
+        /* lencana diskon di foto parfum */
+        if(TAMPIL_LENCANA && aktif){
+          document.body.style.setProperty("--tm-lencana",'"-'+PROMO.persen+'%"'); document.body.classList.add("tm-ada-promo");
+        }else document.body.classList.remove("tm-ada-promo");
+      }
+      function tik(){
+        gambar();
+        var s=sisaWaktu(); if(cdEl && s!==null) cdEl.innerHTML=htmlCd(s);
+      }
+      tik(); setInterval(tik,1000);
+    })();
+    /* ===== AKHIR KODE TAMPILAN ===== */
     
   loadCart();
     searchProduct();
