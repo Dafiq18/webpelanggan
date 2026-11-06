@@ -1,1 +1,482 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin • Aroma Semarang</title>
+<style>
+:root{--bg:#0b1120;--panel:#121a2e;--panel2:#18223b;--line:rgba(255,255,255,.1);--tx:#e8edf7;--mut:#8f9db6;--or:#ee4d2d;--or2:#ff7337;--ok:#22c55e;--bad:#fb7185;--blue:#60a5fa}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+.side{position:sticky;top:0;height:100vh;padding:22px 16px;background:linear-gradient(180deg,#101830,#0b1120);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 20px}
+.logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--or2),var(--or));display:grid;place-items:center;font-size:21px;box-shadow:0 8px 22px rgba(238,77,45,.4)}
+.brand b{display:block;font-size:15px}.brand small{color:var(--mut);font-size:11.5px}
+.nav{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:0;border-radius:12px;background:none;color:var(--mut);cursor:pointer;font-weight:700;font-size:14px;text-align:left}
+.nav:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.nav.on{background:linear-gradient(135deg,rgba(255,115,55,.2),rgba(238,77,45,.12));color:#ffb199;box-shadow:inset 3px 0 0 var(--or)}
+.nav i{font-style:normal;font-size:18px;width:22px;text-align:center}
+.nav em{margin-left:auto;font-style:normal;font-size:11px;font-weight:800;background:rgba(255,255,255,.1);border-radius:999px;padding:2px 8px}
+.side .sp{flex:1}
+.side a{color:var(--mut);font-size:12.5px;text-decoration:none;padding:10px 14px;border-radius:10px}
+.side a:hover{color:var(--tx);background:rgba(255,255,255,.05)}
+.main{padding:28px clamp(16px,4vw,40px) 120px;max-width:1040px;width:100%}
+h1{margin:0 0 4px;font-size:26px;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:14px;margin:0 0 24px;line-height:1.55}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px}
+.card h3{margin:0 0 12px;font-size:15px}
+.stat{position:relative;overflow:hidden}
+.stat .ic{position:absolute;right:14px;top:14px;font-size:26px;opacity:.9}
+.stat small{color:var(--mut);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.stat b{display:block;font-size:30px;margin-top:6px;letter-spacing:-.02em}
+.stat span{color:var(--mut);font-size:12.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:800}
+.pill.ok{background:rgba(34,197,94,.15);color:#86efac}.pill.off{background:rgba(255,255,255,.08);color:var(--mut)}.pill.warn{background:rgba(251,191,36,.15);color:#fcd34d}.pill.bad{background:rgba(251,113,133,.15);color:#fda4af}
+label.f{display:block;margin:14px 0 6px;font-size:12px;font-weight:800;color:#aebbd0}
+.in{width:100%;border:1px solid var(--line);outline:none;border-radius:12px;background:rgba(255,255,255,.05);padding:12px 13px;font-size:15px}
+.in:focus{border-color:var(--or);background:rgba(238,77,45,.06)}
+.hint{color:var(--mut);font-size:12px;margin-top:6px;line-height:1.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sw{position:relative;display:inline-block;width:50px;height:28px;flex:none}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;border-radius:999px;background:#334155;cursor:pointer;transition:.2s}
+.sw span::before{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked+span{background:linear-gradient(135deg,var(--or2),var(--or))}
+.sw input:checked+span::before{transform:translateX(22px)}
+.line{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.line b{font-size:14px}.line small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px;line-height:1.45}
+input[type=range]{width:100%;accent-color:var(--or);height:30px}
+.big{font-size:44px;font-weight:900;letter-spacing:-.03em;background:linear-gradient(135deg,var(--or2),#ffb199);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;font-size:14px;cursor:pointer;background:linear-gradient(135deg,var(--or2),var(--or));color:#fff;box-shadow:0 8px 20px rgba(238,77,45,.3)}
+.btn:hover{filter:brightness(1.08)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.g{background:rgba(255,255,255,.08);box-shadow:none;border:1px solid var(--line)}
+.btn.d{background:rgba(251,113,133,.12);color:#fda4af;box-shadow:none}
+.btn.s{padding:8px 13px;font-size:13px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.preview{border-radius:16px;padding:16px;background:linear-gradient(135deg,rgba(238,77,45,.16),rgba(255,115,55,.05));border:1px dashed rgba(238,77,45,.55)}
+.preview .t{font-weight:900;font-size:15px}
+.tick{position:relative;display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);border-left:6px solid var(--or)}
+.tick.off{border-left-color:#475569;opacity:.75}
+.tick .nm{font-size:18px;font-weight:900;letter-spacing:.04em;color:#ffb199}
+.tick .jd{font-size:13.5px;font-weight:700}
+.tick small{color:var(--mut);font-size:12px;display:block;margin-top:3px;line-height:1.5}
+.tick .ac{margin-left:auto;display:flex;gap:8px;flex:none}
+.list{display:grid;gap:10px}
+.empty{padding:34px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:16px}
+.sizes{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer;font-size:13px;font-weight:800;color:var(--mut)}
+.chip.on{border-color:var(--or);background:rgba(238,77,45,.18);color:#ffb199}
+.seg{display:inline-flex;padding:4px;border-radius:12px;background:rgba(255,255,255,.06)}
+.seg button{border:0;background:none;padding:9px 16px;border-radius:9px;font-weight:800;font-size:13px;color:var(--mut);cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,var(--or2),var(--or));color:#fff}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(2,6,15,.75);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}
+.box{width:min(520px,100%);max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px}
+.box h2{margin:0 0 4px;font-size:19px}
+.acts{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.code{width:100%;min-height:220px;border:1px solid var(--line);border-radius:12px;background:#070c18;color:#b7c4dc;padding:14px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;resize:vertical;outline:none}
+ol.st{margin:8px 0 0;padding-left:20px;color:#c3cee2;font-size:14px;line-height:1.8}
+ol.st b{color:#ffb199}
+.bar{position:fixed;left:240px;right:0;bottom:0;z-index:20;display:none;align-items:center;gap:14px;padding:14px clamp(16px,4vw,40px);background:rgba(11,17,32,.96);border-top:1px solid var(--line);backdrop-filter:blur(12px)}
+.bar.show{display:flex}
+.bar .tx{flex:1;font-size:14px;font-weight:700}.bar .tx small{display:block;color:var(--mut);font-weight:500;font-size:12.5px}
+.dot{width:9px;height:9px;border-radius:50%;background:#fbbf24;display:inline-block;margin-right:8px;box-shadow:0 0 0 4px rgba(251,191,36,.2)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:99;background:#111a30;border:1px solid var(--line);padding:12px 18px;border-radius:12px;font-weight:700;font-size:14px;transition:.25s;pointer-events:none;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.sim{display:grid;gap:8px;margin-top:14px;padding:14px;border-radius:14px;background:rgba(255,255,255,.04)}
+.sim .r{display:flex;justify-content:space-between;font-size:14px;color:#c3cee2}.sim .r.t{font-size:18px;font-weight:900;color:#fff;border-top:1px solid var(--line);padding-top:10px;margin-top:2px}.sim .r.h{color:#86efac}
+.tabs{display:none}
+@media(max-width:820px){
+  .app{display:block}
+  .side{display:none}
+  .tabs{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(11,17,32,.97);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+  .tabs button{flex:1;border:0;background:none;color:var(--mut);padding:7px 2px;font-size:10.5px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+  .tabs button i{font-style:normal;font-size:20px}
+  .tabs button.on{color:#ff8a65}
+  .main{padding:22px 16px 170px}
+  .bar{left:0;bottom:62px}
+  .row2{grid-template-columns:1fr}
+  .tick{flex-wrap:wrap}.tick .ac{margin-left:0;width:100%}
+  .toast{bottom:150px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">🌸</div><div><b>Aroma Semarang</b><small>Panel Admin</small></div></div>
+    <button class="nav on" data-p="ringkasan"><i>📊</i>Ringkasan</button>
+    <button class="nav" data-p="promo"><i>🔥</i>Promo</button>
+    <button class="nav" data-p="voucher"><i>🎟️</i>Voucher<em id="nV">0</em></button>
+    <button class="nav" data-p="botol"><i>🍼</i>Botol<em id="nB">0</em></button>
+    <button class="nav" data-p="terbit"><i>🚀</i>Terbitkan</button>
+    <div class="sp"></div>
+    <a href="index.html" target="_blank">↗ Lihat toko</a>
+  </aside>
 
+  <main class="main">
+    <section id="p-ringkasan">
+      <h1>Halo, Admin 👋</h1>
+      <p class="sub">Atur promo, voucher, dan pilihan botol tokomu dari sini. Perubahan baru tampil di toko setelah kamu menekan <b>Terbitkan</b>.</p>
+      <div class="grid g4" id="stats"></div>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="card"><h3>🔥 Promo saat ini</h3><div id="ringPromo"></div></div>
+        <div class="card"><h3>🧮 Simulasi harga</h3>
+          <label class="f" style="margin-top:0">Belanja parfum (Rp)</label><input class="in" id="sSub" type="number" inputmode="numeric" value="200000" min="0" step="1000">
+          <label class="f">Pakai voucher</label><select class="in" id="sVou"></select>
+          <div class="sim" id="sOut"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-promo" hidden>
+      <h1>Promo Diskon</h1>
+      <p class="sub">Potongan otomatis dari harga parfum untuk semua pelanggan.</p>
+      <div class="grid g2">
+        <div class="card">
+          <div class="line"><div><b>Promo aktif</b><small>Matikan kalau tidak ada promo.</small></div><label class="sw"><input type="checkbox" id="pAktif"><span></span></label></div>
+          <label class="f">Besar diskon</label>
+          <div class="big"><span id="pPersenTxt">50</span>%</div>
+          <input type="range" id="pPersen" min="0" max="90" step="1">
+          <label class="f">Tulisan promo (tampil ke pelanggan)</label>
+          <input class="in" id="pTeks" maxlength="40" placeholder="PROMO DISKON 50%">
+          <label class="f">Berakhir pada tanggal</label>
+          <input class="in" id="pSampai" type="date">
+          <div class="hint">Kosongkan tanggal kalau promo tanpa batas waktu.</div>
+        </div>
+        <div class="card">
+          <h3>Tampilan di toko</h3>
+          <div class="preview" id="pPrev"></div>
+          <div class="line" style="margin-top:22px"><div><b>Boleh digabung dengan voucher</b><small>Mati: pelanggan hanya mendapat potongan yang paling besar antara promo dan voucher. Hidup: keduanya dijumlah.</small></div><label class="sw"><input type="checkbox" id="pGabung"><span></span></label></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="p-voucher" hidden>
+      <div class="head"><div><h1>Voucher</h1><p class="sub">Voucher <b>publik</b> tampil di keranjang dan bisa diklaim. Voucher <b>rahasia</b> hanya bisa dipakai kalau pelanggan mengetik kodenya.</p></div><button class="btn" id="vBaru">＋ Voucher baru</button></div>
+      <div class="list" id="vList"></div>
+    </section>
+
+    <section id="p-botol" hidden>
+      <div class="head"><div><h1>Pilihan Botol</h1><p class="sub">Pelanggan memilih botol saat checkout. Harga botol ditambahkan ke total dan tidak ikut didiskon.</p></div><button class="btn" id="bBaru">＋ Botol baru</button></div>
+      <div class="list" id="bList"></div>
+    </section>
+
+    <section id="p-terbit" hidden>
+      <h1>Terbitkan Perubahan</h1>
+      <p class="sub">Pilih salah satu cara. Setelah terbit, tunggu 1–2 menit lalu tokomu memakai pengaturan baru.</p>
+      <div class="seg" id="mode"><button data-m="manual" class="on">Cara mudah (tempel)</button><button data-m="github">Otomatis (GitHub)</button></div>
+
+      <div id="mManual" class="card" style="margin-top:16px">
+        <h3>Cara mudah: salin lalu tempel</h3>
+        <ol class="st">
+          <li>Tekan tombol <b>Salin pengaturan</b> di bawah.</li>
+          <li>Buka repo webmu di GitHub, tekan tombol <b>titik (.)</b>, lalu klik file <b>config.json</b>.</li>
+          <li>Tekan <b>Ctrl+A</b>, lalu <b>Ctrl+V</b> (hapus isi lama, tempel yang baru).</li>
+          <li>Klik ikon cabang di kiri, tulis pesan, lalu <b>Commit &amp; Push</b>.</li>
+        </ol>
+        <textarea class="code" id="json" readonly style="margin-top:14px"></textarea>
+        <div class="acts"><button class="btn g" id="unduhJson">Unduh file</button><button class="btn" id="salin">📋 Salin pengaturan</button></div>
+      </div>
+
+      <div id="mGithub" class="card" style="margin-top:16px" hidden>
+        <h3>Otomatis: langsung terbit dari panel ini</h3>
+        <p class="hint" style="margin-top:0">Kamu hanya perlu mengisi sekali. Kunci akses (token) tersimpan di perangkat ini saja, tidak masuk ke GitHub dan tidak ke web toko.</p>
+        <div class="row2">
+          <div><label class="f">Nama akun GitHub</label><input class="in" id="gOwner" placeholder="contoh: budi123" autocomplete="off"></div>
+          <div><label class="f">Nama repo</label><input class="in" id="gRepo" placeholder="contoh: aroma-semarang" autocomplete="off"></div>
+        </div>
+        <div class="row2">
+          <div><label class="f">Branch</label><input class="in" id="gBranch" value="main" autocomplete="off"></div>
+          <div><label class="f">Token GitHub</label><input class="in" id="gToken" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+        </div>
+        <div class="hint">Cara membuat token: GitHub → foto profil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>. Pilih <b>Only select repositories</b> (repo tokomu saja), lalu di <b>Permissions → Contents</b> pilih <b>Read and write</b>.</div>
+        <div class="acts"><button class="btn g" id="gLupa">Hapus data dari perangkat ini</button><button class="btn" id="gTerbit">🚀 Terbitkan sekarang</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="bar" id="bar"><div class="tx"><span class="dot"></span>Ada perubahan yang belum diterbitkan<small>Belum tampil di toko.</small></div><button class="btn g s" id="batal">Batalkan</button><button class="btn s" id="keTerbit">Terbitkan →</button></div>
+
+<nav class="tabs" id="tabs">
+  <button class="on" data-p="ringkasan"><i>📊</i>Ringkasan</button>
+  <button data-p="promo"><i>🔥</i>Promo</button>
+  <button data-p="voucher"><i>🎟️</i>Voucher</button>
+  <button data-p="botol"><i>🍼</i>Botol</button>
+  <button data-p="terbit"><i>🚀</i>Terbit</button>
+</nav>
+
+<div class="modal" id="mdV"><div class="box">
+  <h2 id="vJudulBox">Voucher baru</h2>
+  <label class="f">Kode voucher</label><input class="in" id="vKode" maxlength="20" placeholder="HEMAT10" autocapitalize="characters" style="text-transform:uppercase">
+  <label class="f">Nama voucher (tampil ke pelanggan)</label><input class="in" id="vJudul" maxlength="40" placeholder="Diskon 10%">
+  <label class="f">Jenis potongan</label>
+  <div class="seg" id="vTipe"><button data-t="persen" class="on">Persen (%)</button><button data-t="nominal">Nominal (Rp)</button></div>
+  <div class="row2">
+    <div><label class="f" id="vNilaiL">Besar potongan (%)</label><input class="in" id="vNilai" type="number" inputmode="numeric" min="1"></div>
+    <div><label class="f">Minimal belanja (Rp)</label><input class="in" id="vMin" type="number" inputmode="numeric" min="0" step="1000"></div>
+  </div>
+  <div class="row2">
+    <div id="vMaksW"><label class="f">Potongan maksimal (Rp)</label><input class="in" id="vMaks" type="number" inputmode="numeric" min="0" step="1000" placeholder="kosong = tanpa batas"></div>
+    <div><label class="f">Berakhir pada</label><input class="in" id="vSampai" type="date"></div>
+  </div>
+  <div class="line" style="margin-top:18px"><div><b>Tampil di keranjang (publik)</b><small>Mati = rahasia, hanya bisa dipakai kalau pelanggan mengetik kodenya.</small></div><label class="sw"><input type="checkbox" id="vPublik"><span></span></label></div>
+  <div class="hint" id="vErr" style="color:var(--bad);min-height:18px"></div>
+  <div class="acts"><button class="btn g" data-tutup>Batal</button><button class="btn" id="vSimpan">Simpan voucher</button></div>
+</div></div>
+
+<div class="modal" id="mdB"><div class="box">
+  <h2 id="bJudulBox">Botol baru</h2>
+  <label class="f">Nama botol</label><input class="in" id="bNama" maxlength="40" placeholder="Botol kaca polos">
+  <label class="f">Tambahan harga (Rp)</label><input class="in" id="bHarga" type="number" inputmode="numeric" min="0" step="500" placeholder="0 = gratis">
+  <label class="f">Berlaku untuk ukuran</label>
+  <div class="sizes" id="bUk"></div>
+  <div class="hint">Tidak memilih ukuran apa pun berarti botol ini berlaku untuk semua ukuran.</div>
+  <div class="hint" id="bErr" style="color:var(--bad);min-height:18px"></div>
+  <div class="acts"><button class="btn g" data-tutup>Batal</button><button class="btn" id="bSimpan">Simpan botol</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var UKURAN=["30 ML","50 ML","100 ML"];
+var DEFAULT={promo:{aktif:true,persen:50,teks:"PROMO DISKON 50%",sampai:""},gabung:false,
+  botol:[{nama:"Botol standar (bawaan)",harga:0}],voucher:[]};
+var KUNCI_DRAFT="aromaAdminDraft", KUNCI_GH="aromaAdminGithub";
+var cfg=null, asli="", mulai=null;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];}); }
+function rp(n){ return "Rp"+Number(n||0).toLocaleString("id-ID"); }
+function tgl(s){ var p=String(s).split("-"); return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:s; }
+function salin(o){ return JSON.parse(JSON.stringify(o)); }
+function bacaLS(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function tulisLS(k,v){ try{ if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
+function toast(t){ var e=$("toast"); e.textContent=t; e.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(function(){ e.classList.remove("show"); },2600); }
+function berlaku(s){ if(!s) return true; var d=new Date(s+"T23:59:59"); return isNaN(d)||Date.now()<=d.getTime(); }
+function teksJson(){ return JSON.stringify(cfg,null,2)+"\n"; }
+function berubah(){ return teksJson()!==asli; }
+
+/* ---------- muat pengaturan ---------- */
+function rapikan(c){
+  var o=salin(DEFAULT);
+  if(c&&typeof c==="object"){
+    if(c.promo&&typeof c.promo==="object") o.promo={aktif:!!c.promo.aktif,persen:Math.max(0,Math.min(90,Number(c.promo.persen)||0)),teks:String(c.promo.teks||""),sampai:String(c.promo.sampai||"")};
+    if(typeof c.gabung==="boolean") o.gabung=c.gabung;
+    if(Array.isArray(c.botol)) o.botol=c.botol.filter(function(b){return b&&b.nama;}).map(function(b){var x={nama:String(b.nama),harga:Math.max(0,Number(b.harga)||0)}; if(Array.isArray(b.ukuran)&&b.ukuran.length) x.ukuran=b.ukuran.map(String); return x;});
+    if(Array.isArray(c.voucher)) o.voucher=c.voucher.filter(function(v){return v&&v.kode;}).map(function(v){var x={kode:String(v.kode).toUpperCase(),judul:String(v.judul||v.kode),tipe:v.tipe==="nominal"?"nominal":"persen",nilai:Number(v.nilai)||0,min:Math.max(0,Number(v.min)||0)}; if(Number(v.maks)>0&&x.tipe==="persen") x.maks=Number(v.maks); x.sampai=String(v.sampai||""); x.publik=!!v.publik; return x;});
+  }
+  return o;
+}
+function muat(){
+  fetch("config.json?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(c){
+    var dasar=rapikan(c); asli=JSON.stringify(dasar,null,2)+"\n";
+    var d=bacaLS(KUNCI_DRAFT), dc=null; try{ dc=d?JSON.parse(d):null; }catch(e){}
+    cfg=dc?rapikan(dc):dasar; mulai=salin(dasar);
+    if(!c) toast("config.json belum ada. Memakai pengaturan awal.");
+    gambarSemua();
+  });
+}
+
+/* ---------- perubahan ---------- */
+function tandai(){
+  tulisLS(KUNCI_DRAFT,berubah()?teksJson():null);
+  $("bar").classList.toggle("show",berubah());
+  $("json").value=teksJson();
+  gambarRingkas();
+}
+function gambarSemua(){ isiPromo(); gambarVoucher(); gambarBotol(); tandai(); }
+
+/* ---------- navigasi ---------- */
+function buka(p){
+  ["ringkasan","promo","voucher","botol","terbit"].forEach(function(x){ $("p-"+x).hidden=(x!==p); });
+  document.querySelectorAll("[data-p]").forEach(function(b){ b.classList.toggle("on",b.getAttribute("data-p")===p); });
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("[data-p]").forEach(function(b){ b.onclick=function(){ buka(b.getAttribute("data-p")); }; });
+$("keTerbit").onclick=function(){ buka("terbit"); };
+$("batal").onclick=function(){ if(!confirm("Batalkan semua perubahan yang belum diterbitkan?")) return; cfg=salin(mulai); gambarSemua(); toast("Perubahan dibatalkan."); };
+
+/* ---------- ringkasan ---------- */
+function promoHidup(){ return cfg.promo.aktif&&cfg.promo.persen>0&&berlaku(cfg.promo.sampai); }
+function gambarRingkas(){
+  var vAktif=cfg.voucher.filter(function(v){return berlaku(v.sampai);}).length;
+  var vPub=cfg.voucher.filter(function(v){return v.publik&&berlaku(v.sampai);}).length;
+  $("nV").textContent=cfg.voucher.length; $("nB").textContent=cfg.botol.length;
+  $("stats").innerHTML=
+    '<div class="card stat"><span class="ic">🔥</span><small>Promo</small><b>'+(promoHidup()?cfg.promo.persen+'%':'Mati')+'</b><span>'+(promoHidup()?'Sedang berjalan':(cfg.promo.aktif&&!berlaku(cfg.promo.sampai)?'Sudah berakhir':'Tidak aktif'))+'</span></div>'+
+    '<div class="card stat"><span class="ic">🎟️</span><small>Voucher aktif</small><b>'+vAktif+'</b><span>'+vPub+' tampil di keranjang</span></div>'+
+    '<div class="card stat"><span class="ic">🍼</span><small>Pilihan botol</small><b>'+cfg.botol.length+'</b><span>Dipilih saat checkout</span></div>'+
+    '<div class="card stat"><span class="ic">'+(berubah()?'📝':'✅')+'</span><small>Status</small><b style="font-size:20px;margin-top:12px">'+(berubah()?'Belum terbit':'Sudah terbit')+'</b><span>'+(berubah()?'Ada perubahan baru':'Sama dengan toko')+'</span></div>';
+  var p=cfg.promo;
+  $("ringPromo").innerHTML='<div class="preview"><div class="t">🔥 '+esc(p.teks||"Promo")+'</div><div style="color:#cbd5e1;font-size:13px;margin-top:4px">Potongan '+p.persen+'% otomatis dari harga parfum'+(p.sampai?(' • sampai '+tgl(p.sampai)):' • tanpa batas waktu')+'</div></div>'+
+    '<div style="margin-top:12px">'+(promoHidup()?'<span class="pill ok">● Aktif</span>':'<span class="pill off">● Tidak aktif</span>')+' <button class="btn g s" style="margin-left:8px" onclick="document.querySelector(\'[data-p=promo]\').click()">Ubah promo</button></div>';
+  var sel=$("sVou"), cur=sel.value;
+  sel.innerHTML='<option value="">Tanpa voucher</option>'+cfg.voucher.map(function(v){return '<option value="'+esc(v.kode)+'">'+esc(v.kode)+' — '+esc(v.judul)+'</option>';}).join("");
+  sel.value=cur; if(sel.value!==cur) sel.value="";
+  simulasi();
+}
+function simulasi(){
+  var sub=Math.max(0,Number($("sSub").value)||0), kode=$("sVou").value, v=null;
+  cfg.voucher.forEach(function(x){ if(x.kode===kode) v=x; });
+  var promo=promoHidup()?Math.round(sub*cfg.promo.persen/100):0, vou=0, cat="";
+  if(v){
+    if(sub<v.min) cat="Belanja belum mencapai minimal "+rp(v.min)+".";
+    else{ var dasar=cfg.gabung?sub-promo:sub; vou=v.tipe==="persen"?Math.round(dasar*v.nilai/100):v.nilai; if(v.maks) vou=Math.min(vou,v.maks); vou=Math.max(0,Math.min(vou,dasar)); }
+  }
+  if(!cfg.gabung&&promo>0&&vou>0){ if(vou>promo) promo=0; else vou=0; }
+  var tot=Math.max(0,sub-promo-vou);
+  $("sOut").innerHTML='<div class="r"><span>Subtotal parfum</span><span>'+rp(sub)+'</span></div>'+
+    (promo?'<div class="r h"><span>'+esc(cfg.promo.teks||"Promo")+'</span><span>− '+rp(promo)+'</span></div>':'')+
+    (vou?'<div class="r h"><span>Voucher '+esc(v.kode)+'</span><span>− '+rp(vou)+'</span></div>':'')+
+    (cat?'<div class="r" style="color:#fcd34d"><span>'+esc(cat)+'</span></div>':'')+
+    '<div class="r t"><span>Total (belum termasuk botol)</span><span>'+rp(tot)+'</span></div>';
+}
+$("sSub").oninput=simulasi; $("sVou").onchange=simulasi;
+
+/* ---------- promo ---------- */
+function isiPromo(){
+  var p=cfg.promo;
+  $("pAktif").checked=p.aktif; $("pPersen").value=p.persen; $("pPersenTxt").textContent=p.persen;
+  $("pTeks").value=p.teks; $("pSampai").value=p.sampai; $("pGabung").checked=cfg.gabung; gambarPrev();
+}
+function gambarPrev(){
+  var p=cfg.promo;
+  $("pPrev").innerHTML='<div class="t">🔥 '+esc(p.teks||"Promo")+'</div><div style="color:#cbd5e1;font-size:13px;margin-top:4px;line-height:1.5">Potongan '+p.persen+'% otomatis dari harga parfum'+(p.sampai?(' (sampai '+tgl(p.sampai)+')'):'')+'.</div>'+
+    '<div style="margin-top:10px">'+(promoHidup()?'<span class="pill ok">● Aktif di toko</span>':'<span class="pill off">● Tidak tampil di toko</span>')+'</div>';
+}
+function simpanPromo(){
+  var p=cfg.promo;
+  p.aktif=$("pAktif").checked; p.persen=Number($("pPersen").value)||0; $("pPersenTxt").textContent=p.persen;
+  p.teks=$("pTeks").value.trim(); p.sampai=$("pSampai").value; cfg.gabung=$("pGabung").checked;
+  gambarPrev(); tandai();
+}
+["pAktif","pPersen","pTeks","pSampai","pGabung"].forEach(function(id){ $(id).addEventListener("input",simpanPromo); $(id).addEventListener("change",simpanPromo); });
+
+/* ---------- voucher ---------- */
+var vEdit=-1, vTipe="persen";
+function gambarVoucher(){
+  var el=$("vList");
+  if(!cfg.voucher.length){ el.innerHTML='<div class="empty">Belum ada voucher.<br>Tekan <b>＋ Voucher baru</b> untuk membuat yang pertama.</div>'; return; }
+  el.innerHTML=cfg.voucher.map(function(v,i){
+    var habis=!berlaku(v.sampai), nilai=v.tipe==="persen"?(v.nilai+"%"):rp(v.nilai);
+    return '<div class="tick'+(habis?' off':'')+'"><div style="min-width:0"><div class="nm">'+esc(v.kode)+'</div><div class="jd">'+esc(v.judul)+' — '+nilai+'</div>'+
+      '<small>'+(v.min?('Min. belanja '+rp(v.min)):'Tanpa minimal belanja')+(v.maks?(' • maks. potongan '+rp(v.maks)):'')+' • '+(v.sampai?('sampai '+tgl(v.sampai)):'tanpa batas waktu')+'</small>'+
+      '<div style="margin-top:8px">'+(habis?'<span class="pill bad">Sudah berakhir</span> ':'')+(v.publik?'<span class="pill ok">Publik</span>':'<span class="pill warn">Rahasia</span>')+'</div></div>'+
+      '<div class="ac"><button class="btn g s" data-e="'+i+'">Ubah</button><button class="btn d s" data-h="'+i+'">Hapus</button></div></div>';
+  }).join("");
+  el.querySelectorAll("[data-e]").forEach(function(b){ b.onclick=function(){ bukaV(Number(b.getAttribute("data-e"))); }; });
+  el.querySelectorAll("[data-h]").forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute("data-h")); if(!confirm("Hapus voucher "+cfg.voucher[i].kode+"?")) return; cfg.voucher.splice(i,1); gambarVoucher(); tandai(); toast("Voucher dihapus."); }; });
+}
+function setTipe(t){
+  vTipe=t; document.querySelectorAll("#vTipe button").forEach(function(b){ b.classList.toggle("on",b.getAttribute("data-t")===t); });
+  $("vNilaiL").textContent=t==="persen"?"Besar potongan (%)":"Besar potongan (Rp)"; $("vMaksW").style.visibility=t==="persen"?"visible":"hidden";
+}
+document.querySelectorAll("#vTipe button").forEach(function(b){ b.onclick=function(){ setTipe(b.getAttribute("data-t")); }; });
+function bukaV(i){
+  vEdit=i; var v=i>=0?cfg.voucher[i]:{kode:"",judul:"",tipe:"persen",nilai:"",min:0,maks:"",sampai:"",publik:true};
+  $("vJudulBox").textContent=i>=0?"Ubah voucher":"Voucher baru";
+  $("vKode").value=v.kode; $("vJudul").value=v.judul; setTipe(v.tipe); $("vNilai").value=v.nilai; $("vMin").value=v.min||""; $("vMaks").value=v.maks||"";
+  $("vSampai").value=v.sampai; $("vPublik").checked=v.publik; $("vErr").textContent=""; $("mdV").classList.add("open");
+}
+$("vBaru").onclick=function(){ bukaV(-1); };
+$("vSimpan").onclick=function(){
+  var kode=$("vKode").value.trim().toUpperCase().replace(/\s+/g,""), judul=$("vJudul").value.trim(), nilai=Number($("vNilai").value), min=Number($("vMin").value)||0, maks=Number($("vMaks").value)||0, err=$("vErr");
+  if(!/^[A-Z0-9_-]{3,20}$/.test(kode)){ err.textContent="Kode 3–20 karakter, hanya huruf, angka, strip."; return; }
+  var ganda=false; cfg.voucher.forEach(function(v,i){ if(v.kode===kode&&i!==vEdit) ganda=true; });
+  if(ganda){ err.textContent="Kode ini sudah dipakai voucher lain."; return; }
+  if(!judul){ err.textContent="Isi nama voucher dulu."; return; }
+  if(!(nilai>0)){ err.textContent="Isi besar potongan."; return; }
+  if(vTipe==="persen"&&nilai>100){ err.textContent="Persen tidak boleh lebih dari 100."; return; }
+  var o={kode:kode,judul:judul,tipe:vTipe,nilai:nilai,min:min}; if(vTipe==="persen"&&maks>0) o.maks=maks; o.sampai=$("vSampai").value; o.publik=$("vPublik").checked;
+  if(vEdit>=0) cfg.voucher[vEdit]=o; else cfg.voucher.push(o);
+  $("mdV").classList.remove("open"); gambarVoucher(); tandai(); toast("Voucher disimpan.");
+};
+
+/* ---------- botol ---------- */
+var bEdit=-1, bUkur=[];
+function gambarBotol(){
+  var el=$("bList");
+  if(!cfg.botol.length){ el.innerHTML='<div class="empty">Belum ada pilihan botol.<br>Kalau kosong, pelanggan tidak diminta memilih botol.</div>'; return; }
+  el.innerHTML=cfg.botol.map(function(b,i){
+    return '<div class="tick" style="border-left-color:var(--blue)"><div style="min-width:0"><div class="jd" style="font-size:16px">🍼 '+esc(b.nama)+'</div><small>'+(b.harga?('Tambahan '+rp(b.harga)):'Gratis')+' • '+(b.ukuran?('Ukuran '+b.ukuran.join(", ")):'Semua ukuran')+'</small></div>'+
+      '<div class="ac"><button class="btn g s" data-e="'+i+'">Ubah</button><button class="btn d s" data-h="'+i+'">Hapus</button></div></div>';
+  }).join("");
+  el.querySelectorAll("[data-e]").forEach(function(b){ b.onclick=function(){ bukaB(Number(b.getAttribute("data-e"))); }; });
+  el.querySelectorAll("[data-h]").forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute("data-h")); if(!confirm("Hapus "+cfg.botol[i].nama+"?")) return; cfg.botol.splice(i,1); gambarBotol(); tandai(); toast("Botol dihapus."); }; });
+}
+function gambarUk(){
+  $("bUk").innerHTML=UKURAN.map(function(u){ return '<button type="button" class="chip'+(bUkur.indexOf(u)>=0?' on':'')+'" data-u="'+u+'">'+u+'</button>'; }).join("");
+  $("bUk").querySelectorAll("[data-u]").forEach(function(c){ c.onclick=function(){ var u=c.getAttribute("data-u"), k=bUkur.indexOf(u); if(k>=0) bUkur.splice(k,1); else bUkur.push(u); gambarUk(); }; });
+}
+function bukaB(i){
+  bEdit=i; var b=i>=0?cfg.botol[i]:{nama:"",harga:"",ukuran:[]};
+  $("bJudulBox").textContent=i>=0?"Ubah botol":"Botol baru"; $("bNama").value=b.nama; $("bHarga").value=b.harga||""; bUkur=(b.ukuran||[]).slice(); gambarUk(); $("bErr").textContent=""; $("mdB").classList.add("open");
+}
+$("bBaru").onclick=function(){ bukaB(-1); };
+$("bSimpan").onclick=function(){
+  var nama=$("bNama").value.trim(), harga=Math.max(0,Number($("bHarga").value)||0);
+  if(!nama){ $("bErr").textContent="Isi nama botol dulu."; return; }
+  var o={nama:nama,harga:harga}; if(bUkur.length) o.ukuran=UKURAN.filter(function(u){return bUkur.indexOf(u)>=0;});
+  if(bEdit>=0) cfg.botol[bEdit]=o; else cfg.botol.push(o);
+  $("mdB").classList.remove("open"); gambarBotol(); tandai(); toast("Botol disimpan.");
+};
+
+document.querySelectorAll(".modal").forEach(function(m){
+  m.addEventListener("click",function(e){ if(e.target===m||e.target.hasAttribute("data-tutup")) m.classList.remove("open"); });
+});
+
+/* ---------- terbitkan ---------- */
+document.querySelectorAll("#mode button").forEach(function(b){
+  b.onclick=function(){ var m=b.getAttribute("data-m"); document.querySelectorAll("#mode button").forEach(function(x){ x.classList.toggle("on",x===b); }); $("mManual").hidden=m!=="manual"; $("mGithub").hidden=m!=="github"; };
+});
+$("salin").onclick=function(){
+  var t=teksJson();
+  function ok(){ toast("Pengaturan tersalin. Sekarang tempel di config.json."); }
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,function(){ $("json").select(); document.execCommand("copy"); ok(); });
+  else{ $("json").select(); try{ document.execCommand("copy"); }catch(e){} ok(); }
+};
+$("unduhJson").onclick=function(){ var a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([teksJson()],{type:"application/json"})); a.download="config.json"; a.click(); };
+
+var gh={}; try{ gh=JSON.parse(bacaLS(KUNCI_GH)||"{}")||{}; }catch(e){ gh={}; }
+$("gOwner").value=gh.owner||""; $("gRepo").value=gh.repo||""; $("gBranch").value=gh.branch||"main"; $("gToken").value=gh.token||"";
+if(!gh.owner){ var m=location.hostname.match(/^([^.]+)\.github\.io$/), seg=location.pathname.split("/").filter(Boolean)[0]; if(m){ $("gOwner").value=m[1]; if(seg&&!/\.html?$/.test(seg)) $("gRepo").value=seg; } }
+$("gLupa").onclick=function(){ tulisLS(KUNCI_GH,null); $("gToken").value=""; toast("Data akses dihapus dari perangkat ini."); };
+function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+$("gTerbit").onclick=function(){
+  var o=$("gOwner").value.trim(), r=$("gRepo").value.trim(), br=$("gBranch").value.trim()||"main", tk=$("gToken").value.trim();
+  if(!o||!r||!tk){ toast("Isi akun, repo, dan token dulu."); return; }
+  tulisLS(KUNCI_GH,JSON.stringify({owner:o,repo:r,branch:br,token:tk}));
+  var btn=$("gTerbit"); btn.disabled=true; btn.textContent="Menerbitkan...";
+  var url="https://api.github.com/repos/"+encodeURIComponent(o)+"/"+encodeURIComponent(r)+"/contents/config.json";
+  var H={"Authorization":"Bearer "+tk,"Accept":"application/vnd.github+json"};
+  function selesai(){ btn.disabled=false; btn.textContent="🚀 Terbitkan sekarang"; }
+  fetch(url+"?ref="+encodeURIComponent(br),{headers:H}).then(function(res){
+    if(res.status===404) return null;
+    if(res.status===401||res.status===403) throw new Error("Token ditolak. Cek token dan izin Contents: Read and write.");
+    if(!res.ok) throw new Error("Gagal membaca repo ("+res.status+").");
+    return res.json();
+  }).then(function(cur){
+    var body={message:"Update pengaturan toko dari admin panel",content:b64(teksJson()),branch:br}; if(cur&&cur.sha) body.sha=cur.sha;
+    return fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},H),body:JSON.stringify(body)});
+  }).then(function(res){
+    if(!res.ok) throw new Error(res.status===404?"Repo atau akun tidak ditemukan.":res.status===422?"Data tidak cocok. Muat ulang halaman lalu coba lagi.":"Gagal menyimpan ("+res.status+").");
+    asli=teksJson(); mulai=salin(cfg); tulisLS(KUNCI_DRAFT,null); tandai(); toast("Berhasil terbit! Tunggu 1–2 menit.");
+  }).catch(function(e){ toast(e.message||"Gagal terhubung. Coba lagi."); }).then(selesai);
+};
+
+muat();
+})();
+</script>
+</body>
+</html>
