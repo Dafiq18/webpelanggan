@@ -8525,6 +8525,48 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE MENU ===== */
     
+      /* ================================================================
+       KODE KONFIG: web membaca pengaturan dari config.json (diatur lewat admin.html)
+       (tempel di atas baris:  loadCart();  — paling bawah, setelah kode lain)
+       ================================================================ */
+    (function(){
+      if(typeof PROMO==="undefined" || typeof DAFTAR_BOTOL==="undefined" || typeof DAFTAR_VOUCHER==="undefined" || !window.fetch) return;
+      function angka(v,d){ v=Number(v); return isFinite(v)?v:d; }
+      function terapkan(c){
+        if(c.promo && typeof c.promo==="object"){
+          PROMO.aktif=!!c.promo.aktif; PROMO.persen=angka(c.promo.persen,0);
+          PROMO.teks=String(c.promo.teks||"Promo"); PROMO.sampai=String(c.promo.sampai||"");
+        }
+        if(typeof c.gabung==="boolean") GABUNG_PROMO_VOUCHER=c.gabung;
+        if(Array.isArray(c.botol)){
+          var b=c.botol.filter(function(x){ return x && x.nama; }).map(function(x){
+            var o={nama:String(x.nama),harga:Math.max(0,angka(x.harga,0))};
+            if(Array.isArray(x.ukuran) && x.ukuran.length) o.ukuran=x.ukuran.map(String);
+            return o;
+          });
+          DAFTAR_BOTOL.splice.apply(DAFTAR_BOTOL,[0,DAFTAR_BOTOL.length].concat(b));
+        }
+        if(Array.isArray(c.voucher)){
+          var v=c.voucher.filter(function(x){ return x && x.kode; }).map(function(x){
+            var o={kode:String(x.kode).toUpperCase(),judul:String(x.judul||x.kode),tipe:x.tipe==="nominal"?"nominal":"persen",
+                   nilai:angka(x.nilai,0),min:Math.max(0,angka(x.min,0)),sampai:String(x.sampai||""),publik:!!x.publik};
+            if(x.maks) o.maks=angka(x.maks,0);
+            return o;
+          });
+          DAFTAR_VOUCHER.splice.apply(DAFTAR_VOUCHER,[0,DAFTAR_VOUCHER.length].concat(v));
+        }
+      }
+      fetch("config.json?v="+Date.now(),{cache:"no-store"})
+        .then(function(r){ return r.ok?r.json():null; })
+        .then(function(c){
+          if(!c || typeof c!=="object") return;
+          try{ terapkan(c); }catch(e){ try{ console.warn("config.json:",e); }catch(_){} }
+          try{ renderCart(); }catch(e){}
+        })
+        .catch(function(){});
+    })();
+    /* ===== AKHIR KODE KONFIG ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
