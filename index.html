@@ -7039,7 +7039,7 @@ button{touch-action:manipulation}
 
     function aiKatalog(question){
       var q=normalize(question), found=[];
-      var wantsWomen=/wanita|cewek|perempuan|women|female/i.test(q), wantsMen=/pria|cowok|laki|men|male/i.test(q);
+      var wantsWomen=/wanita|cewek|perempuan|women|female/i.test(q), wantsMen=/pria|cowok|laki|\bmen\b|\bmale\b/i.test(q);
       var wantsFresh=/fresh|segar|clean|bersih|aquatic|laut|citrus|citrusy|panas|siang/i.test(q);
       var wantsSweet=/manis|sweet|gourmand|vanilla|creamy|caramel|coffee|kopi|coklat/i.test(q);
       var wantsFloral=/floral|bunga|rose|mawar|jasmine|melati|powdery|bedak/i.test(q);
@@ -7066,7 +7066,7 @@ button{touch-action:manipulation}
       found.sort(function(a,b){return b.score-a.score;});
       var top=found.slice(0,5);
       if(/apa itu edp|edp itu|eau de parfum/i.test(q))return 'EDP (Eau de Parfum) adalah tipe parfum dengan konsentrasi parfum yang umumnya lebih tinggi daripada EDT. Cocok jika kamu ingin aroma yang cukup terasa tanpa harus terlalu berat.';
-      if(/halo|hai|p|oi|oy/i.test(q))return 'Halo juga, Perkenalkan saya asistent aroma semarang. Ada yang bisa saya bantu?';
+      if(/^\s*(halo|hai|hi|hei|hey|oi|oy|p|assalamualaikum)\b/i.test(q))return 'Halo juga, Perkenalkan saya asistent aroma semarang. Ada yang bisa saya bantu?';
       if(/le parfum/i.test(q) && /apa|arti|itu|beda|bedanya/.test(q))return 'Le Parfum biasanya diposisikan sebagai versi yang lebih pekat/intens dibanding EDP. Namun formula dan ketahanan tiap produk bisa berbeda, jadi jangan menganggap semua Le Parfum pasti sama.';
       if(/extrait|extract/i.test(q) && /apa|arti|itu|beda|bedanya/.test(q))return 'Extrait de Parfum umumnya merupakan konsentrasi yang lebih tinggi dan karakter aromanya bisa terasa lebih pekat. Ketahanan tetap bergantung pada formula, kulit, cuaca, dan pemakaian.';
       if(/awet|tahan lama|longevity|berapa jam/i.test(q))return 'Untuk ketahanan, konsentrasi yang lebih tinggi sering terasa lebih pekat, tetapi durasi tidak bisa dijamin hanya dari nama EDP/Le Parfum/Extrait. Kulit, cuaca, jumlah semprotan, dan formulanya sangat berpengaruh.';
@@ -7705,6 +7705,669 @@ async function askAI(){
       w.document.open(); w.document.write(halamanCheckoutBaru(D)); w.document.close();
     }
     document.getElementById("goCheckout").onclick=bukaCheckoutBaru;
+
+        /* ================================================================
+       KODE AKUN: LOGIN EMAIL + ALAMAT TERSIMPAN + CHECKOUT ALA SHOPEE
+       (tempel di atas baris:  loadCart();  — SETELAH kode TOKO 1 dan TOKO 2)
+       ================================================================ */
+    (function(){
+      if(typeof hitungTotal!=="function" || typeof halamanCheckoutBaru!=="function"){
+        try{ console.warn("KODE AKUN: tempel dulu KODE TOKO 1 dan TOKO 2 di atasnya."); }catch(e){}
+        return;
+      }
+
+      /* ====== PENGATURAN — BOLEH KAMU UBAH ====== */
+      /* false = pesan WhatsApp TIDAK memuat nomor WA dan alamat pelanggan (sesuai permintaan)
+         true  = nomor WA dan alamat ikut ditulis di pesan WhatsApp */
+      var KIRIM_ALAMAT_KE_WA = false;
+
+      /* ====== BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+      var KUNCI_AKTIF="aromaAkunAktif", KUNCI_DATA="aromaAkunData";
+      var emailAktif=bacaJson(KUNCI_AKTIF,""); if(typeof emailAktif!=="string") emailAktif="";
+
+      function semuaAkun(){ var d=bacaJson(KUNCI_DATA,{}); return (d && typeof d==="object" && !Array.isArray(d))?d:{}; }
+      function akun(){
+        if(!emailAktif) return null;
+        var a=semuaAkun()[emailAktif]||{};
+        return { email:emailAktif, nama:String(a.nama||""), alamat:Array.isArray(a.alamat)?a.alamat:[], utama:String(a.utama||"") };
+      }
+      function simpanAkun(a){
+        var d=semuaAkun(); d[a.email]={nama:a.nama,alamat:a.alamat,utama:a.utama}; tulisJson(KUNCI_DATA,d);
+      }
+      function alamatTerpilih(){
+        var a=akun(); if(!a||!a.alamat.length) return null;
+        for(var i=0;i<a.alamat.length;i++){ if(a.alamat[i].id===a.utama) return a.alamat[i]; }
+        return a.alamat[0];
+      }
+      function emailBenar(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
+      function bersihWA(v){ return String(v||"").replace(/[^\d+]/g,""); }
+
+      var petaGambar=null;
+      function gambarUntuk(kode){
+        if(!petaGambar){
+          petaGambar={};
+          cards.forEach(function(c){ var d=c.querySelector(".detail-data"); if(d && d.dataset.code) petaGambar[d.dataset.code]=d.dataset.img||""; });
+        }
+        return petaGambar[kode]||"";
+      }
+
+      /* --- gaya tampilan (warna oranye ala Shopee) --- */
+      var gaya=document.createElement("style");
+      gaya.textContent=[
+        ".sp-lapis{position:fixed;inset:0;z-index:90;background:rgba(2,6,15,.74);backdrop-filter:blur(8px);display:none;align-items:flex-end;justify-content:center}",
+        ".sp-lapis.open{display:flex}",
+        ".sp-sheet{width:min(560px,100%);max-height:92vh;overflow:auto;background:#0b1120;border:1px solid var(--line);border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}",
+        ".sp-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:rgba(11,17,32,.97);border-bottom:1px solid var(--line);font-size:17px}",
+        ".sp-x{border:0;background:rgba(255,255,255,.08);color:#fff;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}",
+        ".sp-body{padding:18px}",
+        ".sp-hero{font-size:20px;font-weight:900;margin-bottom:4px}",
+        ".sp-sub{color:#9aa8bd;font-size:13px;line-height:1.55;margin-bottom:14px}",
+        ".sp-body label{display:block;font-size:12px;font-weight:800;color:#aebbd0;margin:12px 0 6px}",
+        ".sp-body input,.sp-body textarea{width:100%;border:1px solid var(--line);outline:none;border-radius:12px;background:rgba(255,255,255,.06);color:#fff;padding:13px;font:inherit;font-size:16px}",
+        ".sp-body input:focus,.sp-body textarea:focus{border-color:#ee4d2d}",
+        ".sp-body textarea{min-height:92px;resize:vertical}",
+        ".sp-btn{width:100%;margin-top:18px;border:0;border-radius:12px;padding:14px;font:inherit;font-weight:900;font-size:15px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#ff7337,#ee4d2d);box-shadow:0 8px 22px rgba(238,77,45,.35)}",
+        ".sp-btn.abu{background:rgba(255,255,255,.09);box-shadow:none;border:1px solid var(--line)}",
+        ".sp-kecil{margin-top:12px;color:#718096;font-size:11.5px;line-height:1.6;text-align:center}",
+        ".sp-err{margin-top:10px;color:#fca5a5;font-size:13px;min-height:18px}",
+        ".sp-chip{display:inline-block;margin:0 8px 8px 0;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#e2e8f0;font:inherit;font-size:13px;font-weight:700;cursor:pointer}",
+        ".sp-chip.on{border-color:#ee4d2d;background:rgba(238,77,45,.18);color:#ffb199}",
+        ".sp-item{position:relative;display:flex;gap:12px;align-items:flex-start;padding:14px;margin-bottom:10px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.04);cursor:pointer}",
+        ".sp-item.on{border-color:#ee4d2d;background:rgba(238,77,45,.09)}",
+        ".sp-radio{flex:0 0 20px;width:20px;height:20px;margin-top:2px;border-radius:50%;border:2px solid #64748b}",
+        ".sp-item.on .sp-radio{border-color:#ee4d2d;background:radial-gradient(#ee4d2d 45%,transparent 50%)}",
+        ".sp-item b{font-size:14px}",
+        ".sp-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:6px;background:rgba(255,255,255,.1);font-size:11px;font-weight:700;color:#cbd5e1}",
+        ".sp-alt{margin-top:4px;color:#aebbd0;font-size:13px;line-height:1.55;white-space:pre-wrap}",
+        ".sp-aksi{margin-top:8px;display:flex;gap:14px}",
+        ".sp-link{border:0;background:none;color:#ff8a65;font:inherit;font-size:12px;font-weight:800;cursor:pointer;padding:0}",
+        /* kartu alamat di keranjang */
+        ".sp-alamat{position:relative;margin:0 0 12px;padding:18px 34px 13px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line);overflow:hidden;cursor:pointer}",
+        ".sp-alamat::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(135deg,#ee4d2d 0 14px,transparent 14px 20px,#3b82f6 20px 34px,transparent 34px 40px)}",
+        ".sp-judul{font-size:12px;font-weight:900;color:#ff8a65;margin-bottom:5px}",
+        ".sp-alamat b{font-size:14px}.sp-tel{color:#aebbd0;font-size:13px}",
+        ".sp-meta{margin-top:6px;color:#718096;font-size:11.5px}",
+        ".sp-panah{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:24px;color:#718096}",
+        ".sp-baris{display:flex;align-items:center;gap:12px}.sp-baris small{display:block;color:#9aa8bd;font-size:12px;margin-top:2px}.sp-ikon{font-size:26px}",
+        /* produk di keranjang */
+        ".sp-hd{display:flex;gap:12px;align-items:flex-start;margin-bottom:6px}",
+        ".sp-thumb{flex:0 0 58px;width:58px;height:76px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.07)}",
+        ".cart-price{color:#ff8a65}",
+        /* voucher ala tiket */
+        ".vk-item{border:1px solid rgba(238,77,45,.4)!important;border-left:5px solid #ee4d2d!important;border-radius:10px;background:rgba(238,77,45,.07);padding:10px 12px!important;margin-bottom:8px}",
+        ".vk-btn{background:linear-gradient(135deg,#ff7337,#ee4d2d)}",
+        ".vk-btn.alt{background:rgba(255,255,255,.1)}.vk-btn.on{background:#16a34a}",
+        /* bilah bawah: total + checkout */
+        ".shop-body{padding-bottom:0!important}",
+        ".sp-foot{position:sticky;bottom:0;z-index:4;display:flex;align-items:center;gap:12px;margin:14px -18px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(11,17,32,.97);border-top:1px solid var(--line);backdrop-filter:blur(14px)}",
+        ".sp-foot .cart-total{display:flex;flex-direction:column;justify-content:center;gap:0;padding:0;font-size:12px;font-weight:700;color:#9aa8bd}",
+        ".sp-foot .cart-total #cartTotal{font-size:19px;font-weight:900;color:#ff8a65}",
+        ".sp-foot .checkout-actions{display:flex;gap:8px;margin:0 0 0 auto}",
+        ".sp-foot .send-btn{min-height:46px;padding:0 18px}",
+        ".sp-foot #clearCart{padding:0 14px}",
+        ".sp-foot #goCheckout{background:linear-gradient(135deg,#ff7337,#ee4d2d)!important;color:#fff;min-width:130px;box-shadow:0 8px 20px rgba(238,77,45,.35)}"
+      ].join("\n");
+      document.head.appendChild(gaya);
+
+      /* --- bilah bawah keranjang --- */
+      var bodyKeranjang=shopModal.querySelector(".shop-body");
+      var elTotal=shopModal.querySelector(".cart-total"), elAksi=shopModal.querySelector(".checkout-actions");
+      var elForm=shopModal.querySelector(".checkout-form"), elCatatan=shopModal.querySelector(".shop-note");
+      var tombolCheckout=document.getElementById("goCheckout"), tombolKosong=document.getElementById("clearCart");
+      if(elForm) elForm.style.display="none";
+      if(elCatatan) elCatatan.innerHTML="Masuk dengan email → pilih alamat → tekan Checkout. Halaman pesanan terbuka di tab baru, lalu kirim ke WhatsApp.<br>WhatsApp toko: 0882005034977";
+      if(bodyKeranjang && elTotal && elAksi){
+        var kaki=document.createElement("div"); kaki.className="sp-foot";
+        kaki.appendChild(elTotal); kaki.appendChild(elAksi);
+        bodyKeranjang.appendChild(kaki);
+      }
+      if(tombolKosong){ tombolKosong.textContent="🗑️"; tombolKosong.title="Kosongkan keranjang"; tombolKosong.setAttribute("aria-label","Kosongkan keranjang"); }
+
+      /* --- lembar (sheet) untuk login & alamat --- */
+      var lapis=document.createElement("div"); lapis.className="sp-lapis";
+      var lembar=document.createElement("div"); lembar.className="sp-sheet"; lapis.appendChild(lembar);
+      document.body.appendChild(lapis);
+      function tampil(html){ lembar.innerHTML=html; lapis.classList.add("open"); lembar.scrollTop=0; }
+      function tutup(){ lapis.classList.remove("open"); lembar.innerHTML=""; }
+      lapis.addEventListener("click",function(e){ if(e.target===lapis) tutup(); });
+      function kepala(judul){ return '<div class="sp-head"><b>'+escapeHtml(judul)+'</b><button type="button" class="sp-x" data-tutup aria-label="Tutup">×</button></div>'; }
+      function pasangTutup(){ lembar.querySelectorAll("[data-tutup]").forEach(function(b){ b.onclick=tutup; }); }
+      function $s(id){ return lembar.querySelector("#"+id); }
+
+      /* --- masuk dengan email --- */
+      function bukaLogin(setelah){
+        tampil(kepala("Masuk")+
+          '<div class="sp-body"><div class="sp-hero">👋 Masuk untuk checkout</div>'+
+          '<p class="sp-sub">Alamatmu akan tersimpan, jadi tidak perlu mengisi ulang setiap kali pesan.</p>'+
+          '<label for="spEmail">Email</label><input id="spEmail" type="email" inputmode="email" autocomplete="email" placeholder="nama@gmail.com">'+
+          '<label for="spNama">Nama</label><input id="spNama" type="text" autocomplete="name" placeholder="Nama kamu">'+
+          '<div class="sp-err" id="spErr"></div>'+
+          '<button type="button" class="sp-btn" id="spMasuk">Masuk</button>'+
+          '<p class="sp-kecil">Tanpa password. Datamu hanya tersimpan di perangkat ini dan tidak dikirim ke mana pun kecuali saat kamu menekan kirim pesanan.</p></div>');
+        pasangTutup();
+        var inEmail=$s("spEmail"), inNama=$s("spNama");
+        inEmail.addEventListener("blur",function(){
+          var e=inEmail.value.trim().toLowerCase(), a=semuaAkun()[e];
+          if(a && a.nama && !inNama.value) inNama.value=a.nama;
+        });
+        function masuk(){
+          var e=inEmail.value.trim().toLowerCase(), n=inNama.value.trim();
+          if(!emailBenar(e)){ $s("spErr").textContent="Email belum benar. Contoh: nama@gmail.com"; inEmail.focus(); return; }
+          if(n.length<2){ $s("spErr").textContent="Isi namamu dulu ya."; inNama.focus(); return; }
+          var lama=semuaAkun()[e]||{};
+          emailAktif=e; tulisJson(KUNCI_AKTIF,e);
+          simpanAkun({email:e,nama:n,alamat:Array.isArray(lama.alamat)?lama.alamat:[],utama:lama.utama||""});
+          tutup(); renderCart(); showToast("Halo "+n+", kamu sudah masuk.");
+          if(setelah) setelah();
+        }
+        $s("spMasuk").onclick=masuk;
+        inNama.addEventListener("keydown",function(e){ if(e.key==="Enter") masuk(); });
+        inEmail.addEventListener("keydown",function(e){ if(e.key==="Enter") inNama.focus(); });
+        setTimeout(function(){ try{ inEmail.focus(); }catch(e){} },60);
+      }
+      function keluar(){
+        emailAktif=""; tulisJson(KUNCI_AKTIF,""); renderCart(); showToast("Kamu sudah keluar.");
+      }
+
+      /* --- daftar alamat --- */
+      function bukaAlamat(setelah){
+        var a=akun(); if(!a){ bukaLogin(function(){ bukaAlamat(setelah); }); return; }
+        var h=kepala("Alamat Pengiriman")+'<div class="sp-body">';
+        if(!a.alamat.length) h+='<p class="sp-sub">Belum ada alamat tersimpan.</p>';
+        var pilih=alamatTerpilih();
+        a.alamat.forEach(function(al){
+          var on=pilih && pilih.id===al.id;
+          h+='<div class="sp-item'+(on?' on':'')+'" data-pilih="'+escapeHtml(al.id)+'"><span class="sp-radio"></span><div style="flex:1;min-width:0">'+
+            '<b>'+escapeHtml(al.nama)+'</b> <span class="sp-tel" style="color:#aebbd0;font-size:13px">| '+escapeHtml(al.wa)+'</span>'+(al.label?'<span class="sp-tag">'+escapeHtml(al.label)+'</span>':'')+
+            '<div class="sp-alt">'+escapeHtml(al.alamat)+(al.catatan?('\nCatatan: '+escapeHtml(al.catatan)):'')+'</div>'+
+            '<div class="sp-aksi"><button type="button" class="sp-link" data-ubah="'+escapeHtml(al.id)+'">Ubah</button><button type="button" class="sp-link" data-hapus="'+escapeHtml(al.id)+'" style="color:#fb7185">Hapus</button></div>'+
+          '</div></div>';
+        });
+        h+='<button type="button" class="sp-btn abu" id="spTambah">＋ Tambah alamat baru</button></div>';
+        tampil(h); pasangTutup();
+        lembar.querySelectorAll("[data-pilih]").forEach(function(el){
+          el.onclick=function(){
+            var x=akun(); x.utama=el.getAttribute("data-pilih"); simpanAkun(x);
+            tutup(); renderCart(); if(setelah) setelah();
+          };
+        });
+        lembar.querySelectorAll("[data-ubah]").forEach(function(b){
+          b.onclick=function(e){ e.stopPropagation(); bukaFormAlamat(b.getAttribute("data-ubah"),setelah); };
+        });
+        lembar.querySelectorAll("[data-hapus]").forEach(function(b){
+          b.onclick=function(e){
+            e.stopPropagation();
+            if(!confirm("Hapus alamat ini?")) return;
+            var x=akun(), id=b.getAttribute("data-hapus");
+            x.alamat=x.alamat.filter(function(i){ return i.id!==id; });
+            if(x.utama===id) x.utama=x.alamat.length?x.alamat[0].id:"";
+            simpanAkun(x); renderCart(); bukaAlamat(setelah);
+          };
+        });
+        $s("spTambah").onclick=function(){ bukaFormAlamat(null,setelah); };
+      }
+
+      /* --- form alamat --- */
+      function bukaFormAlamat(id,setelah){
+        var a=akun(); if(!a){ bukaLogin(function(){ bukaFormAlamat(id,setelah); }); return; }
+        var lama=null; a.alamat.forEach(function(i){ if(i.id===id) lama=i; });
+        var label=lama?lama.label:"Rumah";
+        tampil(kepala(lama?"Ubah Alamat":"Alamat Baru")+
+          '<div class="sp-body">'+
+          '<label>Simpan sebagai</label><div id="spLabel">'+["Rumah","Kantor","Lainnya"].map(function(l){ return '<button type="button" class="sp-chip'+(l===label?' on':'')+'" data-label="'+l+'">'+l+'</button>'; }).join("")+'</div>'+
+          '<label for="spPenerima">Nama penerima</label><input id="spPenerima" type="text" autocomplete="name" value="'+escapeHtml(lama?lama.nama:a.nama)+'" placeholder="Nama penerima">'+
+          '<label for="spWA">Nomor WhatsApp</label><input id="spWA" type="tel" inputmode="tel" autocomplete="tel" value="'+escapeHtml(lama?lama.wa:"")+'" placeholder="08xxxxxxxxxx">'+
+          '<label for="spAlamat">Alamat lengkap</label><textarea id="spAlamat" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, kode pos">'+escapeHtml(lama?lama.alamat:"")+'</textarea>'+
+          '<label for="spCatatan">Catatan untuk kurir (boleh kosong)</label><input id="spCatatan" type="text" value="'+escapeHtml(lama?lama.catatan:"")+'" placeholder="Contoh: rumah pagar hitam, titip satpam">'+
+          '<div class="sp-err" id="spErr"></div>'+
+          '<button type="button" class="sp-btn" id="spSimpan">Simpan alamat</button></div>');
+        pasangTutup();
+        lembar.querySelectorAll("[data-label]").forEach(function(b){
+          b.onclick=function(){ label=b.getAttribute("data-label"); lembar.querySelectorAll("[data-label]").forEach(function(x){ x.classList.toggle("on",x===b); }); };
+        });
+        $s("spSimpan").onclick=function(){
+          var nama=$s("spPenerima").value.trim(), wa=bersihWA($s("spWA").value), alamat=$s("spAlamat").value.trim(), catatan=$s("spCatatan").value.trim();
+          var err=$s("spErr");
+          if(nama.length<2){ err.textContent="Nama penerima belum diisi."; return; }
+          if(wa.replace(/\D/g,"").length<9){ err.textContent="Nomor WhatsApp belum benar."; return; }
+          if(alamat.length<10){ err.textContent="Alamat masih terlalu singkat. Tulis selengkap mungkin."; return; }
+          var x=akun(), item;
+          if(lama){
+            x.alamat.forEach(function(i){ if(i.id===lama.id){ i.label=label; i.nama=nama; i.wa=wa; i.alamat=alamat; i.catatan=catatan; item=i; } });
+          }else{
+            item={id:"a"+Date.now().toString(36)+Math.floor(Math.random()*1000).toString(36),label:label,nama:nama,wa:wa,alamat:alamat,catatan:catatan};
+            x.alamat.push(item);
+          }
+          x.utama=item.id; simpanAkun(x);
+          tutup(); renderCart(); showToast("Alamat tersimpan.");
+          if(setelah) setelah();
+        };
+      }
+
+      /* --- tampilan keranjang: kartu alamat + gambar produk --- */
+      var renderCartToko=renderCart;
+      renderCart=function(){
+        renderCartToko();
+        try{ percantik(); }catch(e){ try{ console.warn(e); }catch(_){} }
+      };
+      function percantik(){
+        var a=akun(), al=alamatTerpilih(), h;
+        if(!a){
+          h='<div class="sp-alamat" data-sp="login"><div class="sp-baris"><span class="sp-ikon">👤</span><div><b>Masuk untuk checkout</b><small>Simpan alamat dan data pesananmu</small></div></div><span class="sp-panah">›</span></div>';
+        }else if(!al){
+          h='<div class="sp-alamat" data-sp="alamat"><div class="sp-judul">📍 Alamat Pengiriman</div><div class="sp-baris"><div><b>Tambah alamat pengiriman</b><small>'+escapeHtml(a.email)+' • <span data-sp="keluar" style="color:#ff8a65;font-weight:800">Keluar</span></small></div></div><span class="sp-panah">›</span></div>';
+        }else{
+          h='<div class="sp-alamat" data-sp="alamat"><div class="sp-judul">📍 Alamat Pengiriman</div>'+
+            '<b>'+escapeHtml(al.nama)+'</b> <span class="sp-tel">| '+escapeHtml(al.wa)+'</span>'+(al.label?'<span class="sp-tag">'+escapeHtml(al.label)+'</span>':'')+
+            '<div class="sp-alt">'+escapeHtml(al.alamat)+'</div>'+
+            '<div class="sp-meta">'+escapeHtml(a.email)+' • <span data-sp="keluar" style="color:#ff8a65;font-weight:800">Keluar</span></div><span class="sp-panah">›</span></div>';
+        }
+        cartItems.insertAdjacentHTML("afterbegin",h);
+        cartItems.querySelectorAll("[data-sp]").forEach(function(el){
+          el.onclick=function(e){
+            var aksi=el.getAttribute("data-sp");
+            if(aksi==="keluar"){ e.stopPropagation(); keluar(); }
+            else if(aksi==="login") bukaLogin();
+            else bukaAlamat();
+          };
+        });
+        cartItems.querySelectorAll(".cart-item").forEach(function(el,i){
+          var it=cart[i], kiri=el.firstElementChild; if(!it||!kiri||kiri.querySelector(".sp-hd")) return;
+          var h4=kiri.querySelector("h4"), meta=kiri.querySelector(".cart-meta"); if(!h4||!meta) return;
+          var hd=document.createElement("div"); hd.className="sp-hd";
+          var gambar=gambarUntuk(it.code);
+          if(gambar){
+            var im=document.createElement("img"); im.className="sp-thumb"; im.alt=""; im.loading="lazy"; im.src=gambar;
+            im.onerror=function(){ im.style.visibility="hidden"; };
+            hd.appendChild(im);
+          }
+          var tx=document.createElement("div"); tx.appendChild(h4); tx.appendChild(meta);
+          hd.appendChild(tx); kiri.insertBefore(hd,kiri.firstChild);
+        });
+        var jumlah=cart.reduce(function(s,i){ return s+i.qty; },0);
+        if(tombolCheckout) tombolCheckout.textContent="Checkout"+(jumlah?(" ("+jumlah+")"):"");
+      }
+            /* --- halaman checkout (tab baru) ala Shopee --- */
+      skripCheckoutBaru=function(D){
+        var $=function(id){ return document.getElementById(id); };
+        var rp=function(n){ return "Rp"+Number(n||0).toLocaleString("id-ID"); };
+        function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+        function sync(fn,args){ try{ var a=window.opener&&window.opener.__aromaCart; if(a) a[fn].apply(a,args); }catch(e){} }
+        function hit(){ return hitungTotal(D.items,D.cfg); }
+        function barisItem(i,k){
+          return (k+1)+". "+i.name+" ("+i.code+") — "+i.type+" "+i.size+(i.botol?(" • Botol: "+i.botol):"")+" x"+i.qty+" = "+rp((i.price+(i.botolHarga||0))*i.qty);
+        }
+        function bagianTotal(H,L){
+          L.push("","Subtotal parfum: "+rp(H.sub));
+          if(H.botol>0) L.push("Biaya botol: "+rp(H.botol));
+          if(H.potPromo>0) L.push((D.promoTeks||"Promo")+": −"+rp(H.potPromo));
+          if(H.potVoucher>0) L.push("Voucher "+D.cfg.voucher.kode+": −"+rp(H.potVoucher));
+          L.push("💰 TOTAL: "+rp(H.total));
+        }
+        function teksWA(){
+          var H=hit(), L=["HALO AROMA SEMARANG, SAYA MAU PESAN:","","👤 Nama: "+D.name];
+          if(D.kirimAlamatWA){ L.push("📱 WhatsApp: "+D.phone,"📍 Alamat: "+D.address); }
+          L.push("","🛍️ DAFTAR PESANAN:");
+          D.items.forEach(function(i,k){ L.push(barisItem(i,k)); });
+          bagianTotal(H,L);
+          L.push("","Pesanan dikirim dari website Aroma Semarang.");
+          return L.join("\n");
+        }
+        function teksEmail(){
+          var H=hit(), L=["HALO AROMA SEMARANG, SAYA MAU PESAN:","","👤 Nama: "+D.name,"📧 Email: "+D.email,"📱 WhatsApp: "+D.phone,"📍 Alamat: "+D.address,"","🛍️ DAFTAR PESANAN:"];
+          D.items.forEach(function(i,k){ L.push(barisItem(i,k)); });
+          bagianTotal(H,L);
+          L.push("","Pesanan dikirim dari website Aroma Semarang.");
+          return L.join("\n");
+        }
+        function render(){
+          var H=hit(), ada=D.items.length>0;
+          $("cust").innerHTML='<div class="jd">📍 Alamat Pengiriman</div><b>'+esc(D.name)+'</b> <span class="tl">| '+esc(D.phone)+'</span><div class="al">'+esc(D.address)+'</div><div class="em">'+esc(D.email)+'</div>';
+          $("list").innerHTML=ada?D.items.map(function(i,k){
+            return '<div class="it">'+(i.img?'<img class="th" alt="" src="'+esc(i.img)+'" onerror="this.style.visibility=\'hidden\'">':'<div class="th"></div>')+
+              '<div class="tx"><b>'+esc(i.name)+'</b><small>'+esc(i.type)+' • '+esc(i.size)+'</small>'+(i.botol?'<small>🍼 '+esc(i.botol)+'</small>':'')+
+              '<div class="bw"><span class="hg">'+rp(i.price+(i.botolHarga||0))+'</span><span class="qt">x'+i.qty+'</span></div></div>'+
+              '<button class="hp" data-k="'+k+'">Hapus</button></div>';
+          }).join(""):'<small>Pesanan kosong.</small>';
+          var pr='';
+          if(H.potPromo>0) pr+='<div class="pm">🔥 '+esc(D.promoTeks||"Promo")+' — hemat '+rp(H.potPromo)+'</div>';
+          if(H.potVoucher>0) pr+='<div class="pm">🎟️ Voucher '+esc(D.cfg.voucher.kode)+' — hemat '+rp(H.potVoucher)+'</div>';
+          if(!pr) pr='<small>Tidak ada promo atau voucher yang dipakai.</small>';
+          $("promo").innerHTML=pr;
+          var b='<div class="row"><span>Subtotal parfum</span><span>'+rp(H.sub)+'</span></div>';
+          if(H.botol>0) b+='<div class="row"><span>Biaya botol</span><span>+ '+rp(H.botol)+'</span></div>';
+          if(H.potPromo>0) b+='<div class="row hj"><span>'+esc(D.promoTeks||"Promo")+'</span><span>− '+rp(H.potPromo)+'</span></div>';
+          if(H.potVoucher>0) b+='<div class="row hj"><span>Voucher '+esc(D.cfg.voucher.kode)+'</span><span>− '+rp(H.potVoucher)+'</span></div>';
+          b+='<div class="row tot"><span>Total pembayaran</span><span id="tot">'+rp(H.total)+'</span></div>';
+          $("ring").innerHTML=b;
+          $("tot2").textContent=rp(H.total);
+          $("wa").disabled=$("em").disabled=!ada;
+        }
+        $("list").onclick=function(e){
+          var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
+          var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
+        };
+        $("wa").onclick=function(){ window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank"); };
+        $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru Aroma Semarang")+"&body="+encodeURIComponent(teksEmail()); };
+        $("pr").onclick=function(){ window.print(); };
+        $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
+        $("bk").onclick=function(){ window.close(); };
+        render();
+      };
+      halamanCheckoutBaru=function(D){
+        var css='*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#0b1120;color:#fff;padding-bottom:96px}'+
+          '.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#ff7337,#ee4d2d);font-weight:900;font-size:18px}'+
+          '.top button{border:0;background:rgba(255,255,255,.22);color:#fff;width:34px;height:34px;border-radius:50%;font-size:20px;cursor:pointer}'+
+          '.box{max-width:560px;margin:0 auto;padding:12px}'+
+          '.card{position:relative;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;margin-bottom:12px;overflow:hidden}'+
+          '.al-c::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(135deg,#ee4d2d 0 14px,transparent 14px 20px,#3b82f6 20px 34px,transparent 34px 40px)}'+
+          '.jd{font-size:13px;font-weight:900;color:#ff8a65;margin-bottom:6px}.tl{color:#aebbd0;font-size:13px}.al{margin-top:5px;color:#cbd5e1;font-size:13px;line-height:1.55;white-space:pre-wrap}.em{margin-top:6px;color:#718096;font-size:12px}'+
+          'small{display:block;color:#aebbd0;margin-top:3px;font-size:12px}'+
+          '.it{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.08)}.it:last-child{border:0}.it:first-child{padding-top:0}'+
+          '.th{flex:0 0 62px;width:62px;height:82px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.07)}'+
+          '.tx{flex:1;min-width:0}.tx b{font-size:14px}.bw{display:flex;justify-content:space-between;margin-top:8px}.hg{color:#ff8a65;font-weight:900}.qt{color:#aebbd0}'+
+          '.hp{align-self:flex-start;background:none;border:1px solid #ff6b6b;color:#ff8a8a;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}'+
+          '.t{font-size:14px;font-weight:900;margin-bottom:8px}.pm{padding:9px 11px;margin-top:6px;border-radius:10px;background:rgba(238,77,45,.12);border:1px dashed rgba(238,77,45,.5);font-size:13px}'+
+          '.row{display:flex;justify-content:space-between;padding:5px 0;color:#cbd5e1;font-size:14px}.hj{color:#86efac}.tot{font-size:17px;font-weight:900;color:#fff;border-top:1px solid rgba(255,255,255,.15);margin-top:6px;padding-top:11px}'+
+          '.lain{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.lain button{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;border-radius:12px;padding:12px 6px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}.lain button:disabled{opacity:.4}'+
+          '.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;align-items:center;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(11,17,32,.97);border-top:1px solid rgba(255,255,255,.12)}'+
+          '.bar .tt{flex:1}.bar .tt small{margin:0}.bar .tt b{font-size:20px;color:#ff8a65}'+
+          '#wa{border:0;border-radius:12px;padding:0 20px;min-height:48px;background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;font:inherit;font-weight:900;font-size:15px;cursor:pointer}#wa:disabled{opacity:.4}'+
+          '@media print{.bar,.top button,.lain,.hp{display:none}body{background:#fff;color:#000}.card{border:1px solid #ccc;background:#fff}.row,.tl,.al,small{color:#000}}';
+        return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Checkout • Aroma Semarang</title><style>'+css+'</style></head><body>'+
+          '<div class="top"><button id="bk" aria-label="Kembali">‹</button>Checkout</div>'+
+          '<div class="box"><div class="card al-c" id="cust"></div>'+
+          '<div class="card"><div class="t">🛍️ Pesanan</div><div id="list"></div></div>'+
+          '<div class="card"><div class="t">🎟️ Promo dan Voucher</div><div id="promo"></div></div>'+
+          '<div class="card"><div class="t">Rincian Pembayaran</div><div id="ring"></div></div>'+
+          '<div class="lain"><button id="em">✉️ Kirim Email</button><button id="pr">🖨️ Cetak</button><button id="cl">🗑️ Hapus semua</button></div></div>'+
+          '<div class="bar"><div class="tt"><small>Total pembayaran</small><b id="tot2"></b></div><button id="wa">Kirim via WhatsApp</button></div>'+
+          '<script>var hitungTotal=('+hitungTotal.toString()+');('+skripCheckoutBaru.toString()+')('+JSON.stringify(D).replace(/</g,"\\u003c")+');<\/script></body></html>';
+      };
+      bukaCheckoutBaru=function(){
+        if(!cart.length){ showToast("Keranjang masih kosong."); return; }
+        var a=akun(), al=alamatTerpilih();
+        if(!a||!al){ showToast("Pilih alamat dulu ya."); return; }
+        var w=window.open("","_blank");
+        if(!w){ showToast("Pop-up diblokir. Izinkan pop-up lalu coba lagi."); return; }
+        cart.forEach(pastikanBotol);
+        var D={
+          name:al.nama, phone:al.wa, address:al.alamat+(al.catatan?(" (Catatan: "+al.catatan+")"):""), email:a.email,
+          kirimAlamatWA:KIRIM_ALAMAT_KE_WA,
+          wa:"62882005034977", mail:"kamu97834@gmail.com",
+          cfg:cfgHitung(), promoTeks:PROMO.teks||"Promo",
+          items:cart.map(function(i){ return {code:i.code,name:i.name,type:i.type,size:i.size,botol:i.botol||"",botolHarga:i.botolHarga||0,price:i.price,qty:i.qty,img:gambarUntuk(i.code)}; })
+        };
+        w.document.open(); w.document.write(halamanCheckoutBaru(D)); w.document.close();
+      };
+
+      /* --- tombol Checkout: masuk dulu, pilih alamat, baru buka halaman pesanan --- */
+      function mulaiCheckout(){
+        if(!cart.length){ showToast("Keranjang masih kosong."); return; }
+        if(!akun()){ bukaLogin(function(){ mulaiCheckout(); }); return; }
+        if(!alamatTerpilih()){ bukaFormAlamat(null,function(){ mulaiCheckout(); }); return; }
+        bukaCheckoutBaru();
+      }
+      if(tombolCheckout) tombolCheckout.onclick=mulaiCheckout;
+      /* --- jawaban AI tentang fitur toko (voucher, promo, botol, akun) --- */
+      if(typeof Q==="function" && typeof jawabanParfum!=="undefined"){
+        jawabanParfum = jawabanParfum.concat([
+          Q("cara pesan,cara order,cara beli,cara checkout,cara memesan,gimana pesan,gimana cara pesan,bagaimana cara pesan,mau pesan,mau order,mau beli,cara belanja","Cara pesan:\n1. Pilih parfum, lalu tekan \"Tambah ke keranjang\"\n2. Pilih jenis, ukuran, dan botol\n3. Buka keranjang, klaim voucher kalau ada\n4. Tekan Checkout, masuk dengan email, lalu isi alamat (cukup sekali)\n5. Di halaman pesanan, tekan \"Kirim via WhatsApp\""),
+          Q("login,masuk akun,daftar akun,buat akun,akun saya,lupa password,password,sandi,kenapa harus masuk,kenapa harus login","Untuk checkout kamu cukup masuk dengan email dan nama, tanpa password. Setelah masuk, alamatmu tersimpan di perangkat ini sehingga tidak perlu diisi lagi setiap pesan."),
+          Q("simpan alamat,alamat tersimpan,ganti alamat,ubah alamat,tambah alamat,hapus alamat,alamat pengiriman,alamat lain,beda alamat","Alamat bisa diatur di keranjang: tekan kartu \"Alamat Pengiriman\" untuk memilih, mengubah, menambah, atau menghapus alamat. Kamu bisa menyimpan lebih dari satu alamat (Rumah, Kantor, dan lainnya)."),
+          Q("keluar akun,logout,ganti akun,ganti email,pakai email lain","Tekan kata \"Keluar\" di kartu alamat pada keranjang. Untuk ganti akun, keluar dulu lalu masuk dengan email lain."),
+          Q("data aman,data pribadi,privasi,keamanan data,email saya aman,alamat saya aman","Email dan alamatmu hanya tersimpan di perangkat ini, bukan di server toko. Datamu baru terkirim saat kamu menekan tombol kirim pesanan."),
+          Q("voucher,kode voucher,klaim voucher,cara pakai voucher,kupon,kode promo,punya voucher,pakai voucher","Voucher ada di keranjang: tekan \"Klaim\" pada voucher yang tersedia, atau ketik kodenya lalu tekan \"Pakai kode\". Perhatikan minimal belanja dan tanggal berakhirnya."),
+          Q("promo,diskon,potongan harga,lagi diskon,ada diskon,ada promo,sale,cashback,harga promo","Kalau ada promo, banner promo muncul di bagian atas keranjang dan potongannya dihitung otomatis dari harga parfum. Voucher bisa dipakai juga, tapi umumnya yang dipakai adalah potongan yang paling besar."),
+          Q("pilih botol,jenis botol,botol apa saja,model botol,ganti botol,botol travel,botol kaca,pilihan botol","Di keranjang ada menu \"Pilih botol\" untuk tiap parfum. Beberapa botol hanya tersedia untuk ukuran tertentu. Biaya botol (kalau ada) ditambahkan ke total dan tidak ikut didiskon."),
+          Q("kirim pesanan,kirim ke whatsapp,pesanan terkirim,konfirmasi pesanan,setelah checkout,habis checkout,sudah checkout","Setelah checkout, halaman pesanan terbuka di tab baru. Tekan \"Kirim via WhatsApp\", lalu kirim pesan yang sudah terisi otomatis. Admin akan mengonfirmasi pesananmu."),
+          Q("batal pesan,batalkan pesanan,hapus pesanan,salah pesan,salah pilih,ganti pesanan,ubah pesanan","Sebelum dikirim, kamu bisa menghapus atau mengubah isi keranjang, termasuk jenis, ukuran, dan botol. Kalau pesanan sudah terkirim lewat WhatsApp, kabari admin secepatnya.")
+        ]);
+      }
+
+      /* --- topik "umum" (sapaan, minta rekomendasi): tampilkan rekomendasi bila ada, kalau tidak cukup jawabannya saja --- */
+      if(typeof aiAnswer==="function" && typeof cariJawaban==="function" && typeof rekomendasi==="function"){
+        var aiAnswerAsli=aiAnswer;
+        aiAnswer=function(question){
+          var hit=cariJawaban(question);
+          if(hit && hit.umum && hit.lanjut){ var rec=rekomendasi(question,hit.profil); return rec||hit.jawab; }
+          return aiAnswerAsli(question);
+        };
+      }
+
+    })();
+    /* ===== AKHIR KODE AKUN ===== */
+
+      /* ---------- JAWABAN TAMBAHAN 1 ---------- */
+    jawabanParfum = jawabanParfum.concat([
+      Q("apa itu woody,woody itu,aroma woody,aroma kayu,wangi kayu,parfum kayu","Woody adalah aroma kayu yang hangat, kering, dan maskulin, seperti cedar atau sandalwood. Biasanya tahan lama dan cocok untuk sore hingga malam.",1,"woody"),
+      Q("sandalwood,cendana,aroma cendana,wangi cendana","Sandalwood (cendana) beraroma kayu lembut, krimi, dan hangat. Memberi kesan mewah dan menenangkan, serta sering jadi base note.",1,"woody"),
+      Q("cedar,cedarwood,aroma cedar,kayu cedar","Cedar adalah kayu kering dan bersih, kadang seperti pensil. Memberi kesan rapi, maskulin, dan elegan.",1,"woody"),
+      Q("vetiver,aroma vetiver,wangi vetiver,akar wangi","Vetiver (akar wangi) beraroma tanah, kayu, dan rumput kering. Kesannya bersih, maskulin, dan sophisticated.",1,"woody"),
+      Q("patchouli,aroma patchouli,wangi patchouli,nilam","Patchouli (nilam) beraroma tanah, kayu, kadang manis dan sedikit gelap. Aromanya dalam dan tahan lama.",1,"woody"),
+      Q("apa itu oud,oud itu,arti oud,apa itu oudh,oudh itu,aroma oud,agarwood,gaharu","Oud (agarwood/gaharu) adalah aroma kayu pekat, hangat, dan sedikit smoky. Aromanya mewah dan kuat, populer untuk malam atau acara.",1,"woody"),
+      Q("apa itu musk,musk itu,arti musk,aroma musk,wangi musk","Musk adalah aroma lembut, bersih, dan hangat seperti kulit yang baru dimandikan. Sering jadi base note yang membuat wangi lebih awet dan 'menempel'.",1,"kantor"),
+      Q("apa itu amber,amber itu,arti amber,aroma amber,wangi amber,ambery","Amber adalah aroma hangat, manis, dan sedikit seperti resin atau balsam. Memberi kesan mewah dan nyaman, cocok untuk malam.",1,"malam"),
+      Q("apa itu vanilla,vanilla itu,aroma vanilla,wangi vanilla,parfum vanilla,vanila","Vanilla beraroma manis, hangat, dan nyaman. Memberi kesan lembut dan menggoda. Ada vanilla yang creamy, ada yang lebih kering atau berasap.",1,"manis"),
+      Q("tonka,tonka bean,aroma tonka,apa itu tonka","Tonka bean beraroma manis, hangat, dan mirip campuran vanilla dengan almond atau rempah. Sering menjadi base note yang lembut.",1,"manis"),
+      Q("apa itu gourmand,gourmand itu,arti gourmand,aroma gourmand,wangi gourmand,wangi manis,aroma manis,parfum manis,wangi makanan,manis banget","Gourmand adalah aroma manis seperti makanan atau minuman: vanilla, karamel, kopi, coklat, atau madu. Hangat, nyaman, dan menggoda.",1,"manis"),
+      Q("aroma kopi,wangi kopi,parfum kopi,coffee,apa itu coffee","Aroma kopi biasanya hangat, sedikit pahit, dan nyaman. Sering dipadukan dengan vanilla atau karamel supaya terasa lebih manis.",1,"manis"),
+      Q("aroma kelapa,wangi kelapa,parfum kelapa,coconut,apa itu coconut","Kelapa memberi kesan tropis, creamy, dan santai, cocok untuk suasana liburan atau siang hari.",1,"buah"),
+      Q("apa itu fruity,fruity itu,aroma fruity,wangi buah,aroma buah,parfum buah,wangi berry,aroma berry","Fruity adalah aroma buah seperti apel, peach, berry, atau tropis. Kesannya ceria, manis, dan segar, cocok untuk keseharian.",1,"buah"),
+      Q("apa itu aquatic,aquatic itu,arti aquatic,aroma aquatic,wangi laut,aroma laut,marine,aroma air,wangi air,ozonic","Aquatic memberi kesan air, laut, atau udara segar. Sangat ringan dan bersih, cocok untuk cuaca panas dan aktivitas siang.",1,"siang"),
+      Q("apa itu green,aroma green,green notes,wangi rumput,aroma daun,wangi daun,aroma hijau","Green notes beraroma seperti rumput, daun, atau tanaman. Kesannya natural, segar, dan menenangkan.",1,"siang"),
+      Q("powdery,aroma powdery,wangi bedak,aroma bedak,parfum bedak,wangi bayi,apa itu powdery","Powdery adalah aroma lembut seperti bedak, biasanya dari iris, musk, atau vanilla. Kesannya bersih, lembut, dan feminin.",1,"floral"),
+      Q("iris,orris,aroma iris,apa itu iris","Iris (orris) beraroma bedak, lembut, sedikit seperti lipstik atau akar. Memberi kesan elegan dan mewah.",1,"floral"),
+      Q("apa itu spicy,spicy itu,aroma spicy,wangi rempah,aroma rempah,parfum rempah,pedas","Spicy adalah aroma rempah seperti lada, kayu manis, cengkeh, atau kapulaga. Hangat, berani, dan sering memberi kesan maskulin atau misterius.",1,"woody"),
+      Q("aroma leather,leather,wangi kulit,parfum leather,apa itu leather","Leather beraroma kulit: hangat, sedikit smoky, dan maskulin. Memberi kesan berkarakter dan dewasa.",1,"woody"),
+      Q("tobacco,aroma tobacco,wangi tembakau,aroma tembakau,parfum tembakau","Tobacco (tembakau) beraroma manis, hangat, dan sedikit berasap, sering dipadukan dengan vanilla atau rempah. Cocok untuk malam atau cuaca sejuk.",1,"woody"),
+      Q("incense,dupa,aroma dupa,wangi dupa,aroma kemenyan,kemenyan","Incense/dupa beraroma resin dan asap yang hangat serta misterius. Sering terasa spiritual dan elegan.",1,"woody"),
+      Q("fougere,fougère,aroma fougere,apa itu fougere,barbershop","Fougère adalah gaya parfum klasik pria: lavender, kayu, dan rumput kering, dengan kesan bersih dan rapi seperti barbershop.",1),
+      Q("chypre,aroma chypre,apa itu chypre","Chypre adalah gaya parfum klasik yang berawal dari citrus, bunga di tengah, dan base tanah-lumut. Kesannya elegan, dewasa, dan sedikit misterius.",1),
+      Q("mint,mentol,peppermint,aroma mint,wangi mint,dingin menyegarkan","Mint memberi kesan dingin, segar, dan bersih. Cocok untuk cuaca panas dan membuat aroma terasa 'ringan'.",1,"siang"),
+      Q("wangi sabun,clean scent,bersih seperti sabun,wangi baju bersih,wangi laundry,aroma sabun,wangi bersih","Aroma 'bersih seperti sabun' biasanya dari musk putih, citrus ringan, atau bunga lembut. Kesannya rapi, aman, dan disukai banyak orang.",1,"kantor"),
+      Q("oriental,aroma oriental,parfum oriental,hangat dan manis,wangi hangat","Oriental/ambery adalah aroma hangat, manis, dan kaya: amber, vanilla, rempah, dan resin. Kesannya mewah dan cocok untuk malam atau cuaca sejuk.",1,"malam"),
+      Q("cara memilih,cara milih,tips memilih,tips milih,bingung pilih,bingung memilih,gimana memilih,gimana milih,cara pilih parfum,tips pilih parfum","Tips memilih parfum:\n1. Tentukan kesan: segar, manis, elegan, atau maskulin\n2. Pikirkan kapan dipakai: siang/malam/acara\n3. Sesuaikan dengan cuaca\n4. Coba ukuran kecil dulu\nTulis pria/wanita + suasana + budget, nanti aku carikan dari katalog.",1),
+      Q("pemula,baru pertama,pertama kali,baru mulai,newbie,belum pernah pakai parfum,awal pakai parfum","Untuk pemula, mulai dari aroma yang aman dan disukai banyak orang: segar-citrus, bersih seperti sabun, atau manis lembut. Coba ukuran 30 ML dulu supaya tahu cocok atau tidak.",1,"kantor"),
+      Q("parfum kerja,untuk kerja,ke kantor,parfum kantor,untuk kantor,buat kerja,kerja,cocok kerja,cocok untuk kantor,office,kantor","Untuk kantor, pilih aroma bersih dan tidak terlalu menyengat: citrus lembut, musk bersih, atau woody ringan. Semprot secukupnya supaya tidak mengganggu rekan kerja.",1,"kantor"),
+      Q("kuliah,sekolah,anak sekolah,remaja,anak muda,parfum remaja,buat kuliah,buat sekolah","Untuk kuliah atau sekolah, aroma ringan dan segar paling nyaman: citrus, fruity, atau aquatic. Semprot secukupnya karena ruang kelas biasanya tertutup.",1,"siang"),
+      Q("wawancara,interview,presentasi,rapat,meeting,melamar kerja","Untuk wawancara atau rapat, pilih aroma bersih dan tidak berlebihan. Semprot sedikit saja supaya kesan profesional.",1,"kantor"),
+      Q("kondangan,pernikahan,acara formal,resepsi,undangan,acara resmi,untuk acara,pesta,gala,buat kondangan,wisuda,buat acara","Untuk acara formal, pilih aroma yang elegan dan sedikit lebih pekat seperti floral lembut, woody, atau amber. Konsentrasi EDP ke atas biasanya lebih awet untuk acara panjang.",1,"acara"),
+      Q("kencan,parfum date,pertama ketemu,untuk date,romantis,first date,dinner,date,buat kencan,buat date,valentine","Untuk kencan, pilih aroma yang hangat dan lembut seperti vanilla, musk, floral manis, atau woody ringan. Semprot secukupnya supaya terasa menyenangkan dari dekat.",1,"kencan"),
+      Q("seksi,menggoda,memikat,sensual,sexy,wangi menggoda","Aroma yang sering terasa memikat biasanya hangat dan lembut: vanilla, amber, musk, atau floral manis. Mulai dari 2-3 semprotan.",1,"kencan"),
+      Q("parfum malam,untuk malam,malam hari,wangi malam,clubbing,malam minggu,malam,yang buat malam,buat malam,cocok malam,cocok untuk malam,malam apa,untuk acara malam,parfum buat malam,parfum yang cocok malam,night","Untuk malam, aroma hangat dan pekat seperti amber, vanilla, oud, atau woody biasanya terasa pas. Konsentrasi EDP ke atas bertahan lebih lama.",1,"malam"),
+      Q("parfum siang,untuk siang,siang hari,wangi siang,pagi hari,parfum pagi,siang,buat siang,cocok siang,cocok untuk siang,parfum buat siang,pagi,buat pagi","Untuk siang atau pagi, aroma segar seperti citrus, aquatic, atau green terasa nyaman. Semprot secukupnya karena panas membuat aroma terasa lebih kuat.",1,"siang"),
+      Q("nongkrong,hangout,jalan jalan,ke mall,ke mal,cafe,kafe","Untuk nongkrong santai, pilih aroma yang ringan dan ramah: citrus, fruity, atau musk bersih. Semprot secukupnya karena ruangan seperti kafe biasanya tertutup.",1,"siang"),
+      Q("musim hujan,saat hujan,cuaca dingin,cuaca hujan,hujan hujan,cuaca sejuk,hujan,buat hujan","Di cuaca sejuk atau hujan, aroma hangat seperti vanilla, amber, atau woody terasa nyaman. Udara dingin juga membuat aroma tidak cepat menguap.",1,"malam"),
+      Q("ber ac,berac,ruangan ac,kantor ac,ruang ac,pakai ac","Di ruangan ber-AC aroma bisa terasa lebih terkumpul, jadi semprot secukupnya dan pilih aroma yang tidak terlalu berat.",1,"kantor"),
+      Q("pantai,liburan,hiking,camping,gunung,outdoor luar ruangan","Untuk liburan atau aktivitas luar ruangan, aroma segar seperti aquatic, citrus, atau green terasa nyaman dan tidak berat.",1,"siang"),
+      Q("ke masjid,sholat jumat,jumatan,ramadan,ramadhan,lebaran,idul fitri,idul adha","Untuk ke masjid atau acara ibadah, pilih aroma lembut dan tidak menyengat, dan pakai secukupnya supaya tidak mengganggu jamaah lain.",1,"kantor"),
+      Q("aman disukai,disukai banyak orang,crowd pleaser,wangi netral,aroma netral,tidak norak,aroma aman,wangi aman,aman buat semua,paling aman","Aroma yang paling aman disukai banyak orang biasanya yang bersih dan ringan: citrus lembut, musk bersih, atau woody ringan. Hindari yang terlalu manis atau pekat kalau belum tahu selera orangnya.",1,"kantor"),
+      Q("terlihat mahal,wangi mahal,kesan mewah,kesan elegan,wangi elegan,wangi berkelas,parfum mewah","Kesan mewah biasanya datang dari aroma yang halus dan seimbang: sandalwood, iris, amber, musk, atau oud. Konsentrasi EDP ke atas cenderung terasa lebih 'dalam'.",1,"acara"),
+      Q("maskulin,macho,gagah,jantan,parfum cowok keren","Aroma maskulin biasanya woody, spicy, leather, atau fresh-citrus yang bersih. Pilih sesuai suasana: segar untuk siang, hangat untuk malam.",1,"woody"),
+      Q("feminin,anggun,lembut,wangi cewek,parfum cewek enak","Aroma feminin biasanya floral, fruity, powdery, atau vanilla yang lembut. Pilih sesuai suasana: ringan untuk siang, hangat untuk malam.",1,"floral"),
+      Q("fresh tapi awet,segar tapi awet,fresh awet,segar awet,segar tapi tahan lama,fresh tahan lama","Aroma segar seperti citrus biasanya cepat memudar. Supaya lebih awet, pilih yang dipadukan dengan musk atau woody di base note, atau konsentrasi EDP ke atas, lalu semprot juga ke pakaian.",1,"siang"),
+      Q("signature,aroma khas,wangi khas,ciri khas,jadi ciri,parfum andalan","Parfum signature itu aroma yang jadi ciri khasmu. Pilih yang paling kamu suka dan paling nyaman dipakai sehari-hari, lalu pakai konsisten supaya orang mengenalnya.",1),
+      Q("kado,hadiah,gift,untuk pacar,untuk istri,untuk suami,untuk ibu,untuk ayah,untuk bapak,untuk teman,ulang tahun,anniversary,parfum kado","Untuk hadiah, pilih aroma yang aman disukai banyak orang: segar-citrus, bersih seperti sabun, atau manis lembut. Sebutkan pria/wanita dan budget, nanti aku carikan dari katalog.",1,"kantor"),
+      Q("harga berapa,berapa harga,lihat harga,cek harga,dimana harga,list harga,daftar harga,tabel harga,harga refill,harga parfum,berapaan,berapa harganya","Harga tertera di kartu tiap parfum (EDP/Le Parfum/Extrait per ukuran), atau tekan tombol detail. Kalau harga masih tertulis ??, hubungi admin lewat WhatsApp 0882005034977."),
+      Q("pilih ukuran,ukuran apa,ukuran botol,beda ukuran,ukuran mana,berapa ml,30 ml,50 ml,100 ml,ukuran berapa","Ukuran tersedia 30, 50, dan 100 ML.\n30 ML → coba-coba atau dibawa bepergian\n50 ML → pemakaian harian\n100 ML → paling hemat per ml untuk yang sudah yakin cocok."),
+      Q("tester,sample,sampel,decant,coba dulu,mau coba dulu,coba aroma","Supaya tidak rugi, mulai dari ukuran terkecil (30 ML) untuk mencoba cocok atau tidaknya di kulitmu. Kalau suka, baru ambil ukuran lebih besar. Untuk sampel, tanya admin lewat WhatsApp 0882005034977."),
+      Q("stok,ready,tersedia,ada stok,masih ada,stok ada,ready gak,ready nggak","Untuk memastikan stok, hubungi admin lewat WhatsApp 0882005034977 dengan menyebut nama parfum dan ukuran yang kamu mau."),
+      Q("original,asli atau,asli gak,asli nggak,asli ga,asli tidak,ori gak,ori nggak,palsu,tiruan,barang kw,produk kw,parfum kw","Pertanyaan bagus. Untuk kepastian soal sumber dan kualitas tiap produk, tanyakan langsung ke admin lewat WhatsApp 0882005034977 supaya jawabannya akurat.")
+    ]);
+        /* ---------- JAWABAN TAMBAHAN 2 ---------- */
+    jawabanParfum = jawabanParfum.concat([
+      Q("bocor,rusak,pecah,salah kirim,komplain,keluhan,kemasan rusak,barang rusak,tidak sesuai","Mohon maaf atas ketidaknyamanannya. Segera hubungi admin lewat WhatsApp 0882005034977 dengan foto atau video produk dan bukti pesanan supaya cepat diproses."),
+      Q("garansi,retur,tukar barang,refund,kembalikan,pengembalian,tukar parfum","Untuk kebijakan tukar atau pengembalian, mohon tanyakan langsung ke admin lewat WhatsApp 0882005034977 supaya jawabannya sesuai ketentuan toko."),
+      Q("reseller,dropship,dropshipper,jual lagi,agen,beli banyak,partai,grosir","Untuk reseller, dropship, atau pembelian dalam jumlah banyak, silakan hubungi admin lewat WhatsApp 0882005034977 untuk info harga dan ketentuannya."),
+      Q("request parfum,bisa request,parfum custom,cari parfum lain,tidak ada di katalog,parfum tidak ada,wishlist,tidak ketemu parfumnya,parfum yang dicari tidak ada","Kalau parfum yang kamu cari belum ada di katalog, coba tanya admin lewat WhatsApp 0882005034977, siapa tahu bisa dicarikan."),
+      Q("nomor wa,nomor admin,hubungi admin,kontak admin,whatsapp admin,nomor telepon,nomor hp,email toko,hubungi toko,kontak toko,kontak","Hubungi kami lewat WhatsApp 0882005034977 atau email kamu97834@gmail.com."),
+      Q("tentang toko,aroma semarang itu,toko apa,jual apa,apa saja yang dijual,profil toko,siapa aroma semarang","Aroma Semarang adalah toko katalog parfum refill dengan pilihan EDP, Le Parfum, dan Extrait dalam ukuran 30, 50, dan 100 ML."),
+      Q("kenapa mahal,kok mahal,mahal banget,mahal ya,harganya mahal","Harga dipengaruhi konsentrasi (EDP/Extrait lebih mahal), bahan aroma, dan merek. Kalau ingin hemat, bisa mulai dari ukuran 30 ML atau konsentrasi EDP."),
+      Q("mahal pasti awet,parfum mahal awet,murah awet,murah tidak awet,mahal berarti bagus,harga menentukan","Tidak selalu. Harga dipengaruhi merek dan bahan, bukan jaminan ketahanan. Ketahanan lebih ditentukan formula, konsentrasi, dan kondisi kulitmu."),
+      Q("beda parfum pria,pria atau wanita,parfum pria wanita,boleh pakai parfum cewek,boleh pakai parfum cowok,parfum cowok dipakai cewek,parfum cewek dipakai cowok,pria pakai parfum wanita,wanita pakai parfum pria,cowok pakai parfum cewek,cewek pakai parfum cowok,pakai parfum cewek,pakai parfum cowok,boleh pakai parfum,parfum cewek untuk cowok,parfum cowok untuk cewek","Pembagian pria/wanita hanya soal kebiasaan pasar. Pada dasarnya semua orang boleh memakai aroma apa pun yang disukai. Parfum unisex biasanya paling fleksibel."),
+      Q("kapan pakai,waktu terbaik,pagi atau malam,pakai parfum kapan,kapan semprot,kapan sebaiknya","Semprot setelah mandi saat kulit bersih dan sedikit lembap. Secara umum aroma segar cocok pagi-siang, sedangkan aroma hangat seperti vanilla, amber, atau oud cocok sore-malam."),
+      Q("parfum di baju tahan,tahan di baju,berapa lama di baju,wangi di baju lama","Aroma di kain biasanya bertahan lebih lama dibanding di kulit, bisa sampai beberapa hari tergantung bahan dan jenis aromanya. Hati-hati dengan noda."),
+      Q("botol bening,botol transparan,botol gelap,botol warna,kemasan botol","Botol gelap melindungi parfum dari cahaya, sedangkan botol bening lebih rentan jika terkena sinar matahari. Apa pun botolnya, simpan di tempat teduh dan tutup rapat."),
+      Q("halo,hallo,hai,haii,assalamualaikum,selamat pagi,selamat sore,selamat malam,selamat siang,permisi","Halo! 👋 Aku Aroma Assistant. Mau cari parfum yang cocok? Sebutkan pria/wanita, suasana (siang/malam), dan aroma favoritmu.",1,"",1),
+      Q("terima kasih,makasih,thanks,thx,trims,terimakasih,mksh","Sama-sama! 😊 Kalau masih bingung memilih parfum, tanya saja lagi."),
+      Q("bisa apa,bantu apa,fitur kamu,kamu bisa,fungsi kamu,apa yang bisa kamu lakukan","Aku bisa bantu: rekomendasi parfum dari katalog, penjelasan jenis (EDP/Le Parfum/Extrait) dan aroma, tips pemakaian, serta cara pesan. Coba tanya: parfum fresh untuk cowok."),
+      Q("dadah,sampai jumpa,selamat tinggal,bye,sampai nanti","Terima kasih sudah mampir ke Aroma Semarang! 😊 Sampai jumpa lagi."),
+      Q("maaf ya,mohon maaf,sorry,maafkan","Tidak apa-apa 😊 Ada yang bisa aku bantu?"),
+      Q("apa itu dupe,dupe itu,arti dupe,dupe parfum,parfum dupe,apa itu inspired,parfum inspired,parfum terinspirasi,clone parfum,parfum clone","Dupe (juga disebut inspired atau clone) adalah parfum yang aromanya dibuat mirip dengan parfum terkenal, tapi dijual dengan merek dan nama sendiri dan biasanya lebih murah. Mirip belum tentu sama persis: komposisi, kualitas bahan, dan ketahanannya bisa berbeda. Dupe berbeda dengan parfum palsu (KW)."),
+      Q("beda dupe dan kw,dupe atau kw,dupe sama kw,dupe palsu,dupe ilegal,apakah dupe ilegal,beda dupe dan palsu","Dupe/inspired dijual dengan merek sendiri dan hanya meniru karakter aromanya. Parfum KW/palsu memakai nama, logo, atau kemasan merek asli untuk mengelabui pembeli, dan itu pemalsuan merek yang melanggar hukum. Jadi keduanya tidak sama."),
+      Q("bedanya ori sama dupe,ori sama dupe,ori dan dupe,ori dengan dupe,ori atau inspired,beda ori dan dupe,ori atau dupe,ori vs dupe,original atau dupe,lebih bagus ori atau dupe,kualitas dupe,bagus mana ori dupe,perbandingan ori dan dupe","Secara umum parfum original lebih konsisten dalam kualitas bahan dan racikan, sedangkan dupe lebih terjangkau dan bisa terasa mirip di sebagian karakter. Hasilnya berbeda-beda tiap produk: ada dupe yang dipuji, ada yang terasa kurang kompleks atau cepat hilang. Cara terbaik adalah mencoba langsung di kulitmu."),
+      Q("cara bedakan ori dan dupe,cara membedakan ori dan dupe,bedakan parfum ori,ciri parfum ori,ciri parfum kw,ciri parfum palsu,cara cek parfum asli,cara mengetahui parfum asli","Tanda yang sering diperhatikan: kualitas kemasan dan cetakan, kode batch yang bisa dicek, ketebalan dan kerapian tutup serta botol, konsistensi aroma, dan harga yang terlalu murah dibanding harga resmi. Tidak ada satu tanda yang pasti, jadi beli dari penjual tepercaya. Untuk produk di toko ini, tanyakan ke admin lewat WhatsApp 0882005034977."),
+      Q("mirip dengan apa,mirip parfum apa,wanginya mirip,aroma mirip,dupe dari,dupenya apa,kembaran parfum,kembarannya,alternatif murah,alternatif parfum mahal,pengganti parfum mahal,parfum mirip","Kemiripan aroma itu sebagian besar opini komunitas dan bisa berubah, bukan data resmi. Cara mencarinya: bandingkan daftar note dan accord kedua parfum, lalu lihat bagian parfum mirip (similar) di situs seperti Fragrantica yang berdasarkan voting pengguna. Sebutkan nama parfumnya, nanti aku bantu cari dari katalog.",1),
+      Q("sering disebut mirip,pasangan ori dan dupe,daftar dupe,rekomendasi dupe,dupe populer,dupe terkenal,rekomendasi dupe parfum","Beberapa pasangan yang sering disebut komunitas (opini, bukan data resmi dan bisa berbeda di kulit tiap orang):\nCreed Aventus → sering dibandingkan dengan Armaf Club de Nuit Intense Man\nKilian Angels' Share → sering dibandingkan dengan Lattafa Khamrah\nJean Paul Gaultier Ultra Male → sering dibandingkan dengan Afnan 9PM\nDior Sauvage Elixir → sering dibandingkan dengan Lattafa Asad\nSebutkan salah satu, nanti aku jelaskan karakter aromanya.",1),
+      Q("dupe aventus,dupe creed aventus,mirip aventus,aventus murah,kembaran aventus,alternatif aventus","Creed Aventus sering disebut mirip dengan Armaf Club de Nuit Intense Man oleh komunitas, karena sama-sama berkarakter fruity-smoky dengan nuansa lemon/nanas dan birch. Itu opini komunitas, tingkat kemiripannya bisa berbeda di kulit tiap orang.",1),
+      Q("dupe angels share,dupe kilian,mirip angels share,mirip khamrah,dupe khamrah,khamrah mirip,alternatif angels share","Lattafa Khamrah sering disebut komunitas mirip dengan Kilian Angels' Share: sama-sama hangat, manis, dan gourmand dengan kesan kayu manis, praline, dan vanilla. Itu opini komunitas dan hasilnya bisa berbeda di tiap kulit.",1),
+      Q("dupe ultra male,mirip ultra male,dupe 9pm,afnan 9pm mirip,9pm mirip,alternatif ultra male","Afnan 9PM sering disebut komunitas mirip dengan Jean Paul Gaultier Ultra Male: sama-sama manis, hangat, dengan kesan apel, kayu manis, lavender, dan vanilla. Itu opini komunitas dan hasilnya bisa berbeda di tiap kulit.",1),
+      Q("dupe sauvage,mirip sauvage,dupe sauvage elixir,mirip sauvage elixir,asad mirip,lattafa asad mirip,alternatif sauvage","Lattafa Asad sering disebut komunitas sebagai alternatif bergaya mirip Dior Sauvage Elixir: hangat, berempah, dan sedikit manis. Itu opini komunitas dan kemiripannya tidak sama persis.",1),
+      Q("parfum arab,parfum timur tengah,parfum lattafa,lattafa,armaf,afnan,parfum dubai,rasasi,al haramain,maison alhambra","Merek-merek parfum Timur Tengah seperti Lattafa, Armaf, dan Afnan dikenal punya banyak aroma manis, hangat, oud, dan amber dengan harga yang relatif terjangkau. Sebagian terinspirasi gaya parfum designer. Ketahanannya biasanya dipuji banyak orang, tapi tetap berbeda tiap produk.",1),
+      Q("apa itu flanker,flanker itu,versi lain parfum,varian parfum,edisi parfum,intense edition,versi intense,elixir itu","Flanker adalah versi lain dari parfum yang sama: misalnya versi Intense, Elixir, Sport, atau Parfum. Biasanya aroma intinya mirip, tapi konsentrasi atau karakternya diubah (lebih pekat, lebih manis, lebih segar, dan sebagainya)."),
+      Q("original lebih awet,ori lebih awet,dupe awet,dupe tahan lama,dupe cepat hilang,dupe lebih awet","Tidak ada aturan pasti. Ketahanan bergantung pada formula dan konsentrasi, bukan hanya ori atau dupe. Ada dupe yang awet, ada ori yang cepat hilang. Cara paling pasti adalah mencobanya di kulitmu."),
+      Q("parfum mahal kenapa,kenapa original mahal,kenapa parfum ori mahal,harga ori mahal,harga dupe murah,kenapa dupe murah","Parfum original biasanya mahal karena biaya merek, riset aroma, bahan, kemasan, dan pemasaran. Dupe lebih murah karena tidak membayar biaya merek dan riset aroma yang sama, serta sering memakai bahan dan kemasan yang lebih sederhana."),
+      Q("creed aventus,aventus,parfum aventus","Creed Aventus: parfum pria bergaya fruity-smoky dengan kesan nanas, bergamot, birch, dan musk. Populer sebagai aroma percaya diri dan elegan.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("sauvage,dior sauvage,sauvage dior,parfum sauvage,sauvage elixir","Dior Sauvage: parfum pria segar-berempah dengan kesan bergamot, lada, dan ambroxan. Modern, bersih, dan cukup menyebar.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("bleu de chanel,blue de chanel,chanel bleu","Bleu de Chanel: parfum pria bergaya citrus-woody yang bersih dan elegan, dengan kesan jeruk, mint, kayu, dan dupa lembut. Cocok untuk keseharian dan kantor.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("light blue,dolce gabbana light blue,d&g light blue,dolce and gabbana","Dolce & Gabbana Light Blue: parfum segar bergaya musim panas dengan kesan lemon Sisilia, apel, dan cedar. Ringan, bersih, dan cocok untuk siang hari.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("versace eros,eros versace,parfum eros,eros","Versace Eros: parfum pria segar-manis dengan kesan mint, apel hijau, tonka, dan vanilla. Berani, hangat, dan cocok untuk malam atau acara santai.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("acqua di gio,aqua di gio,acqua di giò,armani acqua di gio","Armani Acqua di Giò: parfum klasik bergaya aquatic dengan kesan laut, citrus, dan kayu ringan. Bersih dan segar, cocok untuk cuaca panas.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("le male,jean paul gaultier,jpg le male,ultra male","Jean Paul Gaultier Le Male: parfum pria manis-aromatik dengan kesan lavender, mint, vanilla, dan tonka. Ikonis dan hangat. Ultra Male versi lebih manis dan berani.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("1 million,one million,paco rabanne,million paco","Paco Rabanne 1 Million: parfum pria manis-berempah dengan kesan jeruk, kayu manis, kulit, dan amber. Berani dan menarik perhatian.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("black opium,opium ysl,ysl black opium","YSL Black Opium: parfum wanita manis-gourmand dengan kesan kopi, bunga putih, dan vanilla. Hangat, menggoda, dan cocok untuk malam.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("la vie est belle,lancome la vie,lancôme la vie","Lancôme La Vie Est Belle: parfum wanita manis-gourmand dengan kesan iris, praline, dan vanilla. Lembut, manis, dan feminin.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("good girl,carolina herrera good girl,ch good girl","Carolina Herrera Good Girl: parfum wanita floral-manis dengan kesan melati, tuberose, tonka, dan kakao. Elegan dan sensual.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("chanel no 5,chanel number 5,no 5 chanel,chanel no.5","Chanel No. 5: parfum klasik wanita bergaya floral-aldehydic yang elegan dan 'berpowder', dengan kesan bunga, aldehyde, dan vanilla lembut.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("baccarat rouge,br540,baccarat 540,rouge 540,maison francis kurkdjian","Maison Francis Kurkdjian Baccarat Rouge 540: parfum unisex manis-ambery dengan kesan safran, melati, dan kayu amber. Mewah, airy, dan menyebar.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("tobacco vanille,tom ford tobacco,tom ford vanille","Tom Ford Tobacco Vanille: parfum unisex hangat dengan kesan tembakau, vanilla, dan rempah. Mewah, pekat, dan cocok untuk malam atau cuaca sejuk.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("oud wood,tom ford oud,oud wood tom ford","Tom Ford Oud Wood: parfum unisex bergaya woody-oud dengan kesan oud, kayu cendana, dan rempah halus. Elegan, hangat, dan tidak terlalu menyengat.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("jazz club,replica jazz club,maison margiela jazz club,maison margiela replica,margiela replica","Maison Margiela Replica Jazz Club: parfum unisex hangat dengan kesan rum, tembakau, dan vanilla seperti suasana klub jazz. Nyaman dan elegan untuk malam.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("by the fireplace,replica by the fireplace,fireplace margiela","Maison Margiela Replica By the Fireplace: parfum unisex hangat dengan kesan kayu bakar, kastanye, dan vanilla. Nyaman dan cocok untuk cuaca sejuk.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("lazy sunday morning,replica lazy sunday,sunday morning margiela","Maison Margiela Replica Lazy Sunday Morning: parfum unisex bersih dengan kesan linen, iris, dan musk. Lembut seperti seprai bersih.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("gypsy water,byredo gypsy water,byredo","Byredo Gypsy Water: parfum unisex segar-kayu dengan kesan bergamot, juniper, dupa, dan vanilla. Santai, bersih, dan sedikit bohemian.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("santal 33,le labo santal,le labo","Le Labo Santal 33: parfum unisex bergaya kayu cendana dengan kesan cedar, kulit, dan rempah. Khas, hangat, dan banyak dikenal.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("silver mountain water,creed silver mountain,smw creed","Creed Silver Mountain Water: parfum unisex segar dengan kesan citrus, teh hijau, blackcurrant, dan musk. Bersih, dingin, dan cocok untuk siang hari.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("california dream,louis vuitton california dream,lv california dream","Louis Vuitton California Dream: parfum segar bernuansa citrus yang cerah dan ringan, cocok untuk siang hari dan cuaca panas.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("afternoon swim,louis vuitton afternoon swim,lv afternoon swim","Louis Vuitton Afternoon Swim: parfum segar bernuansa citrus dengan kesan akuatik yang ringan dan ceria, cocok untuk siang dan suasana liburan.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("club de nuit intense,club de nuit,cdn intense,armaf club de nuit","Armaf Club de Nuit Intense Man: parfum pria fruity-smoky dengan kesan lemon, nanas, birch, dan musk. Sering dibandingkan dengan Creed Aventus.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1)
+    ]);
+        /* ---------- JAWABAN TAMBAHAN 3 ---------- */
+    jawabanParfum = jawabanParfum.concat([
+      Q("lattafa khamrah,khamrah","Lattafa Khamrah: parfum unisex hangat-manis dengan kesan kayu manis, kurma, praline, dan vanilla. Nyaman dan pekat, cocok untuk malam atau cuaca sejuk.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("afnan 9pm,9pm afnan,sembilan pm","Afnan 9PM: parfum pria manis-aromatik dengan kesan apel, kayu manis, lavender, dan vanilla. Hangat dan cocok untuk malam.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("lattafa asad,asad lattafa","Lattafa Asad: parfum pria hangat-berempah dengan kesan lada hitam, tembakau, vanilla, dan kayu. Berkarakter dan cocok untuk malam.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("lattafa yara,yara lattafa,parfum yara","Lattafa Yara: parfum wanita manis-powdery dengan kesan anggrek, jeruk, dan vanilla. Lembut, feminin, dan disukai banyak orang.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("ysl libre,libre ysl,yves saint laurent libre","YSL Libre: parfum wanita bergaya lavender-bunga jeruk dengan vanilla. Segar sekaligus hangat, berani, dan elegan.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("armani si,giorgio armani si,parfum si armani","Giorgio Armani Si: parfum wanita manis-elegan dengan kesan blackcurrant, mawar, dan vanilla. Lembut dan dewasa.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("dior homme intense,dior homme,homme intense","Dior Homme Intense: parfum pria bergaya iris-powdery yang elegan dengan kesan kayu hangat dan sedikit manis. Lembut dan mewah.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("cool water,davidoff cool water","Davidoff Cool Water: parfum aquatic klasik dengan kesan segar, mint, lavender, dan musk. Bersih dan cocok untuk cuaca panas.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("l'eau d'issey,leau dissey,issey miyake,issey miyake leau","Issey Miyake L'Eau d'Issey: parfum aquatic-floral klasik dengan kesan lotus, air, dan bunga. Bersih, lembut, dan segar.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("ck one,calvin klein ck one","Calvin Klein CK One: parfum unisex citrus-teh klasik yang segar dan bersih dengan sentuhan musk. Cocok untuk keseharian.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("hugo boss bottled,boss bottled,boss number 6","Hugo Boss Bottled: parfum pria klasik dengan kesan apel, kayu manis, dan kayu. Hangat, rapi, dan cocok untuk kantor.\n(Deskripsi umum berdasarkan karakter yang banyak dikenal; hasil di kulit tiap orang bisa berbeda.)",1),
+      Q("apa itu aldehyde,aldehyde itu,aldehid,aroma aldehyde,aldehydic","Aldehyde adalah bahan aroma yang memberi kesan berkilau, bersih, seperti sabun atau lilin. Parfum klasik seperti Chanel No. 5 terkenal karena penggunaannya."),
+      Q("apa itu ambroxan,ambroxan itu,ambroxan parfum,aroma ambroxan","Ambroxan adalah bahan aroma sintetis dengan kesan amber, kayu, dan sedikit asin-hangat. Banyak dipakai di parfum modern karena aromanya halus dan tahan lama."),
+      Q("natural atau sintetis,parfum alami,bahan alami,bahan sintetis,sintetis parfum,parfum natural","Parfum umumnya memakai campuran bahan alami dan sintetis. Sintetis bukan berarti buruk: banyak aroma modern justru dibuat dengan bahan sintetis agar stabil, konsisten, dan tahan lama."),
+      Q("apa itu petrichor,petrichor itu,wangi tanah hujan,aroma tanah basah,wangi hujan","Petrichor adalah aroma khas tanah setelah hujan. Beberapa parfum meniru kesan itu dengan aroma tanah, lumut, dan udara lembap.",1),
+      Q("feromon,pheromone,parfum feromon,parfum pheromone","Klaim parfum feromon yang membuat orang langsung tertarik belum punya bukti ilmiah yang kuat. Yang jelas, aroma yang kamu sukai bisa membuatmu lebih percaya diri."),
+      Q("parfum bikin mood,aroma mempengaruhi mood,wangi bikin senang,parfum dan mood,penciuman dan ingatan,aroma dan kenangan","Penciuman terhubung erat dengan bagian otak yang mengatur emosi dan ingatan, sehingga satu aroma bisa memunculkan kenangan atau mengubah suasana hati."),
+      Q("cara test parfum,cara tes parfum,cara mencoba parfum,tips test parfum,coba parfum di toko,cara coba parfum","Tips mencoba parfum:\n1. Semprot di kertas uji atau kulit, jangan digosok\n2. Jangan coba lebih dari 3 aroma sekaligus\n3. Tunggu 15-30 menit untuk melihat middle note\n4. Cium aroma netral (misalnya kopi) untuk menyegarkan hidung\n5. Kalau bisa, pakai seharian sebelum membeli ukuran besar"),
+      Q("kenapa parfum cepat habis,parfum cepat habis,boros parfum,hemat parfum,tips hemat parfum,biar parfum awet isinya","Tips hemat parfum: semprot 2-3 kali saja, simpan di tempat sejuk dan gelap, tutup rapat, dan jangan sering dibuka. Parfum juga lebih terasa awet jika disemprot di kulit lembap atau pakaian."),
+      Q("eau fraiche,eau fraîche,apa itu eau fraiche","Eau Fraîche adalah konsentrasi sangat ringan (sekitar 1-3%), lebih ringan dari EDC. Sangat segar tapi cepat hilang."),
+      Q("parfum dan sholat,ke masjid wangi,parfum jumat,parfum sunnah","Memakai wewangian sering dianjurkan untuk ke masjid. Pilih aroma yang lembut dan tidak menyengat supaya tidak mengganggu jamaah lain. Untuk hal hukum terkait kandungan alkohol, tanyakan ke ustaz atau ulama yang kamu percaya."),
+      Q("parfum hijab,parfum untuk hijab,parfum berhijab,wangi hijab","Parfum bisa disemprot di titik nadi atau pakaian dari jarak yang cukup. Hati-hati pada kain halus agar tidak ternoda, dan pilih aroma yang nyaman dihirup dari dekat."),
+      Q("parfum beda musim,parfum musim panas,parfum musim dingin,parfum cuaca,parfum sesuai cuaca","Di cuaca panas, pilih aroma segar seperti citrus, aquatic, atau green. Di cuaca sejuk, aroma hangat seperti vanilla, amber, oud, dan woody terasa lebih nyaman. Cuaca panas membuat aroma terasa lebih kuat, jadi kurangi semprotan.",1),
+      Q("peony,aroma peony,wangi peony,bunga peony","Peony beraroma bunga lembut, segar, dan sedikit manis seperti mawar yang ringan. Kesannya bersih, feminin, dan cocok untuk siang hari.",1),
+      Q("tuberose,aroma tuberose,wangi tuberose,sedap malam","Tuberose (sedap malam) beraroma bunga putih yang pekat, creamy, dan sensual. Kesannya mewah dan kuat, biasanya cocok untuk malam atau acara.",1),
+      Q("ylang ylang,ylang-ylang,kenanga,aroma kenanga,wangi kenanga","Ylang-ylang (kenanga) beraroma bunga manis, creamy, dan sedikit buah. Memberi kesan tropis, hangat, dan feminin.",1),
+      Q("neroli,orange blossom,bunga jeruk,aroma neroli","Neroli/orange blossom adalah bunga jeruk yang segar, bersih, dan sedikit manis. Memberi kesan cerah, elegan, dan cocok untuk siang hari.",1),
+      Q("freesia,aroma freesia,wangi freesia","Freesia beraroma bunga segar, ringan, dan sedikit seperti citrus. Kesannya bersih dan ceria.",1),
+      Q("violet,aroma violet,wangi violet,bunga violet","Violet beraroma bunga lembut, powdery, dan sedikit manis, kadang seperti permen. Kesannya lembut dan feminin.",1),
+      Q("magnolia,aroma magnolia,wangi magnolia","Magnolia beraroma bunga lembut dan sedikit seperti lemon. Kesannya segar, anggun, dan creamy.",1),
+      Q("osmanthus,aroma osmanthus,wangi osmanthus","Osmanthus beraroma bunga kecil yang manis, seperti aprikot atau peach dengan sentuhan kulit. Kesannya hangat dan elegan.",1),
+      Q("lotus,aroma lotus,wangi lotus,teratai","Lotus (teratai) beraroma segar, bersih, dan air. Kesannya tenang dan sering ada di parfum aquatic-floral.",1),
+      Q("lily,aroma lily,bunga lily,lily of the valley,lili,bunga lili","Lily dan lily of the valley beraroma bunga putih yang segar dan bersih. Kesannya lembut, murni, dan feminin.",1),
+      Q("aroma apel,wangi apel,parfum apel,green apple,apple,apel hijau","Apel memberi kesan renyah, segar, dan sedikit manis. Apel hijau terasa lebih tajam dan segar, sedangkan apel merah lebih manis.",1),
+      Q("aroma peach,wangi peach,parfum peach,persik,aroma persik","Peach (persik) beraroma manis, lembut, dan sedikit seperti beludru. Kesannya ceria, hangat, dan feminin.",1),
+      Q("aroma pir,wangi pir,pear,aroma pear","Pir memberi kesan segar, manis, dan lembut, sering dipakai sebagai top note yang ramah.",1),
+      Q("aroma nanas,wangi nanas,pineapple,parfum nanas","Nanas memberi kesan tropis, cerah, dan manis-asam. Dalam parfum pria sering dipadukan dengan kayu atau asap untuk kesan percaya diri.",1),
+      Q("aroma mangga,wangi mangga,mango,aroma tropis,tropical,parfum tropis","Aroma tropis seperti mangga dan kelapa memberi kesan ceria, manis, dan santai. Cocok untuk siang dan liburan.",1),
+      Q("blackcurrant,aroma blackcurrant,cassis,wangi cassis","Blackcurrant beraroma buah gelap yang manis-asam dan sedikit hijau. Memberi kesan segar sekaligus dalam.",1),
+      Q("grapefruit,aroma grapefruit,jeruk bali,wangi jeruk bali","Grapefruit (jeruk bali) beraroma segar, sedikit pahit, dan energik. Cocok untuk pagi dan siang.",1),
+      Q("mandarin,jeruk mandarin,tangerine,aroma mandarin,jeruk keprok","Mandarin/tangerine beraroma jeruk yang manis, ringan, dan ceria. Lebih lembut dibanding lemon.",1),
+      Q("fig,aroma fig,buah ara,wangi ara","Fig (buah ara) beraroma hijau, creamy, dan sedikit manis. Kesannya natural dan hangat.",1),
+      Q("kayu manis,cinnamon,aroma kayu manis,wangi kayu manis","Kayu manis (cinnamon) beraroma hangat, manis, dan berempah. Memberi kesan nyaman dan cocok untuk malam atau cuaca sejuk.",1),
+      Q("kapulaga,cardamom,aroma kapulaga,wangi kapulaga","Kapulaga (cardamom) beraroma rempah yang segar, sedikit manis, dan hangat. Sering jadi top note di parfum elegan.",1),
+      Q("lada hitam,black pepper,pink pepper,lada merah muda,aroma lada,wangi lada","Lada memberi kesan berempah, hangat, dan bertenaga. Lada merah muda terasa lebih ringan dan sedikit fruity.",1),
+      Q("saffron,safran,aroma saffron,kunyit saffron","Saffron (safran) beraroma rempah yang hangat, sedikit seperti kulit dan madu. Memberi kesan mewah dan berkarakter.",1),
+      Q("jahe,ginger,aroma jahe,wangi jahe","Jahe (ginger) beraroma hangat, segar, dan sedikit pedas. Memberi kesan energik.",1),
+      Q("cengkeh,clove,aroma cengkeh,wangi cengkeh","Cengkeh (clove) beraroma rempah yang hangat dan tajam, kadang seperti dupa. Memberi kesan kuat dan berkarakter.",1),
+      Q("benzoin,labdanum,myrrh,frankincense,kemenyan putih,resin,aroma resin","Resin seperti benzoin, labdanum, myrrh, dan frankincense beraroma hangat, manis, balsamik, dan sedikit berasap. Memberi kesan mewah dan misterius.",1),
+      Q("guaiac,guaiac wood,birch,birch tar,kayu birch,rosewood,pinewood,pine,aroma pinus","Kayu seperti guaiac, birch, rosewood, dan pinus memberi kesan berbeda: guaiac dan birch cenderung berasap, rosewood lembut dan sedikit bunga, pinus segar seperti hutan.",1),
+      Q("ambergris,ambergris itu,ambergris asli,ambergris sintetis","Ambergris secara tradisional berasal dari zat yang dihasilkan paus dan memberi kesan asin, hangat, dan lembut. Parfum modern umumnya memakai versi sintetis yang meniru aromanya.",1),
+      Q("oakmoss,lumut,aroma lumut,wangi lumut","Oakmoss beraroma lumut, tanah, dan sedikit seperti hutan basah. Sering ada di parfum bergaya chypre dan fougère.",1),
+      Q("aroma coklat,wangi coklat,parfum coklat,cokelat,chocolate,cacao,kakao","Coklat/kakao beraroma manis, sedikit pahit, dan hangat. Sering dipadukan dengan vanilla atau praline untuk kesan gourmand.",1),
+      Q("caramel,karamel,aroma karamel,wangi karamel,madu,honey,aroma madu","Karamel dan madu memberi kesan manis, hangat, dan nyaman. Biasanya muncul di parfum gourmand untuk malam atau cuaca sejuk.",1),
+      Q("almond,kacang almond,aroma almond,praline,hazelnut,aroma kacang,wangi kacang","Almond, praline, atau kacang-kacangan beraroma manis, creamy, dan hangat. Memberi kesan nyaman dan lembut.",1),
+      Q("rum,aroma rum,wangi rum,whiskey,aroma whisky,aroma minuman,wangi minuman,cognac","Aroma minuman seperti rum atau whisky memberi kesan hangat, manis, dan sedikit seperti kayu atau karamel. Biasanya cocok untuk malam.",1)
+    ]);
+      /* ---------- JAWABAN TAMBAHAN 4 ---------- */
+    jawabanParfum = jawabanParfum.concat([
+      Q("aroma teh,wangi teh,green tea,teh hijau,tea","Teh (terutama teh hijau) memberi kesan bersih, tenang, dan sedikit hijau. Cocok untuk siang hari dan suasana santai.",1),
+      Q("aroma garam,wangi garam,salty,asin,sea salt,aroma pantai","Aroma garam atau 'sea salt' memberi kesan laut yang asin dan bersih, sering dipadukan dengan kayu atau citrus.",1),
+      Q("aroma susu,wangi susu,milky,creamy,aroma krim,wangi krim","Aroma susu atau creamy beraroma lembut, hangat, dan nyaman, sering dari vanilla, sandalwood, atau kelapa.",1),
+      Q("aroma kulit baru,suede,aroma suede,wangi suede","Suede memberi kesan kulit yang lembut, hangat, dan sedikit powdery. Lebih halus dibanding leather yang smoky.",1),
+      Q("aroma rumput,cut grass,aroma hutan,wangi hutan,aroma alam,wangi alam","Aroma rumput dan hutan memberi kesan alami, segar, dan menenangkan. Biasanya dari green notes, moss, atau kayu.",1),
+      Q("clean,aroma clean,fresh clean,seperti baju baru dicuci,wangi cucian","Aroma 'clean' biasanya dari musk putih, citrus ringan, atau bunga lembut. Kesannya rapi, aman, dan disukai banyak orang.",1),
+      Q("percaya diri,pede,biar pede,parfum biar percaya diri,aroma percaya diri,wangi percaya diri","Untuk kesan percaya diri, pilih aroma yang kamu sukai dan berkarakter jelas: woody-citrus yang bersih untuk kesan rapi, atau aroma hangat dan berempah untuk kesan berani. Yang terpenting kamu nyaman memakainya.",1),
+      Q("tenang,menenangkan,relaks,rileks,santai,stress,stres,untuk rileks,wangi tenang","Untuk kesan tenang dan santai, pilih aroma lembut seperti lavender, sandalwood, teh, atau musk bersih. Hindari aroma yang terlalu tajam atau pekat.",1),
+      Q("semangat,energik,bertenaga,fokus,biar fokus,wangi semangat,pagi semangat","Untuk kesan segar dan bersemangat, pilih citrus, mint, jahe, atau aquatic. Aromanya cerah dan membantu suasana terasa lebih ringan.",1),
+      Q("tidak bikin eneg,tidak eneg,gak eneg,ga eneg,tidak enek,tidak bikin pusing,tidak menyengat,yang kalem,aroma kalem,wangi kalem","Untuk aroma yang tidak bikin eneg, pilih yang ringan dan bersih: citrus, musk putih, teh, atau green notes. Hindari yang terlalu manis atau pekat, dan semprot secukupnya.",1),
+      Q("beast mode,sangat awet,paling awet,tahan seharian penuh,tahan 12 jam,tahan 24 jam,super awet,ekstra awet","Parfum yang biasanya lebih tahan lama punya konsentrasi tinggi (EDP ke atas) dengan base note kuat seperti oud, amber, vanilla, patchouli, atau musk. Namun ketahanan tetap tergantung kulit dan cuaca.",1),
+      Q("yang disukai cewek,disukai wanita,cowok wangi apa,wangi cowok disukai cewek,parfum cowok yang disukai,parfum bikin cewek suka","Selera orang berbeda-beda, tapi aroma bersih dan hangat seperti woody ringan, citrus, vanilla lembut, atau musk umumnya aman dan disukai banyak orang. Sebutkan aroma favoritmu, nanti aku carikan dari katalog.",1),
+      Q("yang disukai cowok,disukai pria,cewek wangi apa,wangi cewek disukai cowok,parfum cewek yang disukai,parfum bikin cowok suka","Selera orang berbeda-beda, tapi aroma lembut seperti vanilla, floral ringan, musk, atau fruity yang bersih umumnya aman dan disukai banyak orang. Sebutkan aroma favoritmu, nanti aku carikan dari katalog.",1),
+      Q("umur 20an,usia 20an,usia muda,umur 30an,usia 30an,umur 40an,usia 40an,usia dewasa,untuk dewasa,untuk usia","Pilihan aroma tidak dibatasi usia. Biasanya yang lebih muda suka aroma segar, fruity, atau manis ringan, sedangkan yang lebih dewasa sering memilih woody, floral lembut, atau amber yang lebih tenang. Pilih yang paling nyaman buatmu.",1),
+      Q("murah,budget,hemat,terjangkau,paling murah,yang murah,harga terjangkau,dibawah,di bawah,paling hemat,budget terbatas","Untuk yang hemat, mulai dari ukuran 30 ML dan konsentrasi EDP. Harga tiap jenis dan ukuran terlihat di kartu parfum. Sebutkan aroma yang kamu mau, nanti aku carikan dari katalog.",1),
+      Q("viral,trending,paling laris,terlaris,best seller,bestseller,paling populer,favorit orang,yang lagi ngetren,populer sekarang","Untuk parfum yang lagi populer atau paling laris, tanyakan ke admin lewat WhatsApp 0882005034977 supaya infonya akurat. Sementara itu, aku bisa carikan dari katalog kalau kamu sebutkan aroma atau suasana yang kamu mau.",1),
+      Q("rekomendasi,rekomen,saran parfum,saranin,sarankan,kasih rekomendasi,bagusan yang mana,enak yang mana,mana yang enak,yang terbaik","Siap! Supaya rekomendasinya pas, sebutkan: pria/wanita/unisex, aroma yang disuka (fresh/manis/woody/floral), dan kapan dipakai (siang/malam/acara).",1,"",1),
+      Q("kenapa parfum bisa berubah,parfum berubah wangi,aroma berubah seiring waktu,kok wanginya berubah,wangi beda setelah beberapa jam","Itu normal. Parfum berkembang dalam tiga tahap (top, middle, base note), sehingga kesan awal bisa berbeda dengan aroma beberapa jam kemudian."),
+      Q("parfum bisa merusak kulit,parfum bikin kulit gelap,parfum bikin belang,belang parfum,kulit belang","Menyemprot parfum langsung berulang kali di satu titik, apalagi terkena matahari, pada sebagian orang bisa menimbulkan iritasi atau noda gelap. Semprot dari jarak cukup, jangan berlebihan, dan hentikan jika kulit bereaksi."),
+      Q("sebelum tidur,pakai parfum malam hari tidur,parfum saat tidur,tidur pakai parfum","Boleh kalau kamu nyaman, tapi pilih yang lembut dan semprot sedikit. Aroma pekat bisa mengganggu tidur sebagian orang."),
+      Q("parfum bekas,botol bekas,isi ulang botol bekas,botol kosong,pakai botol lama","Kalau memakai botol lama, pastikan bersih dan kering sebelum diisi ulang supaya aromanya tidak bercampur."),
+      Q("jenis jenis parfum,macam macam parfum,kategori parfum,golongan parfum,famili aroma,keluarga aroma,olfactory family","Keluarga aroma utama: citrus/fresh, floral, woody, oriental/amber, gourmand, aquatic, green, spicy, powdery, leather. Sebutkan satu, nanti aku jelaskan dan carikan dari katalog.",1),
+      Q("apa perbedaan edt dan edp,beda edt edp,edt vs edp,edp vs edt,mending edt atau edp,mending edp atau edt","EDT lebih ringan dan segar sehingga cocok untuk siang dan cuaca panas, tapi biasanya lebih cepat hilang. EDP lebih pekat dan lebih awet, cocok untuk seharian atau acara. Kalau budget cukup dan ingin lebih awet, pilih EDP."),
+      Q("mending extrait atau edp,edp atau extrait,extrait vs edp,edp vs extrait,bagusan edp atau extrait,bedanya edp sama extrait,beda edp extrait,edp dan extrait","Extrait biasanya lebih pekat dan lebih awet daripada EDP, jadi cukup disemprot sedikit. Tapi 'lebih pekat' tidak selalu berarti lebih enak, jadi tetap pilih yang aromanya paling cocok buatmu."),
+      Q("mending 30 ml atau 50 ml,30 atau 50,50 atau 100,100 ml hemat,paling hemat ukuran,ukuran paling hemat,mending ukuran berapa,ukuran yang pas","Kalau belum yakin cocok, ambil 30 ML. Untuk pemakaian rutin, 50 ML pas. Kalau sudah sangat suka, 100 ML biasanya paling hemat per ml."),
+      Q("berapa lama habis,sebulan habis,habis berapa lama,pakai berapa lama habis,botol 50 ml habis","Perkiraan kasar: dengan 2-4 semprotan per hari, botol 30 ML bisa bertahan sekitar 1-2 bulan, 50 ML sekitar 2-3 bulan, dan 100 ML 4-6 bulan. Angkanya tergantung ukuran semprotan dan seberapa sering dipakai."),
+      Q("lebih hemat ukuran berapa,per ml,hemat mana ukuran,ukuran paling untung","Biasanya ukuran 100 ML paling hemat per ml, tapi pilih itu kalau kamu sudah yakin cocok. Kalau masih coba-coba, ambil 30 ML dulu."),
+      Q("introvert,ekstrovert,pendiam,orang aktif,ceria,kepribadian,sesuai karakter,sesuai kepribadian","Pilihan parfum bisa mencerminkan suasana yang ingin kamu tampilkan: segar-citrus untuk kesan ceria, musk bersih untuk tenang dan rapi, woody-amber untuk kesan dewasa dan percaya diri.",1,"kantor"),
+      Q("kulit gelap,kulit putih,kulit sawo matang,warna kulit,jenis kulit","Warna kulit tidak menentukan cocok atau tidaknya aroma. Yang lebih berpengaruh adalah pH kulit, suhu tubuh, dan kelembapan, jadi yang paling akurat adalah mencoba langsung di kulitmu."),
+      Q("gampang berkeringat,keringat berlebih,badan bau,bau badan parah,banyak keringat,berkeringat banyak","Kalau mudah berkeringat, pilih aroma segar (citrus, aquatic, mint) dan semprot sedikit. Pakai deodoran dulu, karena parfum tidak menutup bau badan.",1,"siang"),
+      Q("perokok,bau rokok,orang merokok,habis merokok","Asap rokok menempel di pakaian dan rambut, dan bisa bercampur dengan parfum sehingga aromanya berubah. Semprot parfum ke pakaian yang bersih dan hindari menumpuk banyak semprotan untuk menutupi bau."),
+      Q("skincare,makeup,sunscreen,tabir surya,sebelum makeup,sesudah makeup","Semprot parfum di area yang bebas produk perawatan wajah. Titik nadi (leher dan pergelangan) atau pakaian lebih aman daripada wajah. Beri jeda beberapa menit setelah skincare."),
+      Q("pewangi baju,pewangi laundry,pewangi ruangan,diffuser,lilin aromaterapi,pengharum ruangan,pewangi mobil","Toko ini fokus pada parfum refill untuk tubuh dan pakaian. Untuk pewangi ruangan atau mobil, produknya berbeda, jadi tanyakan admin lewat WhatsApp 0882005034977 kalau ada yang tersedia."),
+      Q("tidak keluar,semprotan macet,nozzle,pompa macet,spray macet,tidak mau menyemprot,tidak bisa disemprot,sprayer macet","Kalau semprotan macet, bersihkan ujung nozzle dengan kain lembap, lalu tekan beberapa kali sampai keluar. Kalau tetap macet, hubungi admin lewat WhatsApp 0882005034977."),
+      Q("bau jadi aneh,aroma jadi asam,berubah asam di kulit,wangi jadi aneh,jadi bau,aroma berubah jadi","Aroma bisa berubah saat bercampur keringat dan pH kulit, atau jika parfum sudah rusak. Coba cuci area itu, pakai di kulit yang bersih, dan kurangi semprotan. Kalau aroma di botol sendiri sudah asam, jangan dipakai."),
+      Q("kena mata,masuk mata,tertelan,diminum,parfum diminum,keracunan parfum","Jika terkena mata, bilas dengan air bersih mengalir selama beberapa menit. Jika tertelan atau gejala tidak membaik, segera cari pertolongan medis. Simpan parfum jauh dari jangkauan anak-anak."),
+      Q("mudah terbakar,dekat api,korek api,parfum terbakar,api kompor,flammable","Parfum beralkohol mudah terbakar. Jauhkan dari api, rokok, kompor, dan sumber panas, dan jangan menyemprot dekat api."),
+      Q("tiap hari,setiap hari,boleh tiap hari,pakai tiap hari,sering pakai parfum,terlalu sering pakai","Boleh dipakai setiap hari selama kulitmu tidak iritasi. Kalau hidung mulai tidak peka pada aroma yang sama, coba bergantian dengan aroma lain."),
+      Q("koleksi parfum,mulai koleksi,berapa banyak parfum,wardrobe parfum,starter parfum,parfum pertama kedua","Untuk mulai koleksi, cukup 3 aroma: satu segar untuk siang, satu hangat untuk malam, dan satu aroma andalan sehari-hari. Tambah lagi kalau sudah tahu selera.",1,"kantor"),
+      Q("sillage besar,wangi kuat,menyebar jauh,paling kuat,yang kuat,paling pekat","Untuk aroma yang kuat dan menyebar, pilih konsentrasi tinggi (EDP, Le Parfum, Extrait) dengan karakter hangat seperti amber, oud, vanilla, atau rempah. Pakai secukupnya, karena aroma kuat mudah berlebihan.",1,"malam"),
+      Q("wangi lembut,aroma halus,skin scent,dekat kulit,wangi soft,aroma soft","Untuk aroma lembut yang tidak menyengat, pilih musk bersih, powdery, atau floral ringan. Aromanya dekat di kulit dan nyaman untuk keseharian.",1,"kantor"),
+      Q("wangi permen,cotton candy,wangi dessert,wangi kue,es krim,ice cream,wangi gula,wangi donat","Aroma manis seperti permen atau kue biasanya dari gourmand: vanilla, karamel, praline, atau coklat. Nyaman, hangat, dan ceria.",1,"manis"),
+      Q("wangi pohon,wangi gunung,aroma tanah,wangi tanah","Aroma alam biasanya dari pinus, lumut, tanah, dan kayu. Kesannya tenang, segar, dan natural.",1,"woody"),
+      Q("smoky,asap,kayu bakar,api unggun,berasap,wangi bakaran","Aroma smoky berasal dari dupa, kulit, tembakau, atau kayu bakar. Kesannya hangat, dalam, dan misterius.",1,"woody"),
+      Q("cozy,wangi hangat banget,wangi peluk,aroma nyaman,aroma cozy","Aroma cozy biasanya hangat dan lembut: vanilla, tonka, amber, musk, dan kayu. Terasa nyaman seperti selimut.",1,"malam"),
+      Q("beda dari yang lain,langka,jarang ada,eksentrik,anti mainstream,tidak pasaran,tidak mainstream","Untuk aroma yang berbeda dari kebanyakan, parfum niche atau aroma dengan campuran tidak biasa (misalnya smoky, gourmand pekat, atau oud) sering terasa unik. Sebutkan karakter yang kamu suka, nanti aku carikan dari katalog."),
+      Q("apa itu eau de cologne,cologne itu,kolonye,air kolonye","Eau de Cologne (EDC) adalah konsentrasi ringan yang segar tapi cepat hilang, biasanya berbasis citrus. Cocok untuk penyegar singkat di cuaca panas."),
+      Q("mending beli yang mana,pilih yang mana,bingung yang mana,mana yang lebih bagus,bagusan mana","Supaya aku bisa bantu memilih, sebutkan: pria/wanita/unisex, aroma yang kamu suka (segar/manis/woody/floral), dan kapan dipakai (siang/malam/acara).",1,"",1),
+      Q("cuaca hari ini,berita hari ini,jam berapa sekarang,tanggal berapa,hari apa sekarang,kurs dolar,harga emas,saham,skor bola,presiden,bitcoin,pemilu,ramalan zodiak","Aku asisten parfum dan tidak punya data waktu nyata seperti cuaca, berita, atau harga pasar. Untuk itu coba cek aplikasi atau sumber lain ya. Kalau soal parfum, aku siap bantu! 😊"),
+      Q("apa kabar,gimana kabar,lagi apa,sedang apa,kabarmu","Baik, terima kasih! 😊 Ada yang bisa aku bantu soal parfum?"),
+      Q("bahasa inggris,speak english,english please,do you speak english,in english","Maaf, aku hanya bisa menjawab dalam Bahasa Indonesia. Kalau ada yang ingin ditanyakan soal parfum, tulis saja ya."),
+      Q("kamu robot,kamu ai,kamu manusia,kamu bot,apakah kamu ai,kamu asli manusia,chatbot,orang beneran,kamu asli","Aku asisten virtual toko ini, bukan manusia. Jawabanku berasal dari daftar topik yang disiapkan pemilik toko dan dari katalog parfum, jadi belum bisa menjawab semua hal. Untuk hal lain, hubungi admin lewat WhatsApp 0882005034977."),
+      Q("jawabanmu salah,jawaban salah,kok jawabnya gitu,tidak nyambung,gak nyambung,ga nyambung,kamu bodoh,kurang pintar,tidak pintar","Maaf ya, aku masih terbatas. Coba tulis pertanyaannya dengan kata lain, misalnya sebutkan pria/wanita + suasana + aroma yang kamu suka. Atau hubungi admin lewat WhatsApp 0882005034977.")
+    ]);
     
   loadCart();
     searchProduct();
