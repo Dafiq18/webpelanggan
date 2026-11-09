@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kelola Produk — Aroma Semarang</title>
+<style>
+:root{--bg:#0b1120;--panel:#121a2e;--panel2:#18223b;--line:rgba(255,255,255,.1);--tx:#eef2ff;--mut:#9aa6c4;--or:#ee4d2d;--or2:#ff7337;--ok:#34d399;--bad:#fb7185}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:inherit}
+.top{position:sticky;top:0;z-index:20;background:rgba(11,17,32,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top h1{margin:0;font-size:18px;flex:1;min-width:160px}
+.top h1 small{display:block;font-size:11px;color:var(--mut);font-weight:500}
+.btn{border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:var(--panel2);border:1px solid var(--line)}
+.btn.p{background:linear-gradient(135deg,var(--or),var(--or2));border:0}
+.btn.d{background:rgba(251,113,133,.15);color:var(--bad);border-color:rgba(251,113,133,.35)}
+.btn.s{padding:6px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.st b{display:block;font-size:24px}.st span{color:var(--mut);font-size:12px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.bar input,.bar select,.f input,.f select,.f textarea{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;min-width:0}
+.bar input{flex:1;min-width:180px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--mut);border-radius:99px;padding:6px 12px;cursor:pointer;font-weight:700;font-size:12px}
+.chip.on{background:var(--or);color:#fff;border-color:var(--or)}
+.list{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.row img{width:52px;height:52px;object-fit:contain;border-radius:10px;background:#0006}
+.row h3{margin:0;font-size:14px}.row small{color:var(--mut)}
+.hg{font-size:12px;color:var(--mut);margin-top:2px}
+.tag{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;margin-left:4px;vertical-align:middle}
+.tag.u{background:rgba(238,77,45,.2);color:#ffb199}.tag.h{background:rgba(251,113,133,.2);color:var(--bad)}.tag.n{background:rgba(52,211,153,.2);color:var(--ok)}.tag.l{background:rgba(139,92,246,.25);color:#c4b5fd}
+.row.gone{opacity:.5}
+.pg{display:flex;gap:8px;justify-content:center;align-items:center;margin:16px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow:auto;z-index:50}
+.modal.open{display:flex}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:18px;width:100%;max-width:560px;padding:18px}
+.box h2{margin:0 0 12px;font-size:17px}
+.f{display:grid;gap:10px}.f label{display:grid;gap:4px;color:var(--mut);font-size:12px;font-weight:700}
+.f input,.f select,.f textarea{width:100%;color:var(--tx)}
+.pt{width:100%;border-collapse:collapse}.pt th,.pt td{padding:4px;text-align:center;font-size:12px}.pt td:first-child{text-align:left;font-weight:800}
+.pt input{text-align:right}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:8px;color:var(--tx)!important}.sw input{width:auto}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#000d;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:99;display:none}
+.note{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;color:var(--mut);font-size:12px;margin-bottom:12px}
+textarea.out{width:100%;height:200px;font:12px ui-monospace,monospace}
+@media(max-width:520px){.row{grid-template-columns:44px 1fr}.row .ac{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>🏷️ Kelola Produk<small>Ubah harga, tambah &amp; hapus produk, stok habis</small></h1>
+  <a class="btn" href="admin.html">← Admin</a>
+  <a class="btn" href="index.html" target="_blank">Lihat toko ↗</a>
+  <button class="btn" id="bBulk">⚡ Ubah harga massal</button>
+  <button class="btn" id="bBaru">＋ Produk baru</button>
+  <button class="btn p" id="bTerbit">🚀 Terbitkan (<span id="nUbah">0</span>)</button>
+</div>
+<div class="wrap">
+  <div class="stats" id="stats"></div>
+  <div class="note">Perubahan disimpan sementara di perangkat ini. Baru tampil di toko setelah kamu tekan <b>Terbitkan</b>.</div>
+  <div class="bar">
+    <input id="cari" placeholder="🔍 Cari nama, merek, atau kode…">
+    <select id="urut"><option value="kode">Urut kode</option><option value="nama">Urut nama</option><option value="murah">Termurah</option><option value="mahal">Termahal</option></select>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="list" id="list"></div>
+  <div class="pg"><button class="btn s" id="prev">◀</button><span id="pginfo"></span><button class="btn s" id="next">▶</button></div>
+</div>
+
+<!-- Edit -->
+<div class="modal" id="mEdit"><div class="box">
+  <h2 id="eJudul">Ubah produk</h2>
+  <div class="f">
+    <label>Kode<input id="eKode" disabled></label>
+    <div class="f" style="grid-template-columns:1fr 1fr">
+      <label>Nama<input id="eNama"></label><label>Merek<input id="eBrand"></label>
+    </div>
+    <label>Link gambar<input id="eGambar" placeholder="https://..."></label>
+    <div style="overflow:auto"><table class="pt"><thead><tr><th></th><th>30 ML</th><th>50 ML</th><th>100 ML</th></tr></thead><tbody id="ePrice"></tbody></table></div>
+    <div class="f" style="grid-template-columns:1fr 1fr">
+      <label>Lencana<select id="eLencana"><option value="">(tanpa)</option><option>TERLARIS</option><option>BARU</option><option>PROMO</option><option>LIMITED</option></select></label>
+      <label class="sw" style="align-self:end"><input type="checkbox" id="eHabis"> Stok habis</label>
+    </div>
+  </div>
+  <div class="acts"><button class="btn d" id="eHapus">🗑 Hapus</button><button class="btn" id="eReset">↺ Kembalikan asli</button><button class="btn" data-tutup>Batal</button><button class="btn p" id="eSimpan">Simpan</button></div>
+</div></div>
+
+<!-- Baru -->
+<div class="modal" id="mBaru"><div class="box">
+  <h2>＋ Produk baru</h2>
+  <div class="f">
+    <div class="f" style="grid-template-columns:1fr 1fr"><label>Kode<input id="nKode" placeholder="mis. AS001"></label><label>Gender<select id="nGender"><option>Unisex</option><option>Pria</option><option>Wanita</option></select></label></div>
+    <div class="f" style="grid-template-columns:1fr 1fr"><label>Nama<input id="nNama"></label><label>Merek<input id="nBrand"></label></div>
+    <label>Link gambar<input id="nGambar" placeholder="https://..."></label>
+    <label>Aroma (pisahkan koma)<input id="nAroma" placeholder="Segar, Manis, Woody"></label>
+    <label>Deskripsi<textarea id="nDesk" rows="2"></textarea></label>
+    <div style="overflow:auto"><table class="pt"><thead><tr><th></th><th>30 ML</th><th>50 ML</th><th>100 ML</th></tr></thead><tbody id="nPrice"></tbody></table></div>
+  </div>
+  <div class="acts"><button class="btn" data-tutup>Batal</button><button class="btn p" id="nSimpan">Tambah</button></div>
+</div></div>
+
+<!-- Massal -->
+<div class="modal" id="mBulk"><div class="box">
+  <h2>⚡ Ubah harga massal</h2>
+  <div class="f">
+    <label>Jenis<select id="bJenis"><option value="*">Semua jenis</option><option>EDP</option><option>LE PARFUM</option><option>EXTRAIT</option></select></label>
+    <label>Ukuran<select id="bUkuran"><option value="*">Semua ukuran</option><option value="0">30 ML</option><option value="1">50 ML</option><option value="2">100 ML</option></select></label>
+    <div class="f" style="grid-template-columns:1fr 1fr">
+      <label>Cara<select id="bCara"><option value="pct">Persen (%)</option><option value="rp">Rupiah (Rp)</option></select></label>
+      <label>Nilai (minus = turun)<input id="bNilai" type="number" value="10"></label>
+    </div>
+    <label>Bulatkan ke<select id="bBulat"><option value="1">Tidak dibulatkan</option><option value="500">500</option><option value="1000" selected>1.000</option></select></label>
+    <label class="sw"><input type="checkbox" id="bFilter"> Hanya produk yang sedang tampil (hasil pencarian/filter)</label>
+    <div class="note" id="bPrev" style="margin:0"></div>
+  </div>
+  <div class="acts"><button class="btn" data-tutup>Batal</button><button class="btn p" id="bTerap">Terapkan</button></div>
+</div></div>
+
+<!-- Terbit -->
+<div class="modal" id="mTerbit"><div class="box">
+  <h2>🚀 Terbitkan perubahan</h2>
+  <p style="color:var(--mut);margin-top:0">Pilih salah satu cara:</p>
+  <div class="f">
+    <div style="color:var(--mut);font-weight:700">Cara 1 — Otomatis (pakai token GitHub dari halaman Admin)</div>
+    <button class="btn p" id="tOto">Terbitkan sekarang</button>
+    <div style="color:var(--mut);font-weight:700;margin-top:6px">Cara 2 — Salin manual: salin teks di bawah, buka file <b>produk.json</b> di GitHub, hapus isinya, tempel, lalu Commit.</div>
+    <textarea class="out" id="tOut" readonly></textarea>
+    <button class="btn" id="tSalin">📋 Salin teks</button>
+    <div id="tHasil" style="color:var(--mut)"></div>
+  </div>
+  <div class="acts"><button class="btn" data-tutup>Tutup</button></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var JENIS=["EDP","LE PARFUM","EXTRAIT"], UK=["30 ML","50 ML","100 ML"], PER=30;
+  var $=function(i){return document.getElementById(i);};
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+  function rp(n){n=Number(n)||0;return n>0?"Rp"+n.toLocaleString("id-ID"):"-";}
+  function toast(t){var e=$("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display="none";},2400);}
+  function ls(k,d){try{var r=localStorage.getItem(k);return r?JSON.parse(r):d;}catch(e){return d;}}
+  function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+  var dasar=[], petaDasar={}, draft={ubah:{},hapus:[],baru:[]}, publikJson=null;
+  var filter="semua", hal=0, editKode=null;
+
+  function angka(t){return parseInt(String(t).replace(/\D/g,""),10)||0;}
+  function parseKatalog(html){
+    var doc=new DOMParser().parseFromString(html,"text/html"), out=[];
+    doc.querySelectorAll("article.card").forEach(function(c){
+      var d=c.querySelector(".detail-data"); if(!d||!d.dataset.code) return;
+      var h={EDP:[0,0,0],"LE PARFUM":[0,0,0],EXTRAIT:[0,0,0]};
+      c.querySelectorAll("tbody tr").forEach(function(r){
+        var td=r.querySelectorAll("td"), j=td[0]&&td[0].textContent.trim().toUpperCase();
+        if(h[j]) h[j]=[angka(td[1].textContent),angka(td[2].textContent),angka(td[3].textContent)];
+      });
+      out.push({kode:d.dataset.code,nama:d.dataset.name||"",brand:d.dataset.brand||"",gender:d.dataset.gender||"",gambar:d.dataset.img||"",harga:h});
+    });
+    return out;
+  }
+  function salin(o){return JSON.parse(JSON.stringify(o));}
+  function efektif(kode){
+    var b=petaDasar[kode];
+    if(b){
+      var e=salin(b), u=draft.ubah[kode]||{};
+      if(u.harga) JENIS.forEach(function(j){ if(u.harga[j]) e.harga[j]=u.harga[j].slice(); });
+      ["nama","brand","gambar"].forEach(function(k){ if(u[k]) e[k]=u[k]; });
+      e.habis=!!u.habis; e.lencana=u.lencana||""; e.baru=false; e.dihapus=draft.hapus.indexOf(kode)>=0; e.diubah=!!draft.ubah[kode];
+      return e;
+    }
+    var n=null; draft.baru.forEach(function(p){ if(p.kode===kode) n=p; });
+    if(!n) return null;
+    var e=salin(n); e.baru=true; e.dihapus=false; e.diubah=false; e.habis=!!n.habis; e.lencana=n.lencana||""; return e;
+  }
+  function semuaKode(){ return draft.baru.map(function(p){return p.kode;}).concat(dasar.map(function(p){return p.kode;})); }
+  function simpanDraft(){ lsSet("aromaProdukDraft",draft); }
+  function jumlahPerubahan(){ return Object.keys(draft.ubah).length+draft.hapus.length+draft.baru.length; }
+  function minHarga(e){ var m=0; JENIS.forEach(function(j){e.harga[j].forEach(function(v){ if(v>0&&(!m||v<m)) m=v; });}); return m; }
+
+  function tampil(){
+    var q=$("cari").value.trim().toLowerCase(), list=[];
+    semuaKode().forEach(function(k){
+      var e=efektif(k); if(!e) return;
+      if(q && (e.kode+" "+e.nama+" "+e.brand).toLowerCase().indexOf(q)<0) return;
+      if(filter==="diubah" && !e.diubah) return;
+      if(filter==="habis" && !e.habis) return;
+      if(filter==="baru" && !e.baru) return;
+      if(filter==="dihapus" && !e.dihapus) return;
+      list.push(e);
+    });
+    var u=$("urut").value;
+    if(u==="nama") list.sort(function(a,b){return a.nama.localeCompare(b.nama);});
+    else if(u==="murah") list.sort(function(a,b){return minHarga(a)-minHarga(b);});
+    else if(u==="mahal") list.sort(function(a,b){return minHarga(b)-minHarga(a);});
+    tampil.hasil=list;
+    var maks=Math.max(0,Math.ceil(list.length/PER)-1); if(hal>maks) hal=maks;
+    var irisan=list.slice(hal*PER,hal*PER+PER);
+    $("list").innerHTML=irisan.map(function(e){
+      var tg=(e.baru?'<span class="tag n">BARU</span>':'')+(e.diubah?'<span class="tag u">DIUBAH</span>':'')+(e.dihapus?'<span class="tag h">DIHAPUS</span>':'')+(e.habis?'<span class="tag h">HABIS</span>':'')+(e.lencana?'<span class="tag l">'+esc(e.lencana)+'</span>':'');
+      return '<div class="row'+(e.dihapus?' gone':'')+'"><img src="'+esc(e.gambar)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+        '<div><h3>'+esc(e.nama)+tg+'</h3><small>'+esc(e.kode)+' • '+esc(e.brand)+'</small>'+
+        '<div class="hg">EDP '+e.harga.EDP.map(rp).join(' / ')+'</div></div>'+
+        '<div class="ac">'+(e.dihapus?'<button class="btn s" data-pulih="'+esc(e.kode)+'">↩ Pulihkan</button>':'<button class="btn s" data-edit="'+esc(e.kode)+'">✏️ Ubah</button>')+'</div></div>';
+    }).join("")||'<div class="note">Tidak ada produk yang cocok.</div>';
+    $("pginfo").textContent=list.length?("Halaman "+(hal+1)+" dari "+(maks+1)+" • "+list.length+" produk"):"";
+    $("prev").disabled=hal<=0; $("next").disabled=hal>=maks;
+    var n=jumlahPerubahan(); $("nUbah").textContent=n;
+    var habis=0; semuaKode().forEach(function(k){var e=efektif(k); if(e&&e.habis&&!e.dihapus) habis++;});
+    $("stats").innerHTML=[["Total produk",dasar.length+draft.baru.length-draft.hapus.length],["Diubah",Object.keys(draft.ubah).length],["Baru",draft.baru.length],["Dihapus",draft.hapus.length],["Stok habis",habis]].map(function(s){return '<div class="st"><b>'+s[1]+'</b><span>'+s[0]+'</span></div>';}).join("");
+    $("chips").innerHTML=[["semua","Semua"],["diubah","Diubah"],["baru","Baru"],["habis","Stok habis"],["dihapus","Dihapus"]].map(function(c){return '<button class="chip'+(filter===c[0]?' on':'')+'" data-f="'+c[0]+'">'+c[1]+'</button>';}).join("");
+  }
+
+  /* --- modal --- */
+  function buka(id){$(id).classList.add("open");}
+  function tutup(){document.querySelectorAll(".modal").forEach(function(m){m.classList.remove("open");});}
+  document.querySelectorAll("[data-tutup]").forEach(function(b){b.onclick=tutup;});
+  document.querySelectorAll(".modal").forEach(function(m){m.addEventListener("mousedown",function(e){if(e.target===m)tutup();});});
+  function isiHarga(tb,h,pref){
+    tb.innerHTML=JENIS.map(function(j,r){return '<tr><td>'+j+'</td>'+[0,1,2].map(function(i){return '<td><input type="number" min="0" step="500" id="'+pref+r+i+'" value="'+((h&&h[j]&&h[j][i])||0)+'" style="width:96px"></td>';}).join("")+'</tr>';}).join("");
+  }
+  function bacaHarga(pref){
+    var h={}; JENIS.forEach(function(j,r){h[j]=[0,1,2].map(function(i){return Math.max(0,parseInt($(pref+r+i).value,10)||0);});}); return h;
+  }
+  function bukaEdit(kode){
+    var e=efektif(kode); if(!e) return; editKode=kode;
+    $("eJudul").textContent=(e.baru?"Ubah produk baru":"Ubah produk");
+    $("eKode").value=e.kode; $("eNama").value=e.nama; $("eBrand").value=e.brand; $("eGambar").value=e.gambar;
+    isiHarga($("ePrice"),e.harga,"e"); $("eLencana").value=e.lencana||""; $("eHabis").checked=!!e.habis;
+    $("eReset").style.display=e.baru?"none":"";
+    buka("mEdit");
+  }
+  $("eSimpan").onclick=function(){
+    var kode=editKode, h=bacaHarga("e"), nama=$("eNama").value.trim(), brand=$("eBrand").value.trim(), gbr=$("eGambar").value.trim();
+    if(!nama){toast("Nama tidak boleh kosong.");return;}
+    var b=petaDasar[kode];
+    if(!b){
+      draft.baru.forEach(function(p){ if(p.kode===kode){ p.nama=nama;p.brand=brand;p.gambar=gbr;p.harga=h;p.habis=$("eHabis").checked;p.lencana=$("eLencana").value; } });
+    }else{
+      var u={}, beda=false;
+      JENIS.forEach(function(j){ for(var i=0;i<3;i++) if(h[j][i]!==b.harga[j][i]) beda=true; });
+      if(beda) u.harga=h;
+      if(nama!==b.nama) u.nama=nama; if(brand!==b.brand) u.brand=brand; if(gbr!==b.gambar) u.gambar=gbr;
+      if($("eHabis").checked) u.habis=true; if($("eLencana").value) u.lencana=$("eLencana").value;
+      if(Object.keys(u).length) draft.ubah[kode]=u; else delete draft.ubah[kode];
+    }
+    simpanDraft(); tutup(); tampil(); toast("Tersimpan ✔");
+  };
+  $("eReset").onclick=function(){ delete draft.ubah[editKode]; simpanDraft(); tutup(); tampil(); toast("Dikembalikan ke data asli."); };
+  $("eHapus").onclick=function(){
+    var k=editKode; if(!confirm("Hapus produk "+k+" dari toko?")) return;
+    if(petaDasar[k]){ if(draft.hapus.indexOf(k)<0) draft.hapus.push(k); delete draft.ubah[k]; }
+    else draft.baru=draft.baru.filter(function(p){return p.kode!==k;});
+    simpanDraft(); tutup(); tampil(); toast("Produk dihapus (belum terbit).");
+  };
+  $("list").onclick=function(ev){
+    var t=ev.target.closest("button"); if(!t) return;
+    if(t.dataset.edit) bukaEdit(t.dataset.edit);
+    if(t.dataset.pulih){ draft.hapus=draft.hapus.filter(function(k){return k!==t.dataset.pulih;}); simpanDraft(); tampil(); toast("Dipulihkan."); }
+  };
+  $("chips").onclick=function(ev){var t=ev.target.closest("[data-f]"); if(t){filter=t.dataset.f;hal=0;tampil();}};
+  $("cari").oninput=function(){hal=0;tampil();}; $("urut").onchange=function(){hal=0;tampil();};
+  $("prev").onclick=function(){hal--;tampil();window.scrollTo(0,0);}; $("next").onclick=function(){hal++;tampil();window.scrollTo(0,0);};
+
+  /* --- produk baru --- */
+  $("bBaru").onclick=function(){ ["nKode","nNama","nBrand","nGambar","nAroma","nDesk"].forEach(function(i){$(i).value="";}); isiHarga($("nPrice"),null,"n"); buka("mBaru"); };
+  $("nSimpan").onclick=function(){
+    var kode=$("nKode").value.trim().toUpperCase(), nama=$("nNama").value.trim();
+    if(!kode||!nama){toast("Kode dan nama wajib diisi.");return;}
+    if(semuaKode().indexOf(kode)>=0){toast("Kode "+kode+" sudah dipakai.");return;}
+    var h=bacaHarga("n"), ada=false; JENIS.forEach(function(j){h[j].forEach(function(v){if(v>0)ada=true;});});
+    if(!ada){toast("Isi minimal satu harga.");return;}
+    draft.baru.unshift({kode:kode,nama:nama,brand:$("nBrand").value.trim(),gender:$("nGender").value,aroma:$("nAroma").value.trim(),deskripsi:$("nDesk").value.trim(),gambar:$("nGambar").value.trim(),harga:h,habis:false,lencana:"BARU"});
+    simpanDraft(); tutup(); filter="semua"; tampil(); toast("Produk baru ditambahkan ✔");
+  };
+
+  /* --- massal --- */
+  function hitungBaru(v,cara,nilai,bulat){
+    if(v<=0) return v;
+    var r=cara==="pct"?v*(1+nilai/100):v+nilai;
+    r=Math.round(r/bulat)*bulat; return Math.max(0,r);
+  }
+  function targetMassal(){
+    var kodes=$("bFilter").checked&&tampil.hasil?tampil.hasil.filter(function(e){return !e.dihapus;}).map(function(e){return e.kode;}):semuaKode().filter(function(k){var e=efektif(k);return e&&!e.dihapus;});
+    return kodes;
+  }
+  function ubahMassal(tulis){
+    var jn=$("bJenis").value, uk=$("bUkuran").value, cara=$("bCara").value, nilai=parseFloat($("bNilai").value)||0, bulat=parseInt($("bBulat").value,10)||1, n=0, contoh="";
+    targetMassal().forEach(function(k){
+      var e=efektif(k), h=salin(e.harga), ber=false;
+      JENIS.forEach(function(j){ if(jn!=="*"&&jn!==j) return; for(var i=0;i<3;i++){ if(uk!=="*"&&Number(uk)!==i) continue; var nv=hitungBaru(h[j][i],cara,nilai,bulat); if(nv!==h[j][i]){ if(!contoh) contoh=e.nama+" "+j+" "+UK[i]+": "+rp(h[j][i])+" → "+rp(nv); h[j][i]=nv; ber=true; } } });
+      if(!ber) return; n++;
+      if(tulis){
+        var b=petaDasar[k];
+        if(!b){ draft.baru.forEach(function(p){if(p.kode===k)p.harga=h;}); }
+        else{
+          var beda=false; JENIS.forEach(function(j){for(var i=0;i<3;i++) if(h[j][i]!==b.harga[j][i]) beda=true;});
+          var u=draft.ubah[k]||{}; if(beda) u.harga=h; else delete u.harga;
+          if(Object.keys(u).length) draft.ubah[k]=u; else delete draft.ubah[k];
+        }
+      }
+    });
+    return {n:n,contoh:contoh};
+  }
+  function previewMassal(){ var r=ubahMassal(false); $("bPrev").innerHTML=r.n?("Akan mengubah <b>"+r.n+"</b> produk.<br>Contoh: "+esc(r.contoh)):"Tidak ada harga yang berubah."; }
+  ["bJenis","bUkuran","bCara","bNilai","bBulat","bFilter"].forEach(function(i){$(i).oninput=$(i).onchange=previewMassal;});
+  $("bBulk").onclick=function(){buka("mBulk");previewMassal();};
+  $("bTerap").onclick=function(){ var r=ubahMassal(true); simpanDraft(); tutup(); tampil(); toast(r.n+" produk diubah ✔"); };
+
+  /* --- terbitkan --- */
+  function hasilJson(){
+    var o={ubah:draft.ubah,hapus:draft.hapus,baru:draft.baru};
+    return JSON.stringify(o,null,1);
+  }
+  $("bTerbit").onclick=function(){ $("tOut").value=hasilJson(); $("tHasil").textContent=""; buka("mTerbit"); };
+  $("tSalin").onclick=function(){ $("tOut").select(); try{document.execCommand("copy");toast("Tersalin ✔");}catch(e){} };
+  $("tOto").onclick=function(){
+    var g=ls("aromaAdminGithub",null);
+    if(!g||!g.token||!g.repo||!g.owner){ $("tHasil").textContent="Token GitHub belum diisi. Isi dulu di halaman Admin → Terbitkan, atau pakai Cara 2."; return; }
+    var url="https://api.github.com/repos/"+g.owner+"/"+g.repo+"/contents/produk.json", H={Authorization:"Bearer "+g.token,Accept:"application/vnd.github+json"}, br=g.branch||"main";
+    $("tHasil").textContent="Mengirim…"; $("tOto").disabled=true;
+    fetch(url+"?ref="+encodeURIComponent(br),{headers:H}).then(function(r){return r.status===404?{}:r.json();}).then(function(j){
+      var body={message:"Update produk dari Kelola Produk",content:btoa(unescape(encodeURIComponent(hasilJson()))),branch:br}; if(j&&j.sha) body.sha=j.sha;
+      return fetch(url,{method:"PUT",headers:H,body:JSON.stringify(body)});
+    }).then(function(r){ if(!r.ok) throw new Error("Gagal ("+r.status+")"); $("tHasil").textContent="✅ Terbit! Tunggu 1–2 menit, lalu Ctrl+Shift+R di tokomu."; })
+    .catch(function(e){ $("tHasil").textContent="❌ "+e.message+". Coba Cara 2."; }).then(function(){ $("tOto").disabled=false; });
+  };
+
+  /* --- mulai --- */
+  Promise.all([
+    fetch("index.html?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.text();}),
+    fetch("produk.json?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  ]).then(function(a){
+    dasar=parseKatalog(a[0]); dasar.forEach(function(p){petaDasar[p.kode]=p;});
+    publikJson=a[1]||{ubah:{},hapus:[],baru:[]};
+    var dr=ls("aromaProdukDraft",null);
+    draft=dr&&dr.ubah?dr:{ubah:publikJson.ubah||{},hapus:publikJson.hapus||[],baru:publikJson.baru||[]};
+    if(!draft.hapus) draft.hapus=[]; if(!draft.baru) draft.baru=[];
+    tampil();
+  }).catch(function(){ $("list").innerHTML='<div class="note">Gagal memuat daftar produk. Buka halaman ini lewat alamat website kamu (bukan file di komputer).</div>'; });
+})();
+</script>
+</body>
+</html>
