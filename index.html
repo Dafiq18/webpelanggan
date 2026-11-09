@@ -9026,6 +9026,93 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE KATALOG ===== */
     
+    /* ================================================================
+       KODE FIREBASE: pesanan pelanggan tersimpan otomatis ke database (Firebase)
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE KATALOG)
+       ================================================================ */
+    (function(){
+      /* ====== PENGATURAN — dari Firebase milikmu ====== */
+      var FIREBASE_CONFIG = {
+        apiKey: "AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k",
+        authDomain: "aroma-semarang.firebaseapp.com",
+        projectId: "aroma-semarang",
+        storageBucket: "aroma-semarang.firebasestorage.app",
+        messagingSenderId: "92275973960",
+        appId: "1:92275973960:web:7653449d240a7b147d1d7d"
+      };
+      var VERSI_SDK = "10.12.2";
+
+      /* ====== BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+      var ANTRIAN = "aromaPesananAntrian";
+      var siap = null;
+      function muatSkrip(src){
+        return new Promise(function(ok,gagal){
+          var s=document.createElement("script"); s.src=src; s.async=true;
+          s.onload=ok; s.onerror=function(){ gagal(new Error("gagal memuat "+src)); };
+          document.head.appendChild(s);
+        });
+      }
+      function siapkan(){
+        if(siap) return siap;
+        var b="https://www.gstatic.com/firebasejs/"+VERSI_SDK+"/";
+        siap = (window.firebase&&window.firebase.firestore ? Promise.resolve() :
+          muatSkrip(b+"firebase-app-compat.js").then(function(){ return muatSkrip(b+"firebase-firestore-compat.js"); }))
+          .then(function(){
+            var f=window.firebase;
+            if(!f.apps.length) f.initializeApp(FIREBASE_CONFIG);
+            return f.firestore();
+          });
+        siap.catch(function(){ siap=null; });
+        return siap;
+      }
+      function bacaAntrian(){ try{ return JSON.parse(localStorage.getItem(ANTRIAN)||"[]")||[]; }catch(e){ return []; } }
+      function tulisAntrian(a){ try{ localStorage.setItem(ANTRIAN,JSON.stringify(a)); }catch(e){} }
+
+      function susun(D,H){
+        return {
+          nomor:String(D.noPesanan).slice(0,39),
+          nama:String(D.name||"").slice(0,119),
+          wa:String(D.phone||"").slice(0,39),
+          alamat:String(D.address||"").slice(0,599),
+          email:String(D.email||"").slice(0,119),
+          items:(D.items||[]).slice(0,60).map(function(i){
+            return { kode:String(i.code||""), nama:String(i.name||"").slice(0,119), jenis:String(i.type||""), ukuran:String(i.size||""),
+                     botol:String(i.botol||""), botolHarga:Number(i.botolHarga)||0, harga:Number(i.price)||0, qty:Number(i.qty)||1 };
+          }),
+          subtotal:Number(H.sub)||0, botol:Number(H.botol)||0, potPromo:Number(H.potPromo)||0, potVoucher:Number(H.potVoucher)||0,
+          voucher:String((D.cfg&&D.cfg.voucher&&D.cfg.voucher.kode)||"").slice(0,39),
+          total:Number(H.total)||0, status:"baru"
+        };
+      }
+      function kirim(data){
+        return siapkan().then(function(db){
+          var f=window.firebase, d=Object.assign({},data,{dibuat:f.firestore.FieldValue.serverTimestamp()});
+          return db.collection("pesanan").doc(data.nomor).set(d);
+        });
+      }
+      /* gagal karena sinyal/jaringan = coba lagi nanti; ditolak aturan (mis. nomor sudah ada) = jangan diulang */
+      function simpanUlang(data,e){
+        if(e&&e.code==="permission-denied") return;
+        var q=bacaAntrian(); q.push(data); tulisAntrian(q.slice(-20));
+      }
+      function kosongkanAntrian(){
+        var a=bacaAntrian(); if(!a.length) return;
+        tulisAntrian([]);
+        a.forEach(function(x){ kirim(x).catch(function(e){ simpanUlang(x,e); }); });
+      }
+
+      /* dipanggil dari halaman pesanan saat pelanggan menekan tombol WhatsApp */
+      window.__aromaSimpanPesanan=function(D,H){
+        if(!D||!H||!D.items||!D.items.length) return;
+        var data=susun(D,H);
+        return kirim(data).catch(function(e){ simpanUlang(data,e); });
+      };
+
+      /* coba kirim ulang pesanan yang tadi gagal tersimpan (misalnya sinyal putus) */
+      if(bacaAntrian().length) setTimeout(kosongkanAntrian,4000);
+    })();
+    /* ===== AKHIR KODE FIREBASE ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
