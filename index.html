@@ -8047,7 +8047,7 @@ async function askAI(){
           var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
           var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
         };
-        $("wa").onclick=function(){ window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank"); };
+        $("wa").onclick=function(){ try{ window.opener.__aromaSimpanPesanan(D,hit()); }catch(e){} window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank"); };
         $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru Aroma Semarang")+"&body="+encodeURIComponent(teksEmail()); };
         $("pr").onclick=function(){ window.print(); };
         $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
@@ -8843,7 +8843,7 @@ async function askAI(){
           var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
           var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
         };
-        $("wa").onclick=function(){ window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank"); };
+        
         $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru "+D.noPesanan)+"&body="+encodeURIComponent(teksEmail()); };
         $("pr").onclick=function(){ window.print(); };
         $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
