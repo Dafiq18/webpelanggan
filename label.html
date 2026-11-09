@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Cetak Label • Aroma Semarang</title>
+<style>
+:root{--bg:#0b1120;--panel:#121a2e;--line:rgba(255,255,255,.12);--tx:#e8edf7;--mut:#8f9db6;--or:#ee4d2d;--or2:#ff7337}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+button,textarea,input,select{font:inherit;color:inherit}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,var(--or2),var(--or));font-weight:900;font-size:18px}
+.top a{color:#fff;text-decoration:none;background:rgba(255,255,255,.2);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:800}
+.top span{flex:1}
+.wrap{max-width:900px;margin:0 auto;padding:16px 16px 120px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:16px}
+.sub{color:var(--mut);font-size:13px;line-height:1.55;margin:0 0 12px}
+textarea{width:100%;min-height:170px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.05);padding:12px;font-size:14px;outline:none;resize:vertical}
+textarea:focus{border-color:var(--or)}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;font-size:14px;cursor:pointer;background:linear-gradient(135deg,var(--or2),var(--or));color:#fff}
+.btn.g{background:rgba(255,255,255,.09);border:1px solid var(--line)}
+.btn.d{background:rgba(251,113,133,.14);color:#fda4af}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.seg{display:inline-flex;padding:4px;border-radius:12px;background:rgba(255,255,255,.07)}
+.seg button{border:0;background:none;padding:9px 14px;border-radius:9px;font-weight:800;font-size:13px;color:var(--mut);cursor:pointer}
+.seg button.on{background:linear-gradient(135deg,var(--or2),var(--or));color:#fff}
+.err{color:#fda4af;font-size:13px;margin-top:8px;min-height:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.item{position:relative}
+.item .pilih{position:absolute;left:10px;top:10px;z-index:2;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.72);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.item .pilih input{width:16px;height:16px;accent-color:var(--or)}
+.item .hapus{position:absolute;right:10px;top:10px;z-index:2;border:0;border-radius:9px;background:rgba(0,0,0,.72);color:#fda4af;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.kosong{padding:36px;text-align:center;color:var(--mut);border:1px dashed var(--line);border-radius:16px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;gap:10px;align-items:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(11,17,32,.97);border-top:1px solid var(--line)}
+.bar .tx{flex:1;font-size:14px;font-weight:700}
+.set{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.set label{display:block;font-size:12px;font-weight:800;color:#aebbd0;margin:0 0 5px}
+.set input{width:100%;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.05);padding:10px;outline:none;font-size:14px}
+.set .full{grid-column:1/-1}
+@media(max-width:560px){.set{grid-template-columns:1fr}}
+
+/* ===== LABEL ===== */
+.lb{width:100mm;max-width:100%;background:#fff;color:#000;border:1.5px solid #000;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.35;display:flex;flex-direction:column}
+.lb .h{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#000;color:#fff}
+.lb .h b{font-size:14px;letter-spacing:.04em}.lb .h span{font-size:10px}
+.lb .no{padding:8px 10px;border-bottom:1.5px solid #000;text-align:center}
+.lb .no small{display:block;font-size:9px;letter-spacing:.12em;color:#444}
+.lb .no b{font-size:21px;letter-spacing:.08em;font-family:"Courier New",monospace}
+.lb .sec{padding:7px 10px;border-bottom:1px dashed #000}
+.lb .sec h4{margin:0 0 3px;font-size:9px;letter-spacing:.14em;color:#444}
+.lb .nm{font-size:17px;font-weight:900}
+.lb .tl{font-size:14px;font-weight:800;margin-top:1px}
+.lb .al{font-size:13px;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.lb .ct{margin-top:4px;font-size:11px;font-style:italic}
+.lb .it{white-space:pre-wrap;word-break:break-word;font-size:10.5px}
+.lb .tot{padding:7px 10px;display:flex;justify-content:space-between;font-weight:900;font-size:13px;border-top:1.5px solid #000}
+.lb .pg{padding:5px 10px;font-size:9px;text-align:center;color:#444;border-top:1px dashed #000}
+#cetak{display:none}
+@media print{
+  body{background:#fff}
+  .top,.wrap,.bar{display:none!important}
+  #cetak{display:block!important}
+  #cetak.a6 .lb{width:100mm;min-height:148mm;margin:0;page-break-after:always;break-after:page;border:1.5px solid #000}
+  #cetak.a4{display:flex!important;flex-wrap:wrap;gap:4mm;align-content:flex-start}
+  #cetak.a4 .lb{width:95mm;page-break-inside:avoid;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="top"><span>🖨️ Cetak Label Pesanan</span><a href="index.html">↩ Toko</a></div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>1. Tempel pesan dari WhatsApp</h2>
+    <p class="sub">Salin seluruh pesan pesanan dari WhatsApp (tekan lama pesannya → Salin), lalu tempel di bawah. Boleh menempel beberapa pesanan sekaligus, satu per satu.</p>
+    <textarea id="pesan" placeholder="Tempel pesan pesanan di sini…"></textarea>
+    <div class="err" id="err"></div>
+    <div class="acts"><button class="btn" id="buat">➕ Buat label</button><button class="btn g" id="kosongkan">Kosongkan kolom</button></div>
+  </div>
+
+  <div class="card">
+    <h2>2. Label siap cetak</h2>
+    <div id="daftar" class="grid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Data pengirim (toko)</h2>
+    <p class="sub">Tampil di bagian PENGIRIM pada label. Tersimpan di perangkat ini.</p>
+    <div class="set">
+      <div><label>Nama toko</label><input id="sNama" placeholder="Aroma Semarang"></div>
+      <div><label>Nomor WhatsApp toko</label><input id="sWa" placeholder="0882005034977"></div>
+      <div class="full"><label>Alamat toko (boleh kosong)</label><input id="sAlamat" placeholder="Jl. … Semarang"></div>
+    </div>
+    <div class="acts"><span style="font-size:13px;color:var(--mut)">Ukuran kertas:</span>
+      <div class="seg" id="ukuran"><button data-u="a6" class="on">Label 100×150 mm</button><button data-u="a4">Kertas A4 (banyak label)</button></div></div>
+  </div>
+</div>
+
+<div class="bar"><div class="tx" id="info">Belum ada label</div><button class="btn g" id="semua">Pilih semua</button><button class="btn" id="cetakBtn" disabled>🖨️ Cetak</button></div>
+<div id="cetak"></div>
+
+<script>
+(function(){
+"use strict";
+var KUNCI="aromaLabelDaftar", KSET="aromaLabelToko";
+var daftar=[], pilih={}, ukuran="a6";
+function $(i){ return document.getElementById(i); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];}); }
+function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function sv(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+try{ localStorage.setItem("aromaAdminAktif","1"); }catch(e){}
+
+/* ---------- pengaturan toko ---------- */
+var toko={nama:"Aroma Semarang",wa:"0882005034977",alamat:""};
+try{ var t=JSON.parse(ls(KSET)||"null"); if(t&&typeof t==="object") toko={nama:t.nama||toko.nama,wa:t.wa||toko.wa,alamat:t.alamat||""}; }catch(e){}
+$("sNama").value=toko.nama; $("sWa").value=toko.wa; $("sAlamat").value=toko.alamat;
+["sNama","sWa","sAlamat"].forEach(function(id){ $(id).oninput=function(){ toko={nama:$("sNama").value.trim(),wa:$("sWa").value.trim(),alamat:$("sAlamat").value.trim()}; sv(KSET,JSON.stringify(toko)); gambar(); }; });
+
+/* ---------- membaca pesan ---------- */
+function dekode(k){
+  try{ k=k.replace(/-/g,"+").replace(/_/g,"/"); while(k.length%4) k+="="; var o=JSON.parse(decodeURIComponent(escape(atob(k)))); return o&&typeof o==="object"?o:null; }catch(e){ return null; }
+}
+function bersih(s){ return String(s).replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").replace(/\*/g,"").trim(); }
+function baca(teks){
+  var baris=String(teks).replace(/\r/g,"").split("\n").map(function(x){ return x.trim(); }), o={nama:"",wa:"",alamat:"",catatan:"",no:"",item:[],total:""}, m, i;
+  baris.forEach(function(l){
+    if(!o.no && (m=l.match(/No\.?\s*(?:Pesanan)?:?\s*\*?\s*([A-Z0-9]{2,6}-[A-Z0-9-]{3,})/i))) o.no=m[1].toUpperCase();
+    if((m=l.match(/Kode label:\s*(\S+)/i))){ var d=dekode(m[1]); if(d){ o.nama=d.n||o.nama; o.wa=d.w||o.wa; o.alamat=d.a||o.alamat; } }
+    if(/^[^\w]*\s*\*?Nama:?\*?\s*/i.test(l) && (m=l.match(/Nama:\s*\*?(.+)/i))) o.nama=o.nama||bersih(m[1]);
+    if((m=l.match(/WhatsApp:\s*(.+)/i))) o.wa=o.wa||bersih(m[1]);
+    if((m=l.match(/Alamat:\s*(.+)/i))) o.alamat=o.alamat||bersih(m[1]);
+    if((m=l.match(/TOTAL\s*\*?\s*(?:Rp)?\s*([\d.,]+)/i))) o.total=m[1];
+  });
+  if(!o.nama){ for(i=0;i<baris.length;i++){ if(/^\s*(👤)/u.test(baris[i])){ o.nama=bersih(baris[i]); break; } } }
+  if(!o.wa){ for(i=0;i<baris.length;i++){ if(/^📱/u.test(baris[i])){ o.wa=bersih(baris[i]); break; } } }
+  if(!o.alamat){ for(i=0;i<baris.length;i++){ if(/^📍/u.test(baris[i])){ o.alamat=bersih(baris[i]); break; } } }
+  var c=o.alamat.match(/\(Catatan:\s*(.+)\)\s*$/i); if(c){ o.catatan=c[1]; o.alamat=o.alamat.replace(/\s*\(Catatan:.+\)\s*$/i,""); }
+  /* barang: baris bernomor "1. ..." dan baris di bawahnya yang menjorok */
+  for(i=0;i<baris.length;i++){
+    if(/^\*?\d+\.\s/.test(baris[i])){
+      var s=bersih(baris[i]), n=baris[i+1]||"";
+      if(n && !/^\*?\d+\.\s/.test(n) && !/^[━─-]{3,}/.test(n) && /×|x\d|\bML\b/i.test(n)){ s+=" — "+bersih(n); i++; }
+      o.item.push(s);
+    }
+  }
+  o.item=o.item.map(function(x){ return x.replace(/\s*=\s*Rp[\d.,]+\s*$/,""); });
+  return o;
+}
+
+/* ---------- gambar label ---------- */
+function tglSekarang(ms){ var d=new Date(ms), p=function(n){return (n<10?"0":"")+n;}; return p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear(); }
+function htmlLabel(o){
+  return '<div class="lb"><div class="h"><b>'+esc((toko.nama||"TOKO").toUpperCase())+'</b><span>'+tglSekarang(o.waktu)+'</span></div>'+
+    '<div class="no"><small>NOMOR PESANAN</small><b>'+esc(o.no||"—")+'</b></div>'+
+    '<div class="sec"><h4>PENERIMA</h4><div class="nm">'+esc(o.nama||"(nama belum terbaca)")+'</div>'+(o.wa?'<div class="tl">'+esc(o.wa)+'</div>':'')+
+      '<div class="al">'+esc(o.alamat||"(alamat belum terbaca — pastikan pesan lengkap termasuk baris Kode label)")+'</div>'+(o.catatan?'<div class="ct">Catatan: '+esc(o.catatan)+'</div>':'')+'</div>'+
+    '<div class="sec"><h4>PENGIRIM</h4><div><b>'+esc(toko.nama)+'</b>'+(toko.wa?' • '+esc(toko.wa):'')+'</div>'+(toko.alamat?'<div>'+esc(toko.alamat)+'</div>':'')+'</div>'+
+    '<div class="sec" style="border-bottom:0"><h4>ISI PAKET</h4><div class="it">'+(o.item.length?o.item.map(esc).join("\n"):"—")+'</div></div>'+
+    '<div class="tot"><span>Total</span><span>'+(o.total?("Rp"+esc(o.total)):"—")+'</span></div>'+
+    '<div class="pg">Terima kasih sudah berbelanja 🌸</div></div>';
+}
+function simpan(){ sv(KUNCI,JSON.stringify(daftar)); }
+function gambar(){
+  var el=$("daftar");
+  if(!daftar.length){ el.innerHTML='<div class="kosong" style="grid-column:1/-1">Belum ada label.<br>Tempel pesan pesanan di langkah 1, lalu tekan <b>Buat label</b>.</div>'; }
+  else el.innerHTML=daftar.map(function(o,i){
+    return '<div class="item"><label class="pilih"><input type="checkbox" data-p="'+i+'"'+(pilih[o.id]?' checked':'')+'> Cetak</label><button class="hapus" data-h="'+i+'">Hapus</button><div style="padding-top:40px">'+htmlLabel(o)+'</div></div>';
+  }).join("");
+  el.querySelectorAll("[data-p]").forEach(function(c){ c.onchange=function(){ var o=daftar[Number(c.getAttribute("data-p"))]; pilih[o.id]=c.checked; ringkas(); }; });
+  el.querySelectorAll("[data-h]").forEach(function(b){ b.onclick=function(){ var i=Number(b.getAttribute("data-h")); daftar.splice(i,1); simpan(); gambar(); }; });
+  ringkas();
+}
+function ringkas(){
+  var n=daftar.filter(function(o){ return pilih[o.id]; }).length;
+  $("info").textContent=daftar.length?(n+" dari "+daftar.length+" label dipilih"):"Belum ada label";
+  $("cetakBtn").disabled=n===0;
+}
+
+/* ---------- aksi ---------- */
+$("buat").onclick=function(){
+  var t=$("pesan").value.trim(), err=$("err"); err.textContent="";
+  if(!t){ err.textContent="Tempel pesan pesanan dulu ya."; return; }
+  var o=baca(t);
+  if(!o.nama && !o.alamat && !o.item.length){ err.textContent="Pesan ini tidak terbaca sebagai pesanan dari toko. Pastikan kamu menyalin seluruh isinya."; return; }
+  if(!o.alamat) err.textContent="Perhatian: alamat tidak ditemukan. Pastikan baris \"Kode label\" ikut tersalin.";
+  o.id="l"+Date.now().toString(36)+Math.floor(Math.random()*1000); o.waktu=Date.now();
+  daftar.unshift(o); pilih[o.id]=true; simpan(); gambar(); $("pesan").value="";
+};
+$("kosongkan").onclick=function(){ $("pesan").value=""; $("err").textContent=""; };
+$("semua").onclick=function(){ var semua=daftar.every(function(o){ return pilih[o.id]; }); daftar.forEach(function(o){ pilih[o.id]=!semua; }); gambar(); };
+document.querySelectorAll("#ukuran button").forEach(function(b){ b.onclick=function(){ ukuran=b.getAttribute("data-u"); document.querySelectorAll("#ukuran button").forEach(function(x){ x.classList.toggle("on",x===b); }); }; });
+$("cetakBtn").onclick=function(){
+  var pilihan=daftar.filter(function(o){ return pilih[o.id]; }); if(!pilihan.length) return;
+  var gaya=document.getElementById("pgStyle"); if(!gaya){ gaya=document.createElement("style"); gaya.id="pgStyle"; document.head.appendChild(gaya); }
+  gaya.textContent=ukuran==="a6"?"@page{size:100mm 150mm;margin:0}":"@page{size:A4;margin:8mm}";
+  var c=$("cetak"); c.className=ukuran; c.innerHTML=pilihan.map(htmlLabel).join("");
+  setTimeout(function(){ window.print(); },60);
+};
+
+try{ daftar=JSON.parse(ls(KUNCI)||"[]")||[]; if(!Array.isArray(daftar)) daftar=[]; }catch(e){ daftar=[]; }
+gambar();
+})();
+</script>
+</body>
+</html>
