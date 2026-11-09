@@ -7349,7 +7349,7 @@ async function askAI(){
 
       /* ================================================================
        KODE TOKO: PILIH BOTOL + PROMO DISKON + VOUCHER
-       (tempel di atas baris:  loadCart();  )
+       (tempel di atas baris:  loadCart()  )
        ================================================================ */
 
     /* ====== 1) PENGATURAN — BOLEH KAMU UBAH SENDIRI ====== */
@@ -8570,7 +8570,7 @@ async function askAI(){
       /* ================================================================
        KODE TAMPILAN: header ala Shopee (logo + pencarian + menu), banner promo + hitung mundur,
        voucher yang bisa diklaim, kategori bulat, dan lencana diskon di kartu parfum
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE MENU)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE MENU)
        ================================================================ */
     (function(){
       /* ====== PENGATURAN — BOLEH KAMU UBAH ====== */
@@ -8739,7 +8739,151 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE TAMPILAN ===== */
     
-  loadCart();
+      /* ================================================================
+       KODE PESAN: pesan WhatsApp berbentuk kartu (ringkas) + nomor pesanan + kode label untuk dicetak
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE TAMPILAN)
+       ================================================================ */
+    (function(){
+      if(typeof hitungTotal!=="function" || typeof halamanCheckoutBaru!=="function" || typeof cfgHitung!=="function"){
+        try{ console.warn("KODE PESAN: tempel dulu kode TOKO dan AKUN di atasnya."); }catch(e){}
+        return;
+      }
+
+      /* ====== PENGATURAN — BOLEH KAMU UBAH ====== */
+      var NAMA_TOKO       = "Aroma Semarang";
+      var NOMOR_WA        = "62882005034977";               /* tanpa 0 di depan, awali dengan 62 */
+      var EMAIL_TOKO      = "kamu97834@gmail.com";
+      var AWALAN_PESANAN  = "AS";                            /* huruf depan nomor pesanan */
+      /* false = nomor WA dan alamat TIDAK tertulis jelas di pesan WhatsApp (dikirim sebagai "kode label"
+                 yang hanya dibaca oleh halaman label.html milikmu)
+         true  = nomor WA dan alamat ditulis jelas di pesan WhatsApp */
+      var TULIS_ALAMAT_DI_WA = false;
+
+      /* ====== BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+      function bacaLS(k,d){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):d; }catch(e){ return d; } }
+      function alamatAktif(){
+        var em=bacaLS("aromaAkunAktif",""); if(typeof em!=="string"||!em) return null;
+        var d=bacaLS("aromaAkunData",{}), a=d&&d[em]; if(!a||!Array.isArray(a.alamat)||!a.alamat.length) return null;
+        var al=null; a.alamat.forEach(function(x){ if(x.id===a.utama) al=x; });
+        return { email:em, al:al||a.alamat[0] };
+      }
+      var petaFoto=null;
+      function fotoUntuk(kode){
+        if(!petaFoto){ petaFoto={}; document.querySelectorAll(".card").forEach(function(c){ var d=c.querySelector(".detail-data"); if(d&&d.dataset.code) petaFoto[d.dataset.code]=d.dataset.img||""; }); }
+        return petaFoto[kode]||"";
+      }
+      function nomorBaru(){
+        var t=new Date(), p=function(n){ return (n<10?"0":"")+n; }, h="ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r="";
+        for(var i=0;i<4;i++) r+=h.charAt(Math.floor(Math.random()*h.length));
+        return AWALAN_PESANAN+"-"+p(t.getDate())+p(t.getMonth()+1)+"-"+r;
+      }
+
+      /* --- skrip halaman pesanan (berjalan di tab baru; harus berdiri sendiri) --- */
+      skripCheckoutBaru=function(D){
+        var $=function(id){ return document.getElementById(id); };
+        var rp=function(n){ return "Rp"+Number(n||0).toLocaleString("id-ID"); };
+        var G="━━━━━━━━━━━━━━";
+        function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+        function sync(fn,args){ try{ var a=window.opener&&window.opener.__aromaCart; if(a) a[fn].apply(a,args); }catch(e){} }
+        function hit(){ return hitungTotal(D.items,D.cfg); }
+        function kode64(){
+          try{ return btoa(unescape(encodeURIComponent(JSON.stringify({n:D.name,w:D.phone,a:D.address})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }catch(e){ return ""; }
+        }
+        function barisItem(i,k){
+          return ["*"+(k+1)+". "+i.name+"* ("+i.code+")",
+                  "    "+i.type+" "+i.size+(i.botol?" • "+i.botol:"")+" • ×"+i.qty+" = "+rp((i.price+(i.botolHarga||0))*i.qty)];
+        }
+        function bagianTotal(H,L){
+          L.push("Subtotal  "+rp(H.sub));
+          if(H.botol>0) L.push("Botol  +"+rp(H.botol));
+          if(H.potPromo>0) L.push((D.promoTeks||"Promo")+"  −"+rp(H.potPromo));
+          if(H.potVoucher>0) L.push("Voucher "+D.cfg.voucher.kode+"  −"+rp(H.potVoucher));
+          L.push("💰 *TOTAL  "+rp(H.total)+"*");
+        }
+        function teksWA(){
+          var H=hit(), L=["🛍️ *PESANAN BARU*",D.toko+" • No. *"+D.noPesanan+"*",G,"👤 *"+D.name+"*"];
+          if(D.tulisAlamat){ L.push("📱 "+D.phone,"📍 "+D.address); }
+          L.push(G);
+          D.items.forEach(function(i,k){ barisItem(i,k).forEach(function(x){ L.push(x); }); });
+          L.push(G); bagianTotal(H,L); L.push(G);
+          if(!D.tulisAlamat) L.push("🔖 Kode label: "+kode64());
+          L.push("Mohon konfirmasi pesanan ya 🙏");
+          return L.join("\n");
+        }
+        function teksEmail(){
+          var H=hit(), L=["PESANAN BARU — "+D.toko,"No. Pesanan: "+D.noPesanan,"","Nama: "+D.name,"Email: "+D.email,"WhatsApp: "+D.phone,"Alamat: "+D.address,"","DAFTAR PESANAN:"];
+          D.items.forEach(function(i,k){ barisItem(i,k).forEach(function(x){ L.push(x.replace(/\*/g,"")); }); });
+          L.push(""); bagianTotal(H,L); L.push("","Pesanan dikirim dari website "+D.toko+".");
+          return L.join("\n").replace(/\*/g,"");
+        }
+        function render(){
+          var H=hit(), ada=D.items.length>0;
+          $("cust").innerHTML='<div class="jd">📍 Alamat Pengiriman</div><b>'+esc(D.name)+'</b> <span class="tl">| '+esc(D.phone)+'</span><div class="al">'+esc(D.address)+'</div><div class="em">'+esc(D.email)+' • No. pesanan <b style="color:#ffb199">'+esc(D.noPesanan)+'</b></div>';
+          $("list").innerHTML=ada?D.items.map(function(i,k){
+            return '<div class="it">'+(i.img?'<img class="th" alt="" src="'+esc(i.img)+'" onerror="this.style.visibility=\'hidden\'">':'<div class="th"></div>')+
+              '<div class="tx"><b>'+esc(i.name)+'</b><small>'+esc(i.type)+' • '+esc(i.size)+'</small>'+(i.botol?'<small>🍼 '+esc(i.botol)+'</small>':'')+
+              '<div class="bw"><span class="hg">'+rp(i.price+(i.botolHarga||0))+'</span><span class="qt">x'+i.qty+'</span></div></div>'+
+              '<button class="hp" data-k="'+k+'">Hapus</button></div>';
+          }).join(""):'<small>Pesanan kosong.</small>';
+          var pr='';
+          if(H.potPromo>0) pr+='<div class="pm">🔥 '+esc(D.promoTeks||"Promo")+' — hemat '+rp(H.potPromo)+'</div>';
+          if(H.potVoucher>0) pr+='<div class="pm">🎟️ Voucher '+esc(D.cfg.voucher.kode)+' — hemat '+rp(H.potVoucher)+'</div>';
+          if(!pr) pr='<small>Tidak ada promo atau voucher yang dipakai.</small>';
+          $("promo").innerHTML=pr;
+          var b='<div class="row"><span>Subtotal parfum</span><span>'+rp(H.sub)+'</span></div>';
+          if(H.botol>0) b+='<div class="row"><span>Biaya botol</span><span>+ '+rp(H.botol)+'</span></div>';
+          if(H.potPromo>0) b+='<div class="row hj"><span>'+esc(D.promoTeks||"Promo")+'</span><span>− '+rp(H.potPromo)+'</span></div>';
+          if(H.potVoucher>0) b+='<div class="row hj"><span>Voucher '+esc(D.cfg.voucher.kode)+'</span><span>− '+rp(H.potVoucher)+'</span></div>';
+          b+='<div class="row tot"><span>Total pembayaran</span><span id="tot">'+rp(H.total)+'</span></div>';
+          $("ring").innerHTML=b;
+          $("tot2").textContent=rp(H.total);
+          $("wa").disabled=$("em").disabled=!ada;
+        }
+        $("list").onclick=function(e){
+          var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
+          var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
+        };
+        $("wa").onclick=function(){ window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank"); };
+        $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru "+D.noPesanan)+"&body="+encodeURIComponent(teksEmail()); };
+        $("pr").onclick=function(){ window.print(); };
+        $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
+        $("bk").onclick=function(){ window.close(); };
+        render();
+      };
+
+      /* --- membuka halaman pesanan --- */
+      bukaCheckoutBaru=function(){
+        if(!cart.length){ showToast("Keranjang masih kosong."); return; }
+        var a=alamatAktif();
+        if(!a){ showToast("Pilih alamat dulu ya."); return; }
+        var w=window.open("","_blank");
+        if(!w){ showToast("Pop-up diblokir. Izinkan pop-up lalu coba lagi."); return; }
+        cart.forEach(pastikanBotol);
+        var al=a.al;
+        var D={
+          toko:NAMA_TOKO, noPesanan:nomorBaru(), tulisAlamat:TULIS_ALAMAT_DI_WA,
+          name:al.nama, phone:al.wa, address:al.alamat+(al.catatan?(" (Catatan: "+al.catatan+")"):""), email:a.email,
+          wa:NOMOR_WA, mail:EMAIL_TOKO,
+          cfg:cfgHitung(), promoTeks:(typeof PROMO!=="undefined"&&PROMO.teks)||"Promo",
+          items:cart.map(function(i){ return {code:i.code,name:i.name,type:i.type,size:i.size,botol:i.botol||"",botolHarga:i.botolHarga||0,price:i.price,qty:i.qty,img:fotoUntuk(i.code)}; })
+        };
+        w.document.open(); w.document.write(halamanCheckoutBaru(D)); w.document.close();
+      };
+
+      /* --- menu ☰: tambahkan "Cetak Label" untuk pemilik (hanya muncul di perangkat admin) --- */
+      var drawer=document.querySelector(".mn-drawer");
+      if(drawer && window.MutationObserver){
+        new MutationObserver(function(){
+          var adm=drawer.querySelector(".mn-item.adm");
+          if(adm && !drawer.querySelector(".mn-item.tm-label")){
+            adm.insertAdjacentHTML("afterend",'<a class="mn-item adm tm-label" href="label.html" style="margin-top:8px"><i>🖨️</i><span>Cetak Label<small>Cetak alamat pesanan</small></span></a>');
+          }
+        }).observe(drawer,{childList:true,subtree:true});
+      }
+    })();
+    /* ===== AKHIR KODE PESAN ===== */
+    
+    loadCart();
     searchProduct();
     renderCart();
   }
