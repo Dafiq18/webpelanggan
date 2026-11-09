@@ -8883,7 +8883,150 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE PESAN ===== */
     
-    loadCart();
+    /* ================================================================
+       KODE KATALOG: harga, produk baru, produk dihapus, stok habis, dan lencana
+       dibaca dari produk.json (diatur lewat halaman produk.html)
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE PESAN)
+       ================================================================ */
+    (function(){
+      if(typeof cards==="undefined" || typeof productFromCard!=="function" || typeof openPicker!=="function" || !window.fetch){
+        try{ console.warn("KODE KATALOG: kode dasar toko tidak ditemukan."); }catch(e){}
+        return;
+      }
+      var JENIS=["EDP","LE PARFUM","EXTRAIT"];
+      function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+      function fmt(n){ n=Number(n)||0; return n>0?n.toLocaleString("id-ID"):"-"; }
+
+      var gaya=document.createElement("style");
+      gaya.textContent=
+        ".kt-lencana{position:absolute;left:10px;bottom:10px;padding:5px 10px;border-radius:9px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);color:#fff;font-size:11px;font-weight:950;letter-spacing:.05em;box-shadow:0 6px 16px rgba(139,92,246,.4)}"+
+        ".kt-habis img{filter:grayscale(1) opacity(.45)!important}"+
+        ".kt-habis .bottle-wrap::before{content:'STOK HABIS';position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);padding:8px 16px;border-radius:10px;background:rgba(0,0,0,.78);border:2px solid #fda4af;color:#fda4af;font-weight:950;letter-spacing:.1em;font-size:14px}"+
+        ".buy-btn[disabled]{opacity:.5;cursor:not-allowed;filter:grayscale(.6)}";
+      document.head.appendChild(gaya);
+
+      var peta={};
+      cards.forEach(function(c){ var d=c.querySelector(".detail-data"); if(d&&d.dataset.code) peta[d.dataset.code]=c; });
+
+      function setHarga(card,jenis,arr){
+        var tbody=card.querySelector("tbody"); if(!tbody) return;
+        var baris=null;
+        tbody.querySelectorAll("tr").forEach(function(r){ var td=r.querySelector("td"); if(td&&td.textContent.trim()===jenis) baris=r; });
+        if(!baris){ baris=document.createElement("tr"); baris.innerHTML="<td>"+esc(jenis)+"</td><td></td><td></td><td></td>"; tbody.appendChild(baris); }
+        var td=baris.querySelectorAll("td");
+        for(var i=0;i<3;i++) td[i+1].textContent=fmt(arr[i]);
+      }
+      function tandaiHabis(card,habis){
+        card.classList.toggle("kt-habis",!!habis);
+        var b=card.querySelector(".buy-btn");
+        if(b){ b.disabled=!!habis; if(habis){ b.dataset.teksAsli=b.dataset.teksAsli||b.textContent; b.textContent="Stok habis"; } else if(b.dataset.teksAsli){ b.textContent=b.dataset.teksAsli; } }
+      }
+      function pasangLencana(card,teks){
+        var w=card.querySelector(".bottle-wrap"); if(!w) return;
+        var l=w.querySelector(".kt-lencana");
+        if(!teks){ if(l) l.remove(); return; }
+        if(!l){ l=document.createElement("span"); l.className="kt-lencana"; w.appendChild(l); }
+        l.textContent=teks;
+      }
+      function ubahTeks(card,u){
+        var d=card.querySelector(".detail-data");
+        if(u.nama){ var h=card.querySelector("h2"); if(h) h.textContent=u.nama; if(d) d.dataset.name=u.nama; }
+        if(u.brand){ var b=card.querySelector(".brand"); if(b) b.textContent=u.brand; if(d) d.dataset.brand=u.brand; }
+        if(u.nama||u.brand) card.setAttribute("data-search",(card.getAttribute("data-search")||"")+" "+(u.nama||"")+" "+(u.brand||""));
+        if(u.gambar){
+          var im=card.querySelector(".bottle-wrap img"); if(im){ im.classList.remove("broken"); im.src=u.gambar; }
+          if(d) d.dataset.img=u.gambar;
+        }
+      }
+
+      /* --- kartu produk baru --- */
+      function bukaDetailBaru(card){
+        var d=card.querySelector(".detail-data").dataset, $=function(i){ return document.getElementById(i); };
+        $("mCode").textContent=d.code||""; $("mCode2").textContent=d.code||""; $("mName").textContent=d.name||""; $("mBrand").textContent=d.brand||"";
+        $("mDesc").textContent=d.desc||""; $("mGender").textContent=d.gender||""; $("mAccord").textContent=d.accord||""; $("mOccasion").textContent=d.occasion||"";
+        $("mTop").textContent=d.top||"Belum tersedia"; $("mMid").textContent=d.mid||"Belum tersedia"; $("mBase").textContent=d.base||"Belum tersedia";
+        var im=$("mImg"); im.src=d.img||""; im.alt=d.name||"Parfum";
+        document.getElementById("modal").classList.add("open"); document.body.classList.add("modal-open");
+      }
+      function buatKartu(p){
+        var a=document.createElement("article"); a.className="card";
+        var aroma=String(p.aroma||""), desk=String(p.deskripsi||"");
+        a.setAttribute("data-search",[p.kode,p.nama,p.brand,p.gender,aroma,desk].join(" ").toLowerCase());
+        var tabel=JENIS.map(function(j){ var h=(p.harga&&p.harga[j])||[0,0,0]; return "<tr><td>"+j+"</td><td>"+fmt(h[0])+"</td><td>"+fmt(h[1])+"</td><td>"+fmt(h[2])+"</td></tr>"; }).join("");
+        var chips=aroma?aroma.split(",").map(function(x){ x=x.trim(); return x?"<span>"+esc(x)+"</span>":""; }).join(""):"";
+        a.innerHTML=
+          '<div class="card-main"><div class="bottle-wrap"><img src="'+esc(p.gambar||"")+'" alt="'+esc(p.nama)+'" loading="lazy" onerror="this.classList.add(\'broken\')"><span class="gender">'+esc(p.gender||"")+'</span></div>'+
+          '<div class="card-info"><div class="code">'+esc(p.kode)+'</div><h2>'+esc(p.nama)+'</h2><p class="brand">'+esc(p.brand||"")+'</p><p class="desc">'+esc(desk||(p.nama+" — "+(p.brand||"")))+'</p>'+
+          (chips?'<div class="chips">'+chips+'</div>':'')+
+          '<div class="card-actions"><button class="detail-btn" type="button" data-open-detail>Lihat detail <b>→</b></button><button class="buy-btn" type="button" data-add-cart>🛒 Tambah ke keranjang</button></div></div></div>'+
+          '<div class="prices"><div class="price-title">Harga Refill</div><div class="table-scroll"><table><thead><tr><th>Jenis</th><th>30 ML</th><th>50 ML</th><th>100 ML</th></tr></thead><tbody>'+tabel+'</tbody></table></div></div>'+
+          '<div class="detail-data" hidden></div>';
+        var d=a.querySelector(".detail-data");
+        d.dataset.name=p.nama; d.dataset.brand=p.brand||""; d.dataset.code=p.kode; d.dataset.gender=p.gender||""; d.dataset.accord=aroma;
+        d.dataset.occasion=p.waktu||""; d.dataset.desc=desk; d.dataset.img=p.gambar||"";
+        a.querySelector("[data-add-cart]").addEventListener("click",function(){ openPicker(a); });
+        a.querySelector("[data-open-detail]").addEventListener("click",function(){ bukaDetailBaru(a); });
+        return a;
+      }
+
+      function terapkan(d){
+        var u=d.ubah||{}, kode;
+        for(kode in u){
+          if(!Object.prototype.hasOwnProperty.call(u,kode)) continue;
+          var c=peta[kode], x=u[kode]; if(!c||!x) continue;
+          if(x.harga) JENIS.forEach(function(j){ if(Array.isArray(x.harga[j])) setHarga(c,j,x.harga[j]); });
+          ubahTeks(c,x); tandaiHabis(c,x.habis); pasangLencana(c,x.lencana);
+        }
+        (Array.isArray(d.hapus)?d.hapus:[]).forEach(function(k){
+          var c=peta[k]; if(!c) return;
+          var i=cards.indexOf(c); if(i>=0) cards.splice(i,1);
+          if(c.parentNode) c.parentNode.removeChild(c); delete peta[k];
+        });
+        var daftar=document.getElementById("productList");
+        (Array.isArray(d.baru)?d.baru:[]).slice().reverse().forEach(function(p){
+          if(!p||!p.kode||!p.nama||peta[p.kode]) return;
+          var k=buatKartu(p); tandaiHabis(k,p.habis); pasangLencana(k,p.lencana);
+          if(daftar) daftar.insertBefore(k,daftar.firstChild); cards.unshift(k); peta[p.kode]=k;
+        });
+      }
+      function segarkanKeranjang(){
+        try{
+          var ubah=false;
+          cart.forEach(function(it){
+            var c=peta[it.code]; if(!c) return;
+            var p=productFromCard(c); it.allPrices=p.prices;
+            var h=p.prices[it.type]&&p.prices[it.type][it.size];
+            if(h>0 && h!==it.price){ it.price=h; ubah=true; }
+          });
+          if(ubah && typeof saveCart==="function") saveCart();
+          if(typeof renderCart==="function") renderCart();
+        }catch(e){}
+      }
+
+      fetch("produk.json?v="+Date.now(),{cache:"no-store"})
+        .then(function(r){ return r.ok?r.json():null; })
+        .then(function(d){
+          if(!d||typeof d!=="object") return;
+          try{ terapkan(d); }catch(e){ try{ console.warn("produk.json:",e); }catch(_){} }
+          try{ if(typeof searchProduct==="function") searchProduct(); }catch(e){}
+          segarkanKeranjang();
+        })
+        .catch(function(){});
+
+      /* --- menu ☰: tombol "Kelola Produk" untuk pemilik (hanya di perangkat admin) --- */
+      var drawer=document.querySelector(".mn-drawer");
+      if(drawer && window.MutationObserver){
+        new MutationObserver(function(){
+          var adm=drawer.querySelector(".mn-item.adm");
+          if(adm && !drawer.querySelector(".mn-item.kt-produk")){
+            adm.insertAdjacentHTML("afterend",'<a class="mn-item adm kt-produk" href="produk.html" style="margin-top:8px"><i>🏷️</i><span>Kelola Produk<small>Harga, produk baru, stok</small></span></a>');
+          }
+        }).observe(drawer,{childList:true,subtree:true});
+      }
+    })();
+    /* ===== AKHIR KODE KATALOG ===== */
+    
+  loadCart();
     searchProduct();
     renderCart();
   }
