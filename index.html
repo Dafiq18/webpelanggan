@@ -9116,7 +9116,7 @@ async function askAI(){
       /* ================================================================
        KODE BAYAR: info cara pembayaran (rekening, e-wallet, QRIS) di halaman pesanan
        dan ikut tertulis di pesan WhatsApp
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE FIREBASE)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE FIREBASE)
        ================================================================ */
     (function(){
       if(typeof bukaCheckoutBaru!=="function"){
@@ -9204,6 +9204,23 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE BAYAR ===== */
     
+        /* ================================================================
+       KODE INFO: tombol "Info Toko" di menu ☰ (membuka halaman info.html)
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE BAYAR)
+       ================================================================ */
+    (function(){
+      var drawer=document.querySelector(".mn-drawer");
+      if(!drawer || !window.MutationObserver) return;
+      function pasang(){
+        if(drawer.querySelector(".mn-item.mn-info")) return;
+        var wa=drawer.querySelector('a.mn-item[href*="wa.me"]'); if(!wa) return;
+        wa.insertAdjacentHTML("afterend",'<a class="mn-item mn-info" href="info.html"><i>🏪</i><span>Info Toko<small>Alamat, cara pesan, kebijakan</small></span></a>');
+      }
+      pasang();
+      new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
+    })();
+    /* ===== AKHIR KODE INFO ===== */
+  
     loadCart();
     searchProduct();
     renderCart();
