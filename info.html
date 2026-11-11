@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Info Toko — Aroma Semarang</title>
+<style>
+:root{--bg:#070b16;--panel:#0f1729;--line:rgba(255,255,255,.1);--tx:#eef2ff;--mut:#9aa6c4;--ac:#8b5cf6;--ac2:#22d3ee;--or:#ee4d2d;--or2:#ff7337}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 80% -10%,rgba(139,92,246,.18),transparent),var(--bg);color:var(--tx);font:15px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:inherit}
+.top{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--or2),var(--or));padding:12px 16px;display:flex;align-items:center;gap:12px}
+.top a{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);text-decoration:none;font-weight:900}
+.top b{font-size:17px}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 90px}
+.hero{text-align:center;padding:22px 10px 8px}
+.hero img{width:84px;height:84px;object-fit:contain;border-radius:20px;background:#0006;margin-bottom:8px}
+.hero h1{margin:0;font-size:26px}
+.hero p{margin:6px 0 0;color:var(--mut)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-top:14px}
+.card h2{margin:0 0 8px;font-size:17px}
+.card p{margin:0 0 8px;color:#cbd5e1;white-space:pre-line}
+.card p:last-child{margin-bottom:0}
+.jam{display:grid;grid-template-columns:auto 1fr;gap:4px 18px;color:#cbd5e1}.jam span:nth-child(odd){color:var(--mut)}
+.langkah{margin:0;padding:0;list-style:none;counter-reset:n}
+.langkah li{counter-increment:n;display:flex;gap:12px;padding:8px 0;color:#cbd5e1}
+.langkah li::before{content:counter(n);flex:none;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;font-weight:900;display:grid;place-items:center;font-size:13px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid var(--line);text-decoration:none;font-weight:700;font-size:14px}
+.btn.wa{background:linear-gradient(135deg,#22c55e,#15803d);border:0}
+.fab{position:fixed;right:16px;bottom:16px;z-index:20;padding:13px 18px;border-radius:99px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-weight:800;text-decoration:none;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.kecil{color:var(--mut);font-size:12px;text-align:center;margin-top:22px}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html" aria-label="Kembali">‹</a><b>Info Toko</b></div>
+<div class="wrap" id="isi"></div>
+<a class="fab" id="fab" target="_blank" rel="noopener">💬 Chat WhatsApp</a>
+
+<script>
+/* ================================================================
+   PENGATURAN — ISI DENGAN DATA TOKOMU.
+   Bagian yang dikosongkan ("" atau []) otomatis TIDAK ditampilkan.
+   Teks boleh lebih dari satu baris: pakai \n untuk pindah baris.
+   ================================================================ */
+var TOKO = {
+  nama: "Aroma Semarang",
+  logo: "",                                   /* nama file logo, misalnya "logo.png" (boleh kosong) */
+  slogan: "Parfum refill pilihan, harga bersahabat",
+
+  tentang: "",                                /* cerita singkat tokomu, misalnya: "Kami menjual parfum refill ... sejak 2023." */
+
+  alamat: "",                                 /* alamat toko / tempat ambil, misalnya: "Jl. Contoh No. 1, Semarang" */
+  petaLink: "",                               /* link Google Maps, misalnya: "https://maps.app.goo.gl/xxxx" */
+
+  jamBuka: [                                  /* kosongkan "jam" kalau belum mau ditampilkan */
+    { hari: "Senin – Jumat", jam: "" },
+    { hari: "Sabtu – Minggu", jam: "" }
+  ],
+
+  wa: "62882005034977",                       /* nomor WhatsApp, awali 62 tanpa 0 */
+  email: "kamu97834@gmail.com",
+  instagram: "",                              /* nama akun saja tanpa @, misalnya "aromasemarang" */
+  tiktok: "",                                 /* nama akun saja tanpa @ */
+
+  /* cara pesan sudah sesuai alur web-mu; boleh kamu ubah kalimatnya */
+  caraPesan: [
+    "Pilih parfum yang kamu suka, lalu tekan Tambah ke keranjang.",
+    "Pilih jenis (EDP / Le Parfum / Extrait), ukuran (30 / 50 / 100 ML), dan botolnya.",
+    "Buka keranjang, pakai voucher kalau ada, lalu tekan Checkout.",
+    "Masuk dengan email dan isi alamat pengiriman (cukup sekali, nanti tersimpan).",
+    "Tekan Kirim via WhatsApp. Pesananmu masuk ke admin toko.",
+    "Admin mengonfirmasi pesananmu. Lakukan pembayaran sesuai petunjuk, lalu kirim bukti pembayaran lewat WhatsApp.",
+    "Setelah pembayaran dikonfirmasi, pesananmu diproses dan dikirim."
+  ],
+
+  /* kebijakan: isi sesuai aturan tokomu. Kosong = tidak ditampilkan.
+     Contoh: "Parfum refill yang sudah dibuka tidak dapat dikembalikan.\nJika paket rusak atau salah kirim, hubungi kami maksimal 1x24 jam setelah barang diterima dengan video unboxing." */
+  kebijakan: "",
+
+  /* Privasi: sesuai data yang benar-benar dikumpulkan web ini. Kalimat terakhir adalah janji dari tokomu, ubah sesuai kenyataan. */
+  privasi:
+    "Saat kamu memesan, kami menyimpan nama, nomor WhatsApp, alamat, dan isi pesananmu untuk memproses dan mengirim pesanan.\n" +
+    "Data ini disimpan di layanan database Firebase (Google) dan hanya bisa dilihat oleh admin toko.\n" +
+    "Data alamat dan akun di perangkatmu disimpan di browser kamu sendiri.\n" +
+    "Untuk meminta data kamu dihapus, hubungi kami lewat WhatsApp."
+};
+
+/* ====== JANGAN DIUBAH DI BAWAH INI ====== */
+(function(){
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+  var T=TOKO, h="", ada=function(s){return String(s||"").trim();};
+  document.title="Info Toko — "+T.nama;
+  h+='<div class="hero">'+(ada(T.logo)?'<img src="'+esc(T.logo)+'" alt="'+esc(T.nama)+'" onerror="this.remove()">':'')+'<h1>'+esc(T.nama)+'</h1>'+(ada(T.slogan)?'<p>'+esc(T.slogan)+'</p>':'')+'</div>';
+  if(ada(T.tentang)) h+='<div class="card"><h2>🌸 Tentang Kami</h2><p>'+esc(T.tentang)+'</p></div>';
+  if(ada(T.alamat)||ada(T.petaLink)){
+    h+='<div class="card"><h2>📍 Alamat</h2>'+(ada(T.alamat)?'<p>'+esc(T.alamat)+'</p>':'')+(ada(T.petaLink)?'<div class="btns"><a class="btn" target="_blank" rel="noopener" href="'+esc(T.petaLink)+'">🗺️ Buka di Google Maps</a></div>':'')+'</div>';
+  }
+  var jam=(T.jamBuka||[]).filter(function(x){return ada(x.jam);});
+  if(jam.length) h+='<div class="card"><h2>🕘 Jam Buka</h2><div class="jam">'+jam.map(function(x){return '<span>'+esc(x.hari)+'</span><span>'+esc(x.jam)+'</span>';}).join("")+'</div></div>';
+  var k='';
+  if(ada(T.wa)) k+='<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/'+esc(String(T.wa).replace(/\D/g,""))+'">💬 WhatsApp</a>';
+  if(ada(T.email)) k+='<a class="btn" href="mailto:'+esc(T.email)+'">✉️ '+esc(T.email)+'</a>';
+  if(ada(T.instagram)) k+='<a class="btn" target="_blank" rel="noopener" href="https://instagram.com/'+esc(T.instagram)+'">📷 Instagram</a>';
+  if(ada(T.tiktok)) k+='<a class="btn" target="_blank" rel="noopener" href="https://tiktok.com/@'+esc(T.tiktok)+'">🎵 TikTok</a>';
+  if(k) h+='<div class="card"><h2>📞 Hubungi Kami</h2><div class="btns">'+k+'</div></div>';
+  if((T.caraPesan||[]).length) h+='<div class="card"><h2>📖 Cara Pesan</h2><ol class="langkah">'+T.caraPesan.map(function(x){return '<li><span>'+esc(x)+'</span></li>';}).join("")+'</ol></div>';
+  if(ada(T.kebijakan)) h+='<div class="card"><h2>🔄 Kebijakan Retur &amp; Komplain</h2><p>'+esc(T.kebijakan)+'</p></div>';
+  if(ada(T.privasi)) h+='<div class="card"><h2>🔒 Kebijakan Privasi</h2><p>'+esc(T.privasi)+'</p></div>';
+  h+='<div class="kecil">© '+new Date().getFullYear()+' '+esc(T.nama)+'</div>';
+  document.getElementById("isi").innerHTML=h;
+  var f=document.getElementById("fab"); if(ada(T.wa)) f.href="https://wa.me/"+String(T.wa).replace(/\D/g,""); else f.style.display="none";
+})();
+</script>
+</body>
+</html>
