@@ -8741,7 +8741,7 @@ async function askAI(){
     
       /* ================================================================
        KODE PESAN: pesan WhatsApp berbentuk kartu (ringkas) + nomor pesanan + kode label untuk dicetak
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE TAMPILAN)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE TAMPILAN)
        ================================================================ */
     (function(){
       if(typeof hitungTotal!=="function" || typeof halamanCheckoutBaru!=="function" || typeof cfgHitung!=="function"){
@@ -8886,7 +8886,7 @@ async function askAI(){
     /* ================================================================
        KODE KATALOG: harga, produk baru, produk dihapus, stok habis, dan lencana
        dibaca dari produk.json (diatur lewat halaman produk.html)
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE PESAN)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE PESAN)
        ================================================================ */
     (function(){
       if(typeof cards==="undefined" || typeof productFromCard!=="function" || typeof openPicker!=="function" || !window.fetch){
@@ -9028,7 +9028,7 @@ async function askAI(){
     
     /* ================================================================
        KODE FIREBASE: pesanan pelanggan tersimpan otomatis ke database (Firebase)
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE KATALOG)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE KATALOG)
        ================================================================ */
     (function(){
       /* ====== PENGATURAN — dari Firebase milikmu ====== */
@@ -9113,7 +9113,98 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE FIREBASE ===== */
     
-  loadCart();
+      /* ================================================================
+       KODE BAYAR: info cara pembayaran (rekening, e-wallet, QRIS) di halaman pesanan
+       dan ikut tertulis di pesan WhatsApp
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE FIREBASE)
+       ================================================================ */
+    (function(){
+      if(typeof bukaCheckoutBaru!=="function"){
+        try{ console.warn("KODE BAYAR: tempel dulu KODE PESAN di atasnya."); }catch(e){}
+        return;
+      }
+
+      /* ====== PENGATURAN — ISI DENGAN DATA TOKOMU ======
+         Setiap baris = satu cara bayar. Baris yang "nomor"-nya kosong tidak akan ditampilkan.
+         nama     = nama bank atau e-wallet (BCA, BRI, Mandiri, DANA, OVO, GoPay, ShopeePay, dll)
+         nomor    = nomor rekening atau nomor HP e-wallet
+         atasNama = nama pemilik rekening (harus sama dengan di bank/e-wallet) */
+      var METODE = [
+        { nama:"BCA",  nomor:"1344738800", atasNama:"PETER ZAKARIA" },
+        { nama:"DANA", nomor:"", atasNama:"" }
+      ];
+      /* QRIS (opsional): isi dengan nama file gambar QRIS yang kamu unggah ke GitHub, misalnya "qris.png".
+         Kosongkan ("") kalau tidak pakai QRIS. */
+      var QRIS_GAMBAR = "";
+      var CATATAN = "Transfer sesuai total pembayaran, lalu kirim bukti transfer lewat WhatsApp ya 🙏";
+
+      /* ====== BAGIAN DI BAWAH INI JANGAN DIUBAH ====== */
+      function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+      var daftar = METODE.filter(function(m){ return m && String(m.nomor||"").trim(); });
+      var qris = QRIS_GAMBAR ? new URL(QRIS_GAMBAR, location.href).href : "";
+      if(!daftar.length && !qris) return;      /* belum diisi: tidak menampilkan apa-apa */
+
+      function pasang(w){
+        var d=w.document, ring=d.getElementById("ring"); if(!ring||!ring.parentNode) return;
+        var gaya=d.createElement("style");
+        gaya.textContent=".by-m{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)}.by-m:first-of-type{border-top:0}"+
+          ".by-m b{display:block}.by-m small{color:#9aa6c4}.by-m .by-n{font-size:17px;font-weight:800;letter-spacing:.03em}.by-m>div{flex:1;min-width:0}"+
+          ".by-c{border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.1);color:#fff}"+
+          ".by-q{display:block;max-width:220px;width:100%;margin:10px auto 0;border-radius:12px;background:#fff;padding:6px}"+
+          ".by-t{margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(238,77,45,.14);color:#ffb199;font-weight:800}"+
+          ".by-k{margin-top:8px;color:#9aa6c4;font-size:13px}";
+        d.head.appendChild(gaya);
+        var h='<div class="card"><div class="t">💳 Cara Pembayaran</div>'+
+          '<div class="by-t">Total yang dibayar: <span id="byTot"></span></div>';
+        daftar.forEach(function(m,k){
+          h+='<div class="by-m"><div><small>'+esc(m.nama)+(m.atasNama?' • a.n. '+esc(m.atasNama):'')+'</small><span class="by-n">'+esc(m.nomor)+'</span></div>'+
+             '<button type="button" class="by-c" data-k="'+k+'">Salin</button></div>';
+        });
+        if(qris) h+='<img class="by-q" alt="QRIS" src="'+esc(qris)+'">';
+        h+='<div class="by-k">'+esc(CATATAN)+'</div></div>';
+        ring.parentNode.insertAdjacentHTML("afterend",h);
+
+        var tot=d.getElementById("tot2"), by=d.getElementById("byTot");
+        function sama(){ if(tot&&by) by.textContent=tot.textContent; }
+        sama();
+        if(tot && w.MutationObserver) new w.MutationObserver(sama).observe(tot,{childList:true,characterData:true,subtree:true});
+
+        d.addEventListener("click",function(e){
+          var b=e.target.closest&&e.target.closest(".by-c"); if(!b) return;
+          var teks=String(daftar[Number(b.getAttribute("data-k"))].nomor).trim();
+          function selesai(){ b.textContent="Tersalin ✔"; w.setTimeout(function(){ b.textContent="Salin"; },1500); }
+          try{
+            if(w.navigator.clipboard&&w.navigator.clipboard.writeText){ w.navigator.clipboard.writeText(teks).then(selesai,function(){ cadangan(); }); }
+            else cadangan();
+          }catch(x){ cadangan(); }
+          function cadangan(){ var t=d.createElement("textarea"); t.value=teks; d.body.appendChild(t); t.select(); try{ d.execCommand("copy"); selesai(); }catch(z){} d.body.removeChild(t); }
+        });
+
+        /* tambahkan info pembayaran ke pesan WhatsApp */
+        var buka=w.open;
+        w.open=function(u,t,f){
+          if(typeof u==="string" && u.indexOf("https://wa.me/")===0 && u.indexOf("?text=")>0){
+            var L=["","💳 *CARA BAYAR*","Total: "+(tot?tot.textContent:"")];
+            daftar.forEach(function(m){ L.push(m.nama+" "+String(m.nomor).trim()+(m.atasNama?" a.n. "+m.atasNama:"")); });
+            if(qris) L.push("(atau bayar via QRIS)");
+            L.push("Bukti transfer saya kirim setelah ini ya 🙏");
+            u=u+encodeURIComponent("\n"+L.join("\n"));
+          }
+          return buka.call(w,u,t,f);
+        };
+      }
+
+      var asli=bukaCheckoutBaru;
+      bukaCheckoutBaru=function(){
+        var tangkap=null, wo=window.open;
+        window.open=function(){ var w=wo.apply(window,arguments); if(!tangkap) tangkap=w; return w; };
+        try{ asli.apply(this,arguments); }finally{ window.open=wo; }
+        if(tangkap){ try{ pasang(tangkap); }catch(e){ try{ console.warn("KODE BAYAR:",e); }catch(_){} } }
+      };
+    })();
+    /* ===== AKHIR KODE BAYAR ===== */
+    
+    loadCart();
     searchProduct();
     renderCart();
   }
