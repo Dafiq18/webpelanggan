@@ -45,6 +45,9 @@ a{color:inherit}
 .kosong{text-align:center;color:var(--mut);padding:40px 10px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#000d;border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:99;display:none}
 .hide{display:none!important}
+.warn{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.35);color:#fecdd3;font-size:13px}
+.warn small{color:var(--mut)}
+.info{margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fde68a;font-size:13px}
 </style>
 </head>
 <body>
@@ -96,6 +99,72 @@ var NAMA_TOKO="Aroma Semarang";
   var STATUS=[["baru","Baru"],["proses","Diproses"],["kirim","Dikirim"],["selesai","Selesai"],["batal","Batal"]];
   var NAMA={}; STATUS.forEach(function(s){NAMA[s[0]]=s[1];});
   var db=null, auth=null, semua=[], filter="semua", batal=null, pertama=true;
+  var UK=["30 ML","50 ML","100 ML"], KAT=null, katP=null;
+
+  /* ---- pemeriksa harga: bandingkan pesanan dengan harga, botol, promo, dan voucher toko SEKARANG ---- */
+  function angka(t){return parseInt(String(t).replace(/\D/g,""),10)||0;}
+  function muatKatalog(){
+    if(katP) return katP;
+    var u=function(f){return fetch(f+"?v="+Date.now(),{cache:"no-store"});};
+    katP=Promise.all([u("index.html").then(function(r){return r.text();}), u("produk.json").then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}), u("config.json").then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})])
+    .then(function(a){
+      var harga={}, doc=new DOMParser().parseFromString(a[0],"text/html");
+      doc.querySelectorAll("article.card").forEach(function(c){
+        var d=c.querySelector(".detail-data"); if(!d||!d.dataset.code) return; var h={};
+        c.querySelectorAll("tbody tr").forEach(function(r){var td=r.querySelectorAll("td"), j=td[0]&&td[0].textContent.trim().toUpperCase(); if(j) h[j]=[angka(td[1].textContent),angka(td[2].textContent),angka(td[3].textContent)];});
+        harga[d.dataset.code]=h;
+      });
+      var pj=a[1]||{};
+      Object.keys(pj.ubah||{}).forEach(function(k){ var x=pj.ubah[k]; if(harga[k]&&x&&x.harga) Object.keys(x.harga).forEach(function(j){ harga[k][j]=x.harga[j]; }); });
+      (pj.hapus||[]).forEach(function(k){ delete harga[k]; });
+      (pj.baru||[]).forEach(function(p){ if(p&&p.kode&&p.harga) harga[p.kode]=p.harga; });
+      KAT={harga:harga,cfg:a[2]};
+      tampil();
+    }).catch(function(){ KAT=false; tampil(); });
+    return katP;
+  }
+  function tglAkhir(s){ var d=new Date(s+"T23:59:59"); return isNaN(d.getTime())?null:d; }
+  function berlaku(s,t){ if(!s) return true; var d=tglAkhir(s); return !d||t<=d; }
+  function hitungToko(items,cfg){
+    var sub=0,botol=0,i;
+    for(i=0;i<items.length;i++){ sub+=items[i].price*items[i].qty; botol+=(items[i].botolHarga||0)*items[i].qty; }
+    var promo=0,vou=0,v=cfg.voucher;
+    if(cfg.promoAktif) promo=Math.round(sub*cfg.promoPersen/100);
+    if(v && sub>=(v.min||0)){
+      var dasar=cfg.gabung?(sub-promo):sub;
+      vou=v.tipe==="persen"?Math.round(dasar*v.nilai/100):v.nilai;
+      if(v.maks) vou=Math.min(vou,v.maks);
+      vou=Math.max(0,Math.min(vou,dasar));
+    }
+    if(!cfg.gabung && promo>0 && vou>0){ if(vou>promo) promo=0; else vou=0; }
+    return Math.max(0,sub-Math.min(sub,promo+vou))+botol;
+  }
+  function periksa(x){
+    if(KAT===null) return {s:"tunggu",m:[]};
+    if(KAT===false) return {s:"tak",m:["Daftar harga toko tidak bisa dimuat, jadi pesanan ini belum bisa dicek."]};
+    var m=[], tak=0, cfg=KAT.cfg, t=(x.dibuat&&x.dibuat.toDate?x.dibuat.toDate():new Date());
+    var cek=(x.items||[]).map(function(i){
+      var p=KAT.harga[i.kode], ex=p&&p[i.jenis]&&p[i.jenis][UK.indexOf(i.ukuran)], ob={price:i.harga,qty:i.qty,botolHarga:i.botolHarga||0};
+      if(!ex){ tak++; m.push(i.nama+" "+i.jenis+" "+i.ukuran+": tidak ditemukan di katalog sekarang, harganya tidak bisa dicek."); return ob; }
+      if(ex!==i.harga){ m.push(i.nama+" "+i.jenis+" "+i.ukuran+": harga di pesanan "+rp(i.harga)+", harga di toko "+rp(ex)+"."); ob.price=ex; }
+      if(cfg&&i.botol){
+        var b=null; (cfg.botol||[]).forEach(function(z){ if(z.nama===i.botol) b=z; });
+        if(!b){ tak++; m.push("Botol \""+i.botol+"\" tidak ada di pengaturan sekarang."); }
+        else if((b.harga||0)!==(i.botolHarga||0)){ m.push("Botol "+i.botol+": harga di pesanan "+rp(i.botolHarga)+", harga di toko "+rp(b.harga)+"."); ob.botolHarga=b.harga||0; }
+      }
+      return ob;
+    });
+    if(cfg){
+      var pr=cfg.promo||{}, v=null;
+      (cfg.voucher||[]).forEach(function(z){ if(x.voucher && z.kode===x.voucher) v=z; });
+      if(x.voucher && !v){ m.push("Voucher "+x.voucher+" tidak dikenal di pengaturan sekarang."); }
+      else if(v && !berlaku(v.sampai,t) && x.potVoucher>0){ m.push("Voucher "+v.kode+" sudah kedaluwarsa saat pesanan dibuat."); v=null; }
+      var seharusnya=hitungToko(cek,{promoAktif:!!(pr.aktif&&pr.persen>0&&berlaku(pr.sampai,t)),promoPersen:pr.persen||0,gabung:!!cfg.gabung,voucher:v});
+      if(seharusnya!==x.total) m.push("Total di pesanan "+rp(x.total)+", seharusnya "+rp(seharusnya)+(x.total<seharusnya?" (pelanggan membayar LEBIH MURAH "+rp(seharusnya-x.total)+").":" (lebih mahal "+rp(x.total-seharusnya)+")."));
+    }else tak++;
+    var ada=m.some(function(z){return /harga di pesanan|Total di pesanan|kedaluwarsa|tidak dikenal/.test(z);});
+    return {s:ada?"warn":(tak?"tak":"ok"),m:m};
+  }
 
   function muat(src){return new Promise(function(ok,gagal){var s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=function(){gagal(new Error("Gagal memuat Firebase. Periksa koneksi internet."));};document.head.appendChild(s);});}
   var b="https://www.gstatic.com/firebasejs/"+VERSI_SDK+"/";
@@ -108,7 +177,7 @@ var NAMA_TOKO="Aroma Semarang";
     $("bKeluar").onclick=function(){auth.signOut();};
     auth.onAuthStateChanged(function(u){
       if(u && (u.email||"").toLowerCase()===EMAIL_ADMIN.toLowerCase()){
-        $("vLogin").classList.add("hide"); $("vApp").classList.remove("hide"); $("who").textContent=u.email; dengarkan();
+        $("vLogin").classList.add("hide"); $("vApp").classList.remove("hide"); $("who").textContent=u.email; dengarkan(); muatKatalog();
       }else{
         if(u){ $("lErr").textContent="Akun ini bukan admin."; auth.signOut(); }
         if(batal){batal();batal=null;} semua=[]; pertama=true;
@@ -143,13 +212,15 @@ var NAMA_TOKO="Aroma Semarang";
 
   function tampil(){
     var q=$("cari").value.trim().toLowerCase(), hit=semua.filter(function(x){
-      if(filter!=="semua"&&x.status!==filter) return false;
+      if(filter==="cek"){ if(periksa(x).s!=="warn") return false; }
+      else if(filter!=="semua"&&x.status!==filter) return false;
       return !q||(x.nomor+" "+x.nama+" "+x.wa).toLowerCase().indexOf(q)>=0;
     });
-    var bulan=new Date().getMonth(), omzet=0, jml={}; STATUS.forEach(function(s){jml[s[0]]=0;});
+    var bulan=new Date().getMonth(), omzet=0, jml={}, nCek=0; STATUS.forEach(function(s){jml[s[0]]=0;});
+    semua.forEach(function(x){ if(periksa(x).s==="warn") nCek++; });
     semua.forEach(function(x){ jml[x.status]=(jml[x.status]||0)+1; var t=x.dibuat&&x.dibuat.toDate?x.dibuat.toDate():null; if(x.status==="selesai"&&t&&t.getMonth()===bulan) omzet+=x.total||0; });
-    $("stats").innerHTML=[["Total pesanan",semua.length],["Perlu diproses",jml.baru],["Sedang dikirim",jml.kirim],["Omzet selesai bulan ini",rp(omzet)]].map(function(s){return '<div class="st"><b>'+s[1]+'</b><span>'+s[0]+'</span></div>';}).join("");
-    $("chips").innerHTML=[["semua","Semua ("+semua.length+")"]].concat(STATUS.map(function(s){return [s[0],s[1]+" ("+(jml[s[0]]||0)+")"];})).map(function(c){return '<button class="chip'+(filter===c[0]?' on':'')+'" data-f="'+c[0]+'">'+c[1]+'</button>';}).join("");
+    $("stats").innerHTML=[["Total pesanan",semua.length],["Perlu diproses",jml.baru],["Sedang dikirim",jml.kirim],["⚠️ Harga perlu dicek",nCek],["Omzet selesai bulan ini",rp(omzet)]].map(function(s){return '<div class="st"><b>'+s[1]+'</b><span>'+s[0]+'</span></div>';}).join("");
+    $("chips").innerHTML=[["semua","Semua ("+semua.length+")"]].concat(STATUS.map(function(s){return [s[0],s[1]+" ("+(jml[s[0]]||0)+")"];})).concat([["cek","⚠️ Perlu dicek ("+nCek+")"]]).map(function(c){return '<button class="chip'+(filter===c[0]?' on':'')+'" data-f="'+c[0]+'">'+c[1]+'</button>';}).join("");
     $("daftar").innerHTML=hit.length?hit.map(kartu).join(""):'<div class="kosong">'+(semua.length?"Tidak ada pesanan yang cocok.":"Belum ada pesanan masuk. 🌸")+'</div>';
   }
   function kartu(x){
@@ -158,10 +229,12 @@ var NAMA_TOKO="Aroma Semarang";
     if(x.botol>0) ket+='<div><span>Botol</span><span>+'+rp(x.botol)+'</span></div>';
     if(x.potPromo>0) ket+='<div><span>Promo</span><span>−'+rp(x.potPromo)+'</span></div>';
     if(x.potVoucher>0) ket+='<div><span>Voucher '+esc(x.voucher)+'</span><span>−'+rp(x.potVoucher)+'</span></div>';
+    var pk=periksa(x), lb=pk.s==="ok"?'<span class="stt selesai">✅ Harga cocok</span>':pk.s==="warn"?'<span class="stt batal">⚠️ Harga tidak cocok</span>':pk.s==="tak"?'<span class="stt proses">ℹ️ Sebagian tak bisa dicek</span>':'';
+    var dt=pk.m.length?'<div class="'+(pk.s==="warn"?'warn':'info')+'">'+pk.m.map(esc).join("<br>")+'<br><small>Dibandingkan dengan harga, promo, dan voucher toko saat ini. Kalau harga baru diubah setelah pesanan dibuat, perbedaan ini bisa wajar.</small></div>':'';
     var btn=STATUS.filter(function(s){return s[0]!==x.status;}).map(function(s){return '<button class="btn s" data-st="'+s[0]+'" data-id="'+esc(x.id)+'">'+s[1]+'</button>';}).join("");
-    return '<div class="ord"><div class="hd"><span class="no">'+esc(x.nomor)+'</span><span class="stt '+esc(x.status)+'">'+esc(NAMA[x.status]||x.status)+'</span><span class="tm">'+waktu(x)+'</span></div>'+
+    return '<div class="ord"><div class="hd"><span class="no">'+esc(x.nomor)+'</span><span class="stt '+esc(x.status)+'">'+esc(NAMA[x.status]||x.status)+'</span>'+lb+'<span class="tm">'+waktu(x)+'</span></div>'+
       '<div class="cu"><b>'+esc(x.nama)+'</b> • '+esc(x.wa)+'<br>'+esc(x.alamat)+'</div>'+
-      '<div class="its">'+items+ket+'<div class="tot"><span>TOTAL</span><span>'+rp(x.total)+'</span></div></div>'+
+      '<div class="its">'+items+ket+'<div class="tot"><span>TOTAL</span><span>'+rp(x.total)+'</span></div></div>'+dt+
       '<div class="acts"><a class="btn s p" target="_blank" rel="noopener" href="https://wa.me/'+nomorWa(x.wa)+'">💬 Chat pelanggan</a><button class="btn s" data-cetak="'+esc(x.id)+'">🖨️ Cetak label</button>'+btn+'<button class="btn s d" data-hapus="'+esc(x.id)+'">Hapus</button></div></div>';
   }
   $("cari").oninput=tampil;
