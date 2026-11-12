@@ -9206,7 +9206,7 @@ async function askAI(){
     
         /* ================================================================
        KODE INFO: tombol "Info Toko" di menu ☰ (membuka halaman info.html)
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE BAYAR)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE BAYAR)
        ================================================================ */
     (function(){
       var drawer=document.querySelector(".mn-drawer");
@@ -9221,7 +9221,64 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE INFO ===== */
   
-    loadCart();
+      /* ================================================================
+       KODE LACAK: "Pesanan Saya" (daftar pesanan di perangkat ini + status) — tombol 📦 di atas dan di menu ☰
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE INFO)
+       ================================================================ */
+    (function(){
+      var KUNCI="aromaPesananSaya";
+      function baca(){ try{ var a=JSON.parse(localStorage.getItem(KUNCI)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+      function tulis(a){ try{ localStorage.setItem(KUNCI,JSON.stringify(a)); }catch(e){} }
+
+      /* saat pesanan dikirim: ingat di perangkat ini + buat catatan status (hanya nomor + status "baru") di database */
+      var asli=window.__aromaSimpanPesanan;
+      if(typeof asli==="function"){
+        window.__aromaSimpanPesanan=function(D,H){
+          try{
+            if(D && D.noPesanan && D.items && D.items.length){
+              var a=baca().filter(function(x){ return x.nomor!==D.noPesanan; });
+              a.unshift({ nomor:String(D.noPesanan), tgl:Date.now(), total:Number(H&&H.total)||0,
+                items:D.items.slice(0,20).map(function(i){ return {nama:String(i.name||""),jenis:String(i.type||""),ukuran:String(i.size||""),qty:Number(i.qty)||1}; }) });
+              tulis(a.slice(0,30));
+            }
+          }catch(e){}
+          return Promise.resolve(asli(D,H)).then(function(){
+            try{
+              var f=window.firebase;
+              if(f && f.apps && f.apps.length && D && D.noPesanan){
+                f.firestore().collection("status").doc(String(D.noPesanan)).set({
+                  nomor:String(D.noPesanan), status:"baru", diperbarui:f.firestore.FieldValue.serverTimestamp()
+                }).catch(function(){});
+              }
+            }catch(e){}
+          });
+        };
+      }
+
+      /* tombol 📦 Pesanan Saya di bagian atas (di samping tombol ☰) */
+      var gaya=document.createElement("style");
+      gaya.textContent=".lc-btn{position:relative;text-decoration:none;font-size:21px;flex:0 0 auto}.lc-btn b{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#ee4d2d;color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:800}";
+      document.head.appendChild(gaya);
+      var tombol=document.getElementById("mnBuka");
+      if(tombol && tombol.parentNode && !document.getElementById("lcPesanan")){
+        var n=baca().length;
+        tombol.insertAdjacentHTML("beforebegin",'<a class="mn-btn lc-btn" id="lcPesanan" href="lacak.html" aria-label="Pesanan saya" title="Pesanan saya">📦'+(n?'<b>'+n+'</b>':'')+'</a>');
+      }
+
+      /* menu ☰ */
+      var drawer=document.querySelector(".mn-drawer");
+      if(!drawer || !window.MutationObserver) return;
+      function pasang(){
+        if(drawer.querySelector(".mn-item.mn-lacak")) return;
+        var t=drawer.querySelector(".mn-item.mn-info")||drawer.querySelector('a.mn-item[href*="wa.me"]'); if(!t) return;
+        t.insertAdjacentHTML("afterend",'<a class="mn-item mn-lacak" href="lacak.html"><i>📦</i><span>Pesanan Saya<small>Lihat dan lacak pesananmu</small></span></a>');
+      }
+      pasang();
+      new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
+    })();
+    /* ===== AKHIR KODE LACAK ===== */  
+    
+  loadCart();
     searchProduct();
     renderCart();
   }
