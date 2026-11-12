@@ -9310,7 +9310,20 @@ async function askAI(){
       new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
     })();
     /* ===== AKHIR KODE LACAK ===== */
-    
+
+    /* ================================================================
+       KODE FOTO: kalau foto parfum gagal tampil, muncul gambar pengganti yang rapi (bukan kotak kosong)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var s=document.createElement("style");
+      s.textContent=".bottle-wrap:has(img.broken){position:relative;background:radial-gradient(circle at 50% 35%,rgba(139,92,246,.35),rgba(34,211,238,.12) 60%,transparent),rgba(255,255,255,.04)}"+
+        ".bottle-wrap:has(img.broken)::before{content:'🧴';position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);font-size:58px;opacity:.9;filter:drop-shadow(0 8px 14px rgba(0,0,0,.4))}"+
+        ".bottle-wrap:has(img.broken)::after{content:'Foto segera hadir';position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;color:#9aa8bd;letter-spacing:.04em}";
+      document.head.appendChild(s);
+    })();
+    /* ===== AKHIR KODE FOTO ===== */
+  
   loadCart();
     searchProduct();
     renderCart();
