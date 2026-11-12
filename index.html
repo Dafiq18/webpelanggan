@@ -9220,8 +9220,8 @@ async function askAI(){
       new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
     })();
     /* ===== AKHIR KODE INFO ===== */
-  
-      /* ================================================================
+
+        /* ================================================================
        KODE LACAK: "Pesanan Saya" (daftar pesanan di perangkat ini + status) — tombol 📦 di atas dan di menu ☰
        (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE INFO)
        ================================================================ */
@@ -9255,6 +9255,39 @@ async function askAI(){
         };
       }
 
+      /* di halaman pesanan (tab baru): tombol "Salin nomor" + tautan yang bisa diketuk ikut tertulis di pesan WhatsApp */
+      function pasangPopup(w){
+        var d=w.document, cust=d.getElementById("cust");
+        var m=cust&&/No\. pesanan\s*([A-Z0-9-]+)/.exec(cust.textContent), no=m?m[1]:"";
+        if(!no) return;
+        var kartu=d.createElement("div"); kartu.className="card";
+        kartu.innerHTML='<div class="t">📦 Nomor pesananmu</div><div style="display:flex;align-items:center;gap:10px"><b style="font-size:18px;letter-spacing:.04em;flex:1">'+no+'</b><button type="button" id="lcSalin" style="border:0;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.12);color:#fff">Salin nomor</button></div><div style="color:#9aa6c4;font-size:13px;margin-top:6px">Pesananmu juga tersimpan otomatis di menu <b>📦 Pesanan Saya</b> di tokonya.</div>';
+        cust.parentNode.insertBefore(kartu,cust.nextSibling);
+        d.getElementById("lcSalin").onclick=function(){
+          var b=this;
+          function selesai(){ b.textContent="Tersalin ✔"; w.setTimeout(function(){ b.textContent="Salin nomor"; },1500); }
+          function cadangan(){ var t=d.createElement("textarea"); t.value=no; d.body.appendChild(t); t.select(); try{ d.execCommand("copy"); selesai(); }catch(z){} d.body.removeChild(t); }
+          try{ if(w.navigator.clipboard&&w.navigator.clipboard.writeText) w.navigator.clipboard.writeText(no).then(selesai,cadangan); else cadangan(); }catch(x){ cadangan(); }
+        };
+        var buka=w.open;
+        w.open=function(u,t,f){
+          if(typeof u==="string" && u.indexOf("https://wa.me/")===0 && u.indexOf("?text=")>0){
+            var tautan=new URL("lacak.html?no="+encodeURIComponent(no),location.href).href;
+            u=u+encodeURIComponent("\n\n📦 *Lacak pesananmu* (ketuk tautan ini):\n"+tautan);
+          }
+          return buka.call(w,u,t,f);
+        };
+      }
+      if(typeof bukaCheckoutBaru==="function"){
+        var asliBuka=bukaCheckoutBaru;
+        bukaCheckoutBaru=function(){
+          var tangkap=null, wo=window.open;
+          window.open=function(){ var w=wo.apply(window,arguments); if(!tangkap) tangkap=w; return w; };
+          try{ asliBuka.apply(this,arguments); }finally{ window.open=wo; }
+          if(tangkap){ try{ pasangPopup(tangkap); }catch(e){ try{ console.warn("KODE LACAK:",e); }catch(_){} } }
+        };
+      }
+
       /* tombol 📦 Pesanan Saya di bagian atas (di samping tombol ☰) */
       var gaya=document.createElement("style");
       gaya.textContent=".lc-btn{position:relative;text-decoration:none;font-size:21px;flex:0 0 auto}.lc-btn b{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#ee4d2d;color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:800}";
@@ -9276,7 +9309,7 @@ async function askAI(){
       pasang();
       new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
     })();
-    /* ===== AKHIR KODE LACAK ===== */  
+    /* ===== AKHIR KODE LACAK ===== */
     
   loadCart();
     searchProduct();
