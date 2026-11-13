@@ -9223,7 +9223,7 @@ async function askAI(){
 
         /* ================================================================
        KODE LACAK: "Pesanan Saya" (daftar pesanan di perangkat ini + status) — tombol 📦 di atas dan di menu ☰
-       (tempel di atas baris:  loadCart();  — PALING BAWAH, setelah KODE INFO)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE INFO)
        ================================================================ */
     (function(){
       var KUNCI="aromaPesananSaya";
@@ -9324,6 +9324,52 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE FOTO ===== */
   
+      /* ================================================================
+       KODE STOK: parfum yang stoknya 0 otomatis tampil "Stok habis"; stok tinggal 1–3 diberi tanda "Sisa N"
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       Stok diatur di halaman stok.html. Parfum yang stoknya tidak diisi dianggap selalu tersedia.
+       ================================================================ */
+    (function(){
+      var PROYEK="aroma-semarang", KUNCI_API="AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k";
+      var s=document.createElement("style");
+      s.textContent=".st-habis img{filter:grayscale(1) opacity(.45)!important}"+
+        ".st-habis .bottle-wrap{position:relative}"+
+        ".st-habis .bottle-wrap::before{content:'STOK HABIS';position:absolute;z-index:2;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-8deg);padding:8px 16px;border-radius:10px;background:rgba(0,0,0,.78);border:2px solid #fda4af;color:#fda4af;font-weight:950;letter-spacing:.1em;font-size:14px;white-space:nowrap}"+
+        ".st-sisa{position:absolute;z-index:2;left:8px;bottom:8px;padding:3px 9px;border-radius:99px;background:rgba(251,191,36,.95);color:#451a03;font-size:11px;font-weight:900}";
+      document.head.appendChild(s);
+      var stok=null;
+      function terapkan(){
+        if(!stok) return;
+        document.querySelectorAll("article.card").forEach(function(c){
+          var d=c.querySelector(".detail-data"); if(!d||!d.dataset.code) return;
+          var n=stok[String(d.dataset.code).replace(/\//g,"_")];
+          var habis=(typeof n==="number")&&n<=0;
+          c.classList.toggle("st-habis",habis);
+          var b=c.querySelector(".buy-btn");
+          if(b){
+            if(habis){ b.disabled=true; if(!b.dataset.stAsli) b.dataset.stAsli=b.textContent; b.textContent="Stok habis"; }
+            else if(b.dataset.stAsli){ b.disabled=false; b.textContent=b.dataset.stAsli; delete b.dataset.stAsli; }
+          }
+          var w=c.querySelector(".bottle-wrap"), lama=w&&w.querySelector(".st-sisa");
+          if(lama) lama.remove();
+          if(w && typeof n==="number" && n>=1 && n<=3){ w.style.position="relative"; w.insertAdjacentHTML("beforeend",'<span class="st-sisa">Sisa '+n+'</span>'); }
+        });
+      }
+      function ambil(token,hasil){
+        var u="https://firestore.googleapis.com/v1/projects/"+PROYEK+"/databases/(default)/documents/stok?pageSize=300&key="+KUNCI_API+(token?"&pageToken="+encodeURIComponent(token):"");
+        return fetch(u).then(function(r){ if(!r.ok) throw new Error("stok "+r.status); return r.json(); }).then(function(j){
+          (j.documents||[]).forEach(function(x){
+            var id=x.name.split("/").pop(), f=x.fields&&x.fields.jumlah;
+            if(f && f.integerValue!=null) hasil[id]=Number(f.integerValue);
+            else if(f && f.doubleValue!=null) hasil[id]=Number(f.doubleValue);
+          });
+          return j.nextPageToken?ambil(j.nextPageToken,hasil):hasil;
+        });
+      }
+      ambil("",{}).then(function(h){ stok=h; terapkan(); setTimeout(terapkan,2500); }).catch(function(e){ try{ console.warn("KODE STOK:",e.message); }catch(_){} });
+    })();
+    /* ===== AKHIR KODE STOK ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
