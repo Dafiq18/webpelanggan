@@ -9373,6 +9373,96 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE STOK ===== */
     
+      /* ================================================================
+       KODE FILTER: filter "Untuk" (Wanita / Pria / Unisex), filter harga, dan urutan (harga / nama) di katalog
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var toolbar=document.querySelector(".toolbar"), list=document.getElementById("productList");
+      if(!toolbar||!list||document.getElementById("flBar")) return;
+
+      /* ====== PENGATURAN: batas harga (Rp) untuk tombol filter. Dihitung dari harga TERMURAH tiap parfum. ====== */
+      var HARGA=[ ["Semua harga",0,0], ["≤ 30rb",1,30000], ["31–45rb",30001,45000], ["46–60rb",45001,60000], ["> 60rb",60001,0] ];
+
+      var s=document.createElement("style");
+      s.textContent="#flBar{margin:10px 0 4px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.04)}"+
+        "#flBar .fl-r{display:flex;align-items:center;gap:8px;margin:6px 0}"+
+        "#flBar .fl-t{flex:0 0 74px;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8}"+
+        "#flBar .fl-c{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}#flBar .fl-c::-webkit-scrollbar{display:none}"+
+        "#flBar button,#flBar select{flex:0 0 auto;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#e2e8f0;border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}"+
+        "#flBar button.on{background:linear-gradient(135deg,#ee4d2d,#ff7337);border-color:transparent;color:#fff}"+
+        "#flBar select{background:#0f172a;max-width:100%}"+
+        "#flBar .fl-x{margin-left:auto;background:none;border:0;color:#fda4af;text-decoration:underline;padding:4px}";
+      document.head.appendChild(s);
+
+      var G=[["all","Semua"],["wanita","👩 Wanita"],["pria","👨 Pria"],["unisex","👫 Unisex"]];
+      var U=[["asli","Terbaru / bawaan"],["murah","Harga terendah"],["mahal","Harga tertinggi"],["nama","Nama A–Z"]];
+      var st={g:"all",h:0,u:"asli"};
+      var bar=document.createElement("div"); bar.id="flBar";
+      bar.innerHTML='<div class="fl-r"><span class="fl-t">Untuk</span><div class="fl-c" id="flG">'+G.map(function(x){return '<button type="button" data-g="'+x[0]+'">'+x[1]+'</button>';}).join("")+'</div></div>'+
+        '<div class="fl-r"><span class="fl-t">Harga</span><div class="fl-c" id="flH">'+HARGA.map(function(x,i){return '<button type="button" data-h="'+i+'">'+x[0]+'</button>';}).join("")+'</div></div>'+
+        '<div class="fl-r"><span class="fl-t">Urutkan</span><select id="flU">'+U.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join("")+'</select><button type="button" class="fl-x" id="flX" hidden>Hapus filter</button></div>';
+      toolbar.parentNode.insertBefore(bar,toolbar.nextSibling);
+
+      function gender(c){
+        var d=c.querySelector(".detail-data"), t=String((d&&d.dataset.gender)||(c.querySelector(".gender")||{}).textContent||"").toLowerCase();
+        var w=t.indexOf("wanita")>=0||t.indexOf("women")>=0, p=t.indexOf("pria")>=0||t.indexOf("men")>=0&&t.indexOf("women")<0;
+        if(t.indexOf("unisex")>=0||(w&&p)) return "unisex";
+        return w?"wanita":(p?"pria":"unisex");
+      }
+      function termurah(c){
+        var m=0; c.querySelectorAll(".prices tbody td").forEach(function(td,i){
+          var v=Number(String(td.textContent).replace(/\D/g,"")); if(v>0&&(!m||v<m)) m=v;
+        });
+        return m;
+      }
+      function nama(c){var h=c.querySelector("h2");return h?h.textContent:"";}
+      var snapshot=Array.prototype.slice.call(list.children);
+
+      function terapkan(){
+        var cards=Array.prototype.slice.call(list.querySelectorAll(".card")), shown=0, h=HARGA[st.h];
+        cards.forEach(function(c){
+          var ok=!c.hidden;
+          if(ok&&st.g!=="all"&&gender(c)!==st.g) ok=false;
+          if(ok&&st.h>0){var m=termurah(c); if(!m||m<h[1]||(h[2]&&m>h[2])) ok=false;}
+          c.hidden=!ok; if(ok) shown++;
+        });
+        /* urutan */
+        var urut=cards.slice();
+        if(st.u==="asli"){
+          var baru=urut.filter(function(c){return snapshot.indexOf(c)<0;});
+          snapshot=baru.concat(snapshot.filter(function(c){return c.parentNode===list;}));
+          urut=snapshot.filter(function(c){return c.classList&&c.classList.contains("card");});
+        }else if(st.u==="nama"){ urut.sort(function(a,b){return nama(a).localeCompare(nama(b));}); }
+        else{ urut.sort(function(a,b){var x=termurah(a)||1e12,y=termurah(b)||1e12; return st.u==="murah"?x-y:(termurah(b)-termurah(a));}); }
+        var cur=Array.prototype.slice.call(list.querySelectorAll(".card")), beda=urut.some(function(c,i){return c!==cur[i];});
+        if(beda){ var f=document.createDocumentFragment(); urut.forEach(function(c){f.appendChild(c);}); list.appendChild(f); }
+        var cnt=document.getElementById("count"), emp=document.getElementById("empty");
+        if(cnt) cnt.textContent=shown+" parfum"; if(emp) emp.hidden=shown!==0;
+        /* tampilan tombol */
+        bar.querySelectorAll("[data-g]").forEach(function(b){b.classList.toggle("on",b.dataset.g===st.g);});
+        bar.querySelectorAll("[data-h]").forEach(function(b){b.classList.toggle("on",Number(b.dataset.h)===st.h);});
+        document.getElementById("flX").hidden=(st.g==="all"&&st.h===0&&st.u==="asli");
+      }
+      bar.addEventListener("click",function(e){
+        var b=e.target.closest("button"); if(!b) return;
+        if(b.dataset.g) st.g=b.dataset.g; else if(b.dataset.h!=null) st.h=Number(b.dataset.h); else if(b.id==="flX"){ st={g:"all",h:0,u:"asli"}; document.getElementById("flU").value="asli"; }
+        gabung();
+      });
+      document.getElementById("flU").addEventListener("change",function(){ st.u=this.value; gabung(); });
+
+      /* jalankan pencarian bawaan dulu (supaya kategori & kata kunci tetap berlaku), lalu filter ini */
+      function gabung(){ try{ if(typeof searchProduct==="function") searchProduct(); }catch(e){} terapkan(); }
+      var asliCari=(typeof searchProduct==="function")?searchProduct:null;
+      if(asliCari){ searchProduct=function(){ asliCari.apply(this,arguments); terapkan(); }; }
+      var kolom=document.getElementById("searchInput");
+      if(kolom){ ["input","keyup"].forEach(function(ev){ kolom.addEventListener(ev,terapkan,false); }); }
+      document.querySelectorAll(".category-pill").forEach(function(p){ p.addEventListener("click",terapkan,false); });
+      terapkan();
+      setTimeout(terapkan,2500);
+    })();
+    /* ===== AKHIR KODE FILTER ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
