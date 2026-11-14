@@ -9462,7 +9462,93 @@ async function askAI(){
       setTimeout(terapkan,2500);
     })();
     /* ===== AKHIR KODE FILTER ===== */
-    
+
+    /* ================================================================
+       KODE FAVORIT: tombol ♡ di setiap parfum + tombol ♡ di atas untuk melihat daftar favorit
+       (tersimpan di perangkat pembeli sendiri)
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var list=document.getElementById("productList"); if(!list||document.getElementById("fvBtn")) return;
+      var KUNCI="aromaFavorit";
+      function baca(){ try{ var a=JSON.parse(localStorage.getItem(KUNCI)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+      function tulis(a){ try{ localStorage.setItem(KUNCI,JSON.stringify(a)); }catch(e){} }
+      function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+      function kode(c){var d=c.querySelector(".detail-data");return d?d.dataset.code:"";}
+      function ada(k){return baca().indexOf(k)>=0;}
+      function kartu(k){var h=null;list.querySelectorAll(".card").forEach(function(c){if(kode(c)===k)h=c;});return h;}
+      function termurah(c){var m=0;c.querySelectorAll(".prices tbody td").forEach(function(td){var v=Number(String(td.textContent).replace(/\D/g,""));if(v>0&&(!m||v<m))m=v;});return m;}
+      function rp(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
+      function toast(t){ try{ if(typeof showToast==="function") showToast(t); }catch(e){} }
+
+      var s=document.createElement("style");
+      s.textContent=".fv-h{position:absolute;z-index:3;right:8px;bottom:8px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(8,12,24,.62);backdrop-filter:blur(6px);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}"+
+        ".fv-h.on{background:rgba(244,63,94,.9);border-color:transparent;animation:fvp .3s}@keyframes fvp{50%{transform:scale(1.25)}}"+
+        ".fv-b{position:relative;text-decoration:none;font-size:21px;flex:0 0 auto}.fv-b b{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#f43f5e;color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:800}"+
+        "#fvSheet{position:fixed;inset:0;z-index:95;display:none;align-items:flex-end;justify-content:center;background:rgba(2,6,15,.78);backdrop-filter:blur(12px)}#fvSheet.open{display:flex}"+
+        "#fvSheet .fv-p{width:min(620px,100%);max-height:88vh;overflow:auto;background:#0b1120;border:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0}"+
+        "#fvSheet .fv-hd{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:rgba(11,17,32,.97);border-bottom:1px solid rgba(255,255,255,.1);font-weight:900;font-size:17px}"+
+        "#fvSheet .fv-x{border:0;background:rgba(255,255,255,.1);color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}"+
+        "#fvSheet .fv-i{display:flex;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.06)}"+
+        "#fvSheet .fv-i img{width:58px;height:58px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.05);flex:0 0 auto}"+
+        "#fvSheet .fv-n{flex:1;min-width:0;cursor:pointer}#fvSheet .fv-n b{display:block}#fvSheet .fv-n small{color:#9aa8bd}"+
+        "#fvSheet .fv-a{display:flex;flex-direction:column;gap:6px}#fvSheet .fv-a button{border:0;border-radius:10px;padding:7px 11px;font-weight:800;font-size:12px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#ee4d2d,#ff7337)}#fvSheet .fv-a button.d{background:rgba(255,255,255,.1)}"+
+        "#fvSheet .fv-k{text-align:center;color:#9aa8bd;padding:36px 20px}";
+      document.head.appendChild(s);
+
+      function pasangHati(c){
+        var w=c.querySelector(".bottle-wrap"), k=kode(c); if(!w||!k||w.querySelector(".fv-h")) return;
+        w.style.position="relative";
+        var b=document.createElement("button"); b.type="button"; b.className="fv-h"; b.setAttribute("aria-label","Simpan ke favorit"); b.dataset.k=k;
+        b.textContent=ada(k)?"♥":"♡"; if(ada(k)) b.classList.add("on");
+        w.appendChild(b);
+      }
+      function segarkanHati(){
+        var a=baca(); list.querySelectorAll(".fv-h").forEach(function(b){ var on=a.indexOf(b.dataset.k)>=0; b.classList.toggle("on",on); b.textContent=on?"♥":"♡"; });
+        var n=a.length, bt=document.getElementById("fvBtn"); if(bt) bt.innerHTML="♡"+(n?"<b>"+n+"</b>":"");
+      }
+      list.querySelectorAll(".card").forEach(pasangHati);
+      new MutationObserver(function(){ list.querySelectorAll(".card").forEach(pasangHati); }).observe(list,{childList:true});
+      list.addEventListener("click",function(e){
+        var b=e.target.closest(".fv-h"); if(!b) return;
+        e.preventDefault(); e.stopPropagation();
+        var a=baca(), i=a.indexOf(b.dataset.k);
+        if(i>=0){ a.splice(i,1); toast("Dihapus dari favorit"); } else { a.unshift(b.dataset.k); toast("Disimpan ke favorit ♥"); }
+        tulis(a); segarkanHati(); if(sheet.classList.contains("open")) isiSheet();
+      },true);
+
+      /* tombol ♡ di bagian atas */
+      var sebelum=document.getElementById("lcPesanan")||document.getElementById("mnBuka");
+      if(sebelum&&sebelum.parentNode) sebelum.insertAdjacentHTML("beforebegin",'<button type="button" class="mn-btn fv-b" id="fvBtn" aria-label="Favorit" title="Favorit">♡</button>');
+
+      var sheet=document.createElement("div"); sheet.id="fvSheet";
+      sheet.innerHTML='<div class="fv-p"><div class="fv-hd"><span>♥ Parfum Favoritku</span><button class="fv-x" type="button" aria-label="Tutup">✕</button></div><div id="fvIsi"></div></div>';
+      document.body.appendChild(sheet);
+      function tutup(){ sheet.classList.remove("open"); document.body.style.overflow=""; }
+      function isiSheet(){
+        var a=baca(), h="";
+        a.forEach(function(k){
+          var c=kartu(k); if(!c) return;
+          var im=c.querySelector(".bottle-wrap img"), nm=c.querySelector("h2"), br=c.querySelector(".brand"), hg=termurah(c);
+          var habis=c.classList.contains("kt-habis")||c.classList.contains("st-habis");
+          h+='<div class="fv-i" data-k="'+esc(k)+'"><img src="'+esc(im?im.getAttribute("src"):"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="fv-n" data-lihat="1"><b>'+esc(nm?nm.textContent:k)+'</b><small>'+esc(br?br.textContent:"")+(hg?' • mulai '+rp(hg):'')+'</small></div>'+
+            '<div class="fv-a">'+(habis?'<button type="button" class="d" disabled>Stok habis</button>':'<button type="button" data-pilih="1">🛒 Pilih</button>')+'<button type="button" class="d" data-hapus="1">Hapus</button></div></div>';
+        });
+        document.getElementById("fvIsi").innerHTML=h||'<div class="fv-k">Belum ada favorit.<br>Ketuk ♡ di foto parfum untuk menyimpannya di sini.</div>';
+      }
+      document.addEventListener("click",function(e){
+        if(e.target.closest("#fvBtn")){ isiSheet(); sheet.classList.add("open"); document.body.style.overflow="hidden"; return; }
+        if(e.target===sheet||e.target.closest(".fv-x")){ tutup(); return; }
+        var it=e.target.closest("#fvSheet .fv-i"); if(!it) return; var k=it.dataset.k, c=kartu(k);
+        if(e.target.closest("[data-hapus]")){ tulis(baca().filter(function(x){return x!==k;})); segarkanHati(); isiSheet(); return; }
+        if(!c) return;
+        if(e.target.closest("[data-pilih]")){ tutup(); try{ openPicker(c); }catch(x){ var t=c.querySelector("[data-add-cart]"); if(t) t.click(); } return; }
+        if(e.target.closest("[data-lihat]")){ tutup(); var d=c.querySelector("[data-open-detail]"); if(d) d.click(); }
+      });
+      segarkanHati();
+    })();
+    /* ===== AKHIR KODE FAVORIT ===== */
+  
   loadCart();
     searchProduct();
     renderCart();
