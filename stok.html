@@ -90,7 +90,7 @@ var VERSI_SDK="10.12.2";
       fetch("index.html?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(h){
         var doc=new DOMParser().parseFromString(h,"text/html"),out=[];
         doc.querySelectorAll("article.card").forEach(function(c){var d=c.querySelector(".detail-data");if(d&&d.dataset.code)out.push({kode:d.dataset.code,nama:d.dataset.name||""});});
-        return out;
+        return fetch("produk.json?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}).then(function(j){ if(j){ (j.hapus||[]).forEach(function(k){ out=out.filter(function(p){return p.kode!==k;}); }); (j.baru||[]).slice().reverse().forEach(function(p){ if(p&&p.kode&&p.nama&&!out.some(function(o){return o.kode===p.kode;})) out.unshift({kode:p.kode,nama:p.nama}); }); } return out; });
       }),
       db.collection("stok").get().then(function(s){var o={};s.forEach(function(d){var j=d.data().jumlah;if(typeof j==="number")o[d.id]=j;});return o;})
     ]).then(function(h){produk=h[0];stok=h[1];ubah={};tampil();}).catch(function(e){$("daftar").innerHTML='<div class="kosong">Gagal memuat: '+esc(e.message)+'</div>';});
