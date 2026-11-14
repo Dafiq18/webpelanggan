@@ -9324,13 +9324,16 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE FOTO ===== */
   
-      /* ================================================================
-       KODE STOK: parfum yang stoknya 0 otomatis tampil "Stok habis"; stok tinggal 1–3 diberi tanda "Sisa N"
+        /* ================================================================
+       KODE STOK: stok dihitung dalam ML. Parfum yang stoknya habis tampil "Stok habis";
+       stok menipis diberi tanda "Sisa ... ml". Stok diatur di halaman stok.html.
+       Parfum yang stoknya tidak diisi dianggap selalu tersedia.
        (tempel di atas baris:  loadCart();  — PALING BAWAH)
-       Stok diatur di halaman stok.html. Parfum yang stoknya tidak diisi dianggap selalu tersedia.
        ================================================================ */
     (function(){
       var PROYEK="aroma-semarang", KUNCI_API="AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k";
+      var UKURAN_TERKECIL=30;   /* stok di bawah ini (ML) = HABIS. Harus sama dengan di stok.html */
+      var BATAS_MENIPIS=300;    /* stok di bawah ini (ML) = tampil "Sisa ... ml" */
       var s=document.createElement("style");
       s.textContent=".st-habis img{filter:grayscale(1) opacity(.45)!important}"+
         ".st-habis .bottle-wrap{position:relative}"+
@@ -9343,7 +9346,7 @@ async function askAI(){
         document.querySelectorAll("article.card").forEach(function(c){
           var d=c.querySelector(".detail-data"); if(!d||!d.dataset.code) return;
           var n=stok[String(d.dataset.code).replace(/\//g,"_")];
-          var habis=(typeof n==="number")&&n<=0;
+          var ada=(typeof n==="number"), habis=ada&&n<UKURAN_TERKECIL;
           c.classList.toggle("st-habis",habis);
           var b=c.querySelector(".buy-btn");
           if(b){
@@ -9352,7 +9355,7 @@ async function askAI(){
           }
           var w=c.querySelector(".bottle-wrap"), lama=w&&w.querySelector(".st-sisa");
           if(lama) lama.remove();
-          if(w && typeof n==="number" && n>=1 && n<=3){ w.style.position="relative"; w.insertAdjacentHTML("beforeend",'<span class="st-sisa">Sisa '+n+'</span>'); }
+          if(w && ada && !habis && n<BATAS_MENIPIS){ w.style.position="relative"; w.insertAdjacentHTML("beforeend",'<span class="st-sisa">Sisa '+Math.round(n)+' ml</span>'); }
         });
       }
       function ambil(token,hasil){
