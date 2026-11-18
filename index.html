@@ -1,4 +1,4 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1020"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="logo.png">
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1020"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Parfum refill pilihan, harga bersahabat. Pilih aroma favoritmu dan pesan lewat WhatsApp."><meta property="og:type" content="website"><meta property="og:site_name" content="Aroma Semarang"><meta property="og:title" content="Aroma Semarang | Toko Parfum Refil"><meta property="og:description" content="Parfum refill pilihan, harga bersahabat. Pilih aroma favoritmu dan pesan lewat WhatsApp."><meta property="og:image" content="https://ALAMAT_WEBMU/logo.png"><meta property="og:url" content="https://ALAMAT_WEBMU/"><meta name="twitter:card" content="summary"><link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Parfum refill pilihan, harga bersahabat. Pilih aroma favoritmu dan pesan lewat WhatsApp."><meta property="og:type" content="website"><meta property="og:site_name" content="Aroma Semarang"><meta property="og:title" content="Aroma Semarang | Toko Parfum Refil"><meta property="og:description" content="Parfum refill pilihan, harga bersahabat. Pilih aroma favoritmu dan pesan lewat WhatsApp."><meta property="og:image" content="https://ALAMAT_WEBMU/logo.png"><meta property="og:url" content="https://ALAMAT_WEBMU/"><meta name="twitter:card" content="summary"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="logo.png">
   <link rel="apple-touch-icon" href="logo.png"><title>Aroma Semarang | Toko Parfum Refil</title> <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <style>
@@ -9549,6 +9549,58 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE FAVORIT ===== */
   
+      /* ================================================================
+       KODE APLIKASI: tombol "Pasang Aplikasi" di menu ☰ (web bisa dipasang di layar utama HP seperti aplikasi)
+       Butuh file: manifest.webmanifest dan sw.js di GitHub, serta baris <link rel="manifest"> di bagian atas index.html.
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var sudah=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+      if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost")){
+        window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
+      }
+      if(sudah) return;                                   /* sudah dibuka sebagai aplikasi: tombol tidak perlu */
+      var tunda=null;
+      window.addEventListener("beforeinstallprompt",function(e){ e.preventDefault(); tunda=e; });
+      window.addEventListener("appinstalled",function(){ tunda=null; var x=document.querySelector(".mn-item.mn-app"); if(x) x.remove(); });
+
+      var s=document.createElement("style");
+      s.textContent="#apBox{position:fixed;inset:0;z-index:99;display:none;align-items:flex-end;justify-content:center;background:rgba(2,6,15,.78);backdrop-filter:blur(12px)}#apBox.open{display:flex}"+
+        "#apBox .ap-p{width:min(520px,100%);background:#0b1120;border:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;padding:20px 20px 26px;color:#e2e8f0}"+
+        "#apBox h3{margin:0 0 6px;font-size:19px}#apBox p{margin:0 0 12px;color:#9aa8bd;font-size:14px}"+
+        "#apBox ol{margin:0 0 16px;padding-left:20px;line-height:1.7;font-size:15px}"+
+        "#apBox button{width:100%;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:15px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#ee4d2d,#ff7337)}";
+      document.head.appendChild(s);
+      var box=document.createElement("div"); box.id="apBox"; document.body.appendChild(box);
+      function petunjuk(){
+        var ua=navigator.userAgent||"", ios=/iPhone|iPad|iPod/i.test(ua), and=/Android/i.test(ua);
+        var langkah=ios?["Buka web ini di <b>Safari</b> (bukan di aplikasi lain).","Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas) di bagian bawah.","Gulir, lalu pilih <b>Tambah ke Layar Utama</b>.","Ketuk <b>Tambah</b>."]
+          :and?["Ketuk <b>⋮</b> (tiga titik) di pojok kanan atas Chrome.","Pilih <b>Tambahkan ke layar utama</b> atau <b>Instal aplikasi</b>.","Ketuk <b>Instal</b> / <b>Tambahkan</b>."]
+          :["Klik ikon <b>Instal</b> di sebelah kanan kotak alamat browser, atau buka menu ⋮ lalu pilih <b>Instal Aroma Semarang</b>.","Klik <b>Instal</b>."];
+        box.innerHTML='<div class="ap-p"><h3>📲 Pasang di layar utama</h3><p>Buka toko langsung dari ikon di HP, tampil layar penuh seperti aplikasi.</p><ol>'+langkah.map(function(x){return "<li>"+x+"</li>";}).join("")+'</ol><button type="button" id="apTutup">Mengerti</button></div>';
+        box.classList.add("open");
+      }
+      document.addEventListener("click",function(e){
+        if(e.target===box||e.target.closest("#apTutup")){ box.classList.remove("open"); return; }
+        var t=e.target.closest(".mn-item.mn-app"); if(!t) return;
+        e.preventDefault();
+        var l=document.querySelector(".mn-lapis"); if(l) l.click();
+        if(tunda){ var p=tunda; tunda=null; try{ p.prompt(); }catch(x){ petunjuk(); } }
+        else petunjuk();
+      });
+
+      var drawer=document.querySelector(".mn-drawer");
+      if(!drawer||!window.MutationObserver) return;
+      function pasang(){
+        if(drawer.querySelector(".mn-item.mn-app")) return;
+        var t=drawer.querySelector(".mn-item.mn-lacak")||drawer.querySelector(".mn-item.mn-info")||drawer.querySelector('a.mn-item[href*="wa.me"]'); if(!t) return;
+        t.insertAdjacentHTML("afterend",'<a class="mn-item mn-app" href="#"><i>📲</i><span>Pasang Aplikasi<small>Tambahkan ke layar utama HP</small></span></a>');
+      }
+      pasang();
+      new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
+    })();
+    /* ===== AKHIR KODE APLIKASI ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
