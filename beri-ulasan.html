@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Beri Ulasan — Aroma Semarang</title>
+<style>
+:root{--bg:#070b16;--panel:#0f1729;--line:rgba(255,255,255,.1);--tx:#eef2ff;--mut:#9aa6c4;--or:#ee4d2d;--or2:#ff7337;--ok:#34d399;--bad:#fb7185;--kn:#fbbf24}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 80% -10%,rgba(139,92,246,.18),transparent),var(--bg);color:var(--tx);font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--or2),var(--or));padding:12px 16px;display:flex;align-items:center;gap:12px}
+.top a{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);color:#fff;text-decoration:none;font-weight:900}.top b{font-size:17px}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px 80px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:12px}
+.card h3{margin:0 0 2px;font-size:16px}.card small{color:var(--mut)}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 9px;border-radius:99px;margin-left:6px;vertical-align:middle}
+.tag.ok{background:rgba(52,211,153,.18);color:var(--ok)}.tag.w{background:rgba(251,191,36,.18);color:var(--kn)}.tag.m{background:rgba(255,255,255,.1);color:var(--mut)}
+.btn{border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--or),var(--or2))}
+.btn.s{background:rgba(255,255,255,.1)}.btn:disabled{opacity:.5}
+label{display:block;margin:12px 0 4px;color:var(--mut);font-size:13px;font-weight:700}
+input,textarea,select{width:100%;background:#0b1120;color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit}
+textarea{min-height:110px;resize:vertical}
+.bintang{display:flex;gap:6px;font-size:36px;line-height:1}.bintang button{border:0;background:none;color:#475569;font-size:36px;cursor:pointer;padding:0 2px}.bintang button.on{color:var(--kn)}
+.hit{color:var(--mut);font-size:12px;text-align:right}
+.msg{margin-top:12px;padding:11px 13px;border-radius:12px;font-size:14px}.msg.ok{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#a7f3d0}.msg.err{background:rgba(251,113,133,.12);border:1px solid rgba(251,113,133,.3);color:#fecdd3}
+.kosong{text-align:center;color:var(--mut);padding:26px 10px}
+.cari{display:flex;gap:8px}.cari input{flex:1}
+</style>
+</head>
+<body>
+<div class="top"><a href="index.html" aria-label="Kembali">‹</a><b>⭐ Beri Ulasan</b></div>
+<div class="wrap">
+  <p style="color:var(--mut);margin:6px 0 0">Ulasan hanya bisa ditulis untuk pesanan yang sudah <b>Selesai</b>. Ulasanmu akan ditinjau toko dulu sebelum tampil di web.</p>
+  <div id="daftar"><div class="kosong">Memuat pesananmu…</div></div>
+  <div class="card"><h3>Pesanan tidak muncul?</h3><small>Masukkan nomor pesananmu (contoh: AS-1411-AB12).</small>
+    <div class="cari" style="margin-top:8px"><input id="nomorManual" placeholder="Nomor pesanan" autocapitalize="characters"><button class="btn s" id="bCari" type="button">Cek</button></div><div id="pesanCari"></div></div>
+</div>
+<script>
+/* ====== PENGATURAN ====== */
+var FIREBASE_CONFIG={apiKey:"AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k",authDomain:"aroma-semarang.firebaseapp.com",projectId:"aroma-semarang",storageBucket:"aroma-semarang.firebasestorage.app",messagingSenderId:"92275973960",appId:"1:92275973960:web:7653449d240a7b147d1d7d"};
+var VERSI_SDK="10.12.2";
+/* ====== JANGAN DIUBAH DI BAWAH INI ====== */
+(function(){
+  var $=function(i){return document.getElementById(i);};
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+  function baca(k){try{var a=JSON.parse(localStorage.getItem(k)||"[]");return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function tulis(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  var db, pesanan=[], status={}, terkirim=baca("aromaUlasanTerkirim");
+  function muat(src){return new Promise(function(ok,g){var s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=function(){g(new Error("Gagal memuat Firebase. Periksa internet."));};document.head.appendChild(s);});}
+  var b="https://www.gstatic.com/firebasejs/"+VERSI_SDK+"/";
+  muat(b+"firebase-app-compat.js").then(function(){return muat(b+"firebase-firestore-compat.js");}).then(function(){
+    firebase.initializeApp(FIREBASE_CONFIG); db=firebase.firestore(); mulai();
+  }).catch(function(e){ $("daftar").innerHTML='<div class="msg err">'+esc(e.message)+'</div>'; });
+
+  function mulai(){
+    pesanan=baca("aromaPesananSaya").slice(0,15);
+    var no=(new URLSearchParams(location.search).get("no")||"").trim().toUpperCase();
+    if(/^[A-Z0-9]{2,6}-[A-Z0-9-]{3,}$/.test(no) && !pesanan.some(function(p){return p.nomor===no;})) pesanan.unshift({nomor:no,items:[]});
+    Promise.all(pesanan.map(function(p){return db.collection("status").doc(p.nomor).get().then(function(d){status[p.nomor]=d.exists?d.data().status:"";}).catch(function(){status[p.nomor]="";});})).then(tampil);
+  }
+  function tampil(){
+    if(!pesanan.length){ $("daftar").innerHTML='<div class="kosong">Belum ada pesanan di perangkat ini.</div>'; return; }
+    $("daftar").innerHTML=pesanan.map(function(p){
+      var st=status[p.nomor], sudah=terkirim.indexOf(p.nomor)>=0, isi=(p.items||[]).map(function(i){return esc(i.nama);}).slice(0,3).join(", ");
+      var aksi=sudah?'<span class="tag ok">Ulasan terkirim ✓</span>':(st==="selesai"?'<button class="btn" type="button" data-tulis="'+esc(p.nomor)+'">⭐ Tulis ulasan</button>':'<span class="tag m">'+(st==="batal"?"Pesanan dibatalkan":(st?"Belum selesai":"Status belum diketahui"))+'</span>');
+      return '<div class="card" id="k-'+esc(p.nomor)+'"><h3>'+esc(p.nomor)+(st==="selesai"?'<span class="tag ok">Selesai</span>':'')+'</h3><small>'+(isi||"—")+'</small><div style="margin-top:10px">'+aksi+'</div><div class="form"></div></div>';
+    }).join("");
+  }
+  var bintang=0;
+  function form(nomor){
+    var p=pesanan.filter(function(x){return x.nomor===nomor;})[0], el=$("k-"+nomor).querySelector(".form");
+    var namaAwal=""; try{namaAwal=localStorage.getItem("aromaUlasanNama")||"";}catch(e){}
+    bintang=0;
+    var opt=(p.items||[]).map(function(i){var t=i.nama+(i.ukuran?" "+i.ukuran:"");return '<option>'+esc(t)+'</option>';}).join("");
+    el.innerHTML='<label>Penilaian</label><div class="bintang" id="bin">'+[1,2,3,4,5].map(function(n){return '<button type="button" data-b="'+n+'" aria-label="'+n+' bintang">★</button>';}).join("")+'</div>'+
+      '<label>Nama (cukup nama depan)</label><input id="fNama" maxlength="40" value="'+esc(namaAwal)+'" placeholder="Contoh: Budi">'+
+      '<label>Kota (boleh dikosongkan)</label><input id="fKota" maxlength="40" placeholder="Contoh: Semarang">'+
+      (opt?'<label>Parfum yang kamu beli</label><select id="fParfum">'+opt+'</select>':'<label>Parfum yang kamu beli (boleh dikosongkan)</label><input id="fParfum" maxlength="80">')+
+      '<label>Ulasanmu</label><textarea id="fIsi" maxlength="400" placeholder="Ceritakan pengalamanmu: aroma, kemasan, pengiriman…"></textarea><div class="hit"><span id="hit">0</span>/400</div>'+
+      '<div id="pesan"></div><button class="btn" type="button" id="kirim" style="margin-top:12px;width:100%">Kirim ulasan</button>';
+    el.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  document.addEventListener("click",function(e){
+    var t=e.target.closest("[data-tulis]"); if(t){ form(t.dataset.tulis); t.remove(); return; }
+    var b=e.target.closest("#bin [data-b]"); if(b){ bintang=Number(b.dataset.b); document.querySelectorAll("#bin button").forEach(function(x){x.classList.toggle("on",Number(x.dataset.b)<=bintang);}); return; }
+    if(e.target.id==="kirim") kirim(e.target.closest(".card").id.slice(2));
+    if(e.target.id==="bCari") cari();
+  });
+  document.addEventListener("input",function(e){ if(e.target.id==="fIsi") $("hit").textContent=e.target.value.length; });
+  function pesan(t,ok){ var x=$("pesan"); if(x) x.innerHTML='<div class="msg '+(ok?'ok':'err')+'">'+esc(t)+'</div>'; }
+  function kirim(nomor){
+    var nama=$("fNama").value.trim(), kota=$("fKota").value.trim(), isi=$("fIsi").value.trim(), pf=($("fParfum")&&$("fParfum").value||"").trim();
+    if(!bintang) return pesan("Pilih jumlah bintang dulu.");
+    if(!nama) return pesan("Isi namamu (cukup nama depan).");
+    if(isi.length<10) return pesan("Tulis ulasan minimal 10 huruf.");
+    $("kirim").disabled=true;
+    db.collection("ulasan").doc(nomor).set({nomor:nomor,nama:nama.slice(0,40),kota:kota.slice(0,40),bintang:bintang,isi:isi.slice(0,400),parfum:pf.slice(0,80),status:"menunggu",dibuat:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(function(){
+      terkirim.push(nomor); tulis("aromaUlasanTerkirim",terkirim); try{localStorage.setItem("aromaUlasanNama",nama);}catch(e){}
+      $("k-"+nomor).querySelector(".form").innerHTML='<div class="msg ok">Terima kasih, ulasanmu sudah terkirim ❤️ Ulasan akan tampil di web setelah ditinjau toko.</div>';
+    }).catch(function(er){
+      $("kirim").disabled=false;
+      pesan(er&&er.code==="permission-denied"?"Ulasan tidak bisa dikirim. Pastikan pesanan sudah Selesai dan belum pernah diulas.":"Gagal mengirim ("+(er&&er.code||"error")+"). Coba lagi.");
+    });
+  }
+  function cari(){
+    var no=$("nomorManual").value.trim().toUpperCase(), m=$("pesanCari");
+    if(!/^[A-Z0-9]{2,6}-[A-Z0-9-]{3,}$/.test(no)){ m.innerHTML='<div class="msg err">Format nomor tidak sesuai. Contoh: AS-1411-AB12</div>'; return; }
+    if(pesanan.some(function(p){return p.nomor===no;})){ m.innerHTML='<div class="msg ok">Pesanan itu sudah ada di daftar di atas.</div>'; return; }
+    db.collection("status").doc(no).get().then(function(d){
+      if(!d.exists){ m.innerHTML='<div class="msg err">Nomor pesanan tidak ditemukan.</div>'; return; }
+      pesanan.unshift({nomor:no,items:[]}); status[no]=d.data().status; m.innerHTML=""; tampil();
+    }).catch(function(){ m.innerHTML='<div class="msg err">Gagal memeriksa. Coba lagi.</div>'; });
+  }
+})();
+</script>
+</body>
+</html>
