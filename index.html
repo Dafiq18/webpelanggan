@@ -9793,6 +9793,82 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE TESTIMONI ===== */
     
+      /* ================================================================
+       KODE BANDING: bandingkan 2 parfum berdampingan (aroma, waktu pakai, ketahanan, harga)
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var list=document.getElementById("productList"); if(!list||document.getElementById("bdBar")) return;
+      function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+      function rp(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
+      function toast(t){ try{ if(typeof showToast==="function") showToast(t); }catch(e){} }
+      function kode(c){var d=c.querySelector(".detail-data");return d?d.dataset.code:"";}
+      function kartu(k){var h=null;list.querySelectorAll(".card").forEach(function(c){if(kode(c)===k)h=c;});return h;}
+      var pilih=[];
+
+      var s=document.createElement("style");
+      s.textContent=".bd-t{margin-top:8px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e2e8f0;border-radius:12px;padding:9px 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;width:100%}.bd-t.on{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#a5f3fc}"+
+        "#bdBar{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;z-index:90;display:none;align-items:center;gap:10px;padding:10px 12px 10px 16px;border-radius:99px;background:#0b1120;border:1px solid rgba(34,211,238,.5);box-shadow:0 10px 30px rgba(0,0,0,.5);color:#e2e8f0;font-weight:700;font-size:14px;white-space:nowrap}#bdBar.on{display:flex}"+
+        "#bdBar button{border:0;border-radius:99px;padding:9px 14px;font-weight:800;font-size:13px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#0891b2,#22d3ee)}#bdBar button.x{background:rgba(255,255,255,.12);padding:9px 12px}#bdBar button:disabled{opacity:.45}"+
+        "#bdSheet{position:fixed;inset:0;z-index:98;display:none;align-items:flex-end;justify-content:center;background:rgba(2,6,15,.82);backdrop-filter:blur(12px)}#bdSheet.open{display:flex}"+
+        "#bdSheet .p{width:min(760px,100%);max-height:92vh;overflow:auto;background:#0b1120;border:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;color:#e2e8f0}"+
+        "#bdSheet .hd{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(11,17,32,.98);border-bottom:1px solid rgba(255,255,255,.1);font-weight:900;font-size:17px}"+
+        "#bdSheet .hd button{border:0;background:rgba(255,255,255,.1);color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer}"+
+        "#bdSheet .r{display:grid;grid-template-columns:78px minmax(0,1fr) minmax(0,1fr);gap:0 8px;padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px;text-align:left;word-wrap:break-word}"+
+        "#bdSheet .r>div{min-width:0}#bdSheet .l{color:#94a3b8;font-weight:800;font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding-top:2px}"+
+        "#bdSheet .t{align-items:end}#bdSheet .t>div{text-align:center}#bdSheet .t img{width:70px;height:70px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.05);display:block;margin:0 auto 6px}#bdSheet .t b{display:block;font-size:14px;text-transform:none;letter-spacing:0;color:#fff}#bdSheet .t small{color:#9aa8bd;font-weight:500;text-transform:none;letter-spacing:0}"+
+        "#bdSheet .mu{color:#86efac;font-weight:800}#bdSheet .b{display:block;width:100%;border:0;border-radius:10px;padding:9px 6px;font-weight:800;font-size:12px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#ee4d2d,#ff7337)}";
+      document.head.appendChild(s);
+      var bar=document.createElement("div"); bar.id="bdBar"; document.body.appendChild(bar);
+      var sheet=document.createElement("div"); sheet.id="bdSheet"; document.body.appendChild(sheet);
+
+      function pasangTombol(c){
+        var a=c.querySelector(".card-actions"), k=kode(c); if(!a||!k||a.querySelector(".bd-t")) return;
+        var b=document.createElement("button"); b.type="button"; b.className="bd-t"; b.dataset.k=k; b.textContent="⚖️ Bandingkan"; a.appendChild(b);
+      }
+      list.querySelectorAll(".card").forEach(pasangTombol);
+      new MutationObserver(function(){ list.querySelectorAll(".card").forEach(pasangTombol); }).observe(list,{childList:true});
+
+      function segarkan(){
+        list.querySelectorAll(".bd-t").forEach(function(b){ var on=pilih.indexOf(b.dataset.k)>=0; b.classList.toggle("on",on); b.textContent=on?"✓ Dipilih untuk dibandingkan":"⚖️ Bandingkan"; });
+        if(!pilih.length){ bar.classList.remove("on"); bar.innerHTML=""; return; }
+        bar.classList.add("on");
+        bar.innerHTML='<span>⚖️ '+pilih.length+'/2 dipilih'+(pilih.length<2?' — pilih 1 lagi':'')+'</span><button type="button" data-go="1"'+(pilih.length<2?' disabled':'')+'>Bandingkan</button><button type="button" class="x" data-bersih="1" aria-label="Batal">✕</button>';
+      }
+      function data(c){
+        var d=c.querySelector(".detail-data").dataset, ch=(c.querySelector(".chips")||{}).textContent||"";
+        var kt=/Ketahanan:\s*([^•🌬\n]+)/.exec(ch), sl=/Sillage:\s*([^•\n]+)/.exec(ch);
+        var im=c.querySelector(".bottle-wrap img"), hg={};
+        c.querySelectorAll(".prices tbody tr").forEach(function(tr){ var td=tr.querySelectorAll("td"); if(td.length>=4) hg[td[0].textContent.trim()]=[1,2,3].map(function(i){return Number(String(td[i].textContent).replace(/\D/g,""))||0;}); });
+        return {c:c,k:d.code,nama:d.name||"",brand:d.brand||"",gender:d.gender||"",aroma:d.accord||"",waktu:d.occasion||"",tahan:kt?kt[1].trim():"",sillage:sl?sl[1].trim():"",img:im?im.getAttribute("src"):"",habis:c.classList.contains("kt-habis")||c.classList.contains("st-habis"),hg:hg};
+      }
+      function tampil(){
+        var A=data(kartu(pilih[0])), B=data(kartu(pilih[1]));
+        function baris(l,x,y){ return '<div class="r"><div class="l">'+l+'</div><div>'+(x?esc(x):'—')+'</div><div>'+(y?esc(y):'—')+'</div></div>'; }
+        var jenis=[]; [A,B].forEach(function(z){ Object.keys(z.hg).forEach(function(j){ if(jenis.indexOf(j)<0) jenis.push(j); }); });
+        var hb=jenis.map(function(j){
+          var a=A.hg[j]||[0,0,0], b=B.hg[j]||[0,0,0], murah=(a[0]&&b[0])?(a[0]<b[0]?0:(b[0]<a[0]?1:-1)):-1;
+          function sel(v,i){ return (v.some(Boolean)?[0,1,2].map(function(n){return v[n]?"<div>"+[30,50,100][n]+" ML: "+rp(v[n])+"</div>":"";}).join(""):"—")+(murah===i?'<div class="mu">✓ lebih murah</div>':''); }
+          return '<div class="r"><div class="l">Harga '+esc(j)+'</div><div>'+sel(a,0)+'</div><div>'+sel(b,1)+'</div></div>';
+        }).join("");
+        sheet.innerHTML='<div class="p"><div class="hd"><span>⚖️ Bandingkan Parfum</span><button type="button" data-tutup="1" aria-label="Tutup">✕</button></div>'+
+          '<div class="r t"><div></div>'+[A,B].map(function(z){return '<div><img src="'+esc(z.img)+'" alt="" onerror="this.style.visibility=\'hidden\'"><b>'+esc(z.nama)+'</b><small>'+esc(z.brand)+'</small></div>';}).join("")+'</div>'+
+          baris("Untuk",A.gender.replace(/^[^\wA-Za-z]+/,""),B.gender.replace(/^[^\wA-Za-z]+/,""))+baris("Aroma",A.aroma,B.aroma)+baris("Waktu pakai",A.waktu,B.waktu)+baris("Ketahanan",A.tahan,B.tahan)+baris("Sillage",A.sillage,B.sillage)+hb+
+          '<div class="r"><div></div>'+[A,B].map(function(z,i){return '<div>'+(z.habis?'<button class="b" disabled style="opacity:.5">Stok habis</button>':'<button class="b" data-pilih="'+i+'">🛒 Pilih ini</button>')+'</div>';}).join("")+'</div></div>';
+        sheet.classList.add("open"); document.body.style.overflow="hidden";
+      }
+      document.addEventListener("click",function(e){
+        var t=e.target.closest(".bd-t");
+        if(t){ e.preventDefault(); e.stopPropagation(); var i=pilih.indexOf(t.dataset.k); if(i>=0) pilih.splice(i,1); else { pilih.push(t.dataset.k); if(pilih.length>2){ pilih.shift(); toast("Maksimal 2 parfum — pilihan terlama diganti"); } } segarkan(); return; }
+        if(e.target.closest("[data-bersih]")){ pilih=[]; segarkan(); return; }
+        if(e.target.closest("[data-go]")){ if(pilih.length===2) tampil(); return; }
+        if(!sheet.classList.contains("open")) return;
+        if(e.target===sheet||e.target.closest("[data-tutup]")){ sheet.classList.remove("open"); document.body.style.overflow=""; return; }
+        var p=e.target.closest("[data-pilih]"); if(p){ var c=kartu(pilih[Number(p.dataset.pilih)]); sheet.classList.remove("open"); document.body.style.overflow=""; if(c){ try{ openPicker(c); }catch(x){ var b=c.querySelector("[data-add-cart]"); if(b) b.click(); } } }
+      },true);
+    })();
+    /* ===== AKHIR KODE BANDING ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
