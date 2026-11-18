@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Laporan Penjualan — Aroma Semarang</title>
+<style>
+:root{--bg:#0b1120;--panel:#121a2e;--panel2:#18223b;--line:rgba(255,255,255,.1);--tx:#eef2ff;--mut:#9aa6c4;--or:#ee4d2d;--or2:#ff7337;--ok:#34d399;--bad:#fb7185;--kn:#fbbf24;--bl:#38bdf8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{position:sticky;top:0;z-index:20;background:rgba(11,17,32,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top h1{margin:0;font-size:18px;flex:1;min-width:150px}.top h1 small{display:block;font-size:11px;color:var(--mut);font-weight:500}
+.btn{border:0;border-radius:10px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:var(--panel2);border:1px solid var(--line);text-decoration:none;display:inline-block}
+.btn:disabled{opacity:.5}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+.login{max-width:380px;margin:12vh auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px}
+.login h2{margin:0 0 4px}.login p{color:var(--mut);margin:0 0 16px}
+.login input{width:100%;margin-bottom:10px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit}
+.login .btn{width:100%;background:linear-gradient(135deg,var(--or),var(--or2));border:0}.err{color:var(--bad);min-height:20px;margin-top:8px;font-size:13px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--mut);border-radius:99px;padding:7px 14px;cursor:pointer;font-weight:700;font-size:13px}
+.chip.on{background:var(--or);color:#fff;border-color:var(--or)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.k{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.k span{color:var(--mut);font-size:12px}.k b{display:block;font-size:21px;margin-top:2px}.k small{color:var(--mut);font-size:11px}
+.k.h b{color:var(--ok)}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.box h3{margin:0 0 10px;font-size:15px}
+.grafik{display:flex;align-items:flex-end;gap:3px;height:130px;padding-top:8px}
+.grafik div{flex:1;min-width:2px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--or2),var(--or));position:relative;min-height:2px}
+.grafik div.nol{background:rgba(255,255,255,.12)}
+.sumbu{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-top:4px}
+table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+td.r,th.r{text-align:right}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:4px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--or),var(--or2))}
+.st{display:flex;gap:8px;flex-wrap:wrap}.st span{padding:5px 11px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:12px;font-weight:700}
+.note{color:var(--mut);font-size:12px;margin-top:10px}
+.hide{display:none!important}.kosong{text-align:center;color:var(--mut);padding:24px}
+</style>
+</head>
+<body>
+<div id="vLogin" class="login hide">
+  <h2>🔐 Masuk Admin</h2><p>Aroma Semarang — laporan penjualan</p>
+  <input id="lEmail" type="email" placeholder="Email admin" autocomplete="username">
+  <input id="lPass" type="password" placeholder="Password" autocomplete="current-password">
+  <button class="btn" id="lMasuk">Masuk</button><div class="err" id="lErr"></div>
+</div>
+<div id="vApp" class="hide">
+  <div class="top"><h1>📊 Laporan Penjualan<small id="who"></small></h1><a class="btn" href="pesanan.html">Pesanan</a><a class="btn" href="stok.html">Stok</a><button class="btn" id="bKeluar">Keluar</button></div>
+  <div class="wrap">
+    <div class="chips" id="chips"></div>
+    <div id="isi"><div class="kosong">Memuat…</div></div>
+  </div>
+</div>
+<script>
+/* ====== PENGATURAN ====== */
+var FIREBASE_CONFIG={apiKey:"AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k",authDomain:"aroma-semarang.firebaseapp.com",projectId:"aroma-semarang",storageBucket:"aroma-semarang.firebasestorage.app",messagingSenderId:"92275973960",appId:"1:92275973960:web:7653449d240a7b147d1d7d"};
+var EMAIL_ADMIN="kamu97834@gmail.com";   /* hanya akun admin yang bisa membaca pesanan, jadi isi dengan email admin pesanan */
+var VERSI_SDK="10.12.2";
+/* ====== JANGAN DIUBAH DI BAWAH INI ====== */
+(function(){
+  var $=function(i){return document.getElementById(i);};
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+  function rp(n){return "Rp"+Math.round(Number(n)||0).toLocaleString("id-ID");}
+  function ang(n){return Math.round(Number(n)||0).toLocaleString("id-ID");}
+  var db,auth,semua=[],rentang="7";
+  var NAMA_ST={baru:"Baru",proses:"Diproses",kirim:"Dikirim",selesai:"Selesai",batal:"Batal"};
+  function muat(src){return new Promise(function(ok,gagal){var s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=function(){gagal(new Error("Gagal memuat Firebase. Periksa koneksi internet."));};document.head.appendChild(s);});}
+  var b="https://www.gstatic.com/firebasejs/"+VERSI_SDK+"/";
+  muat(b+"firebase-app-compat.js").then(function(){return muat(b+"firebase-auth-compat.js");}).then(function(){return muat(b+"firebase-firestore-compat.js");}).then(mulai)
+  .catch(function(e){$("vLogin").classList.remove("hide");$("lErr").textContent=e.message;});
+  function mulai(){
+    firebase.initializeApp(FIREBASE_CONFIG);auth=firebase.auth();db=firebase.firestore();
+    $("lMasuk").onclick=masuk;$("lPass").onkeydown=function(e){if(e.key==="Enter")masuk();};
+    $("bKeluar").onclick=function(){auth.signOut();};
+    auth.onAuthStateChanged(function(u){
+      if(u&&(u.email||"").toLowerCase()===EMAIL_ADMIN.toLowerCase()){$("vLogin").classList.add("hide");$("vApp").classList.remove("hide");$("who").textContent=u.email;ambil();}
+      else{if(u){$("lErr").textContent="Akun ini bukan admin.";auth.signOut();}$("vApp").classList.add("hide");$("vLogin").classList.remove("hide");}
+    });
+  }
+  function masuk(){
+    $("lErr").textContent="";var em=$("lEmail").value.trim(),pw=$("lPass").value;
+    if(!em||!pw){$("lErr").textContent="Isi email dan password.";return;}
+    $("lMasuk").disabled=true;
+    auth.signInWithEmailAndPassword(em,pw).catch(function(e){var k=e&&e.code||"";$("lErr").textContent=/wrong-password|invalid-credential|user-not-found|invalid-email/.test(k)?"Email atau password salah.":/too-many/.test(k)?"Terlalu banyak percobaan. Tunggu 15–30 menit.":"Gagal masuk ("+k+").";}).then(function(){$("lMasuk").disabled=false;});
+  }
+  function tgl(d){ if(!d) return null; if(d.toDate) return d.toDate(); var x=new Date(d); return isNaN(x)?null:x; }
+  function ambil(){
+    $("isi").innerHTML='<div class="kosong">Memuat…</div>';
+    db.collection("pesanan").get().then(function(s){
+      semua=[]; s.forEach(function(d){ var p=d.data(); p.id=d.id; p._t=tgl(p.dibuat); semua.push(p); });
+      gambar();
+    }).catch(function(e){ $("isi").innerHTML='<div class="kosong">Gagal memuat: '+esc(e.code||e.message)+'</div>'; });
+  }
+  function awalHari(d){var x=new Date(d);x.setHours(0,0,0,0);return x;}
+  function ml(u){var m=/(\d+(?:[.,]\d+)?)/.exec(String(u||""));return m?Number(m[1].replace(",",".")):0;}
+  function gambar(){
+    var R=[["1","Hari ini"],["7","7 hari"],["30","30 hari"],["semua","Semua"]];
+    $("chips").innerHTML=R.map(function(r){return '<button class="chip'+(rentang===r[0]?' on':'')+'" data-r="'+r[0]+'">'+r[1]+'</button>';}).join("");
+    var sekarang=new Date(), mulaiT=rentang==="semua"?null:awalHari(new Date(sekarang.getTime()-(Number(rentang)-1)*864e5));
+    var P=semua.filter(function(p){return !mulaiT||(p._t&&p._t>=mulaiT);});
+    var cnt={baru:0,proses:0,kirim:0,selesai:0,batal:0};
+    P.forEach(function(p){ if(cnt[p.status]!=null) cnt[p.status]++; });
+    var S=P.filter(function(p){return p.status==="selesai";}), jalan=P.filter(function(p){return p.status==="proses"||p.status==="kirim"||p.status==="baru";});
+    var omzet=S.reduce(function(a,p){return a+(Number(p.total)||0);},0), potensi=jalan.reduce(function(a,p){return a+(Number(p.total)||0);},0);
+    var mlTotal=0, botol=0, terlaris={};
+    S.forEach(function(p){ (p.items||[]).forEach(function(i){ var q=Number(i.qty)||1, m=ml(i.ukuran)*q; mlTotal+=m; botol+=q; var k=i.nama||i.kode||"?"; var t=terlaris[k]||(terlaris[k]={nama:k,qty:0,ml:0,rp:0}); t.qty+=q; t.ml+=m; t.rp+=(Number(i.harga)||0)*q; }); });
+    var top=Object.keys(terlaris).map(function(k){return terlaris[k];}).sort(function(a,b){return b.qty-a.qty||b.ml-a.ml;}).slice(0,10), maks=top.length?top[0].qty:1;
+    /* grafik per hari (omzet pesanan selesai) */
+    var hari=rentang==="semua"?30:Number(rentang), seri=[], i;
+    if(rentang==="1"){ seri=[]; for(i=0;i<24;i+=1) seri.push({l:(i<10?"0":"")+i,v:0}); S.forEach(function(p){ if(p._t) seri[p._t.getHours()].v+=Number(p.total)||0; }); }
+    else{ for(i=hari-1;i>=0;i--){ var d0=awalHari(new Date(sekarang.getTime()-i*864e5)); seri.push({l:d0.getDate()+"/"+(d0.getMonth()+1),v:0,t:d0.getTime()}); }
+      semua.forEach(function(p){ if(p.status!=="selesai"||!p._t) return; var t=awalHari(p._t).getTime(); seri.forEach(function(s){ if(s.t===t) s.v+=Number(p.total)||0; }); }); }
+    var mv=Math.max.apply(null,seri.map(function(s){return s.v;}).concat([1]));
+    var h='<div class="grid">'+
+      '<div class="k h"><span>Omzet (pesanan Selesai)</span><b>'+rp(omzet)+'</b><small>'+S.length+' pesanan selesai</small></div>'+
+      '<div class="k"><span>Rata-rata per pesanan</span><b>'+rp(S.length?omzet/S.length:0)+'</b></div>'+
+      '<div class="k"><span>Parfum terjual</span><b>'+ang(botol)+' botol</b><small>'+ang(mlTotal)+' ML ('+(mlTotal/1000).toLocaleString("id-ID",{maximumFractionDigits:2})+' L)</small></div>'+
+      '<div class="k"><span>Menunggu (belum selesai)</span><b>'+rp(potensi)+'</b><small>'+jalan.length+' pesanan</small></div></div>'+
+      '<div class="box"><h3>Status pesanan ('+P.length+' pesanan)</h3><div class="st">'+Object.keys(NAMA_ST).map(function(k){return '<span>'+NAMA_ST[k]+': '+cnt[k]+'</span>';}).join("")+'</div></div>'+
+      '<div class="box"><h3>Omzet '+(rentang==="1"?"per jam hari ini":"per hari")+'</h3><div class="grafik">'+seri.map(function(s){return '<div class="'+(s.v?'':'nol')+'" style="height:'+(s.v?Math.max(4,s.v/mv*100):1)+'%" title="'+esc(s.l)+': '+rp(s.v)+'"></div>';}).join("")+'</div><div class="sumbu"><span>'+esc(seri[0].l)+'</span><span>'+esc(seri[seri.length-1].l)+'</span></div></div>'+
+      '<div class="box"><h3>🏆 Parfum terlaris</h3>'+(top.length?'<table><tr><th>Parfum</th><th class="r">Botol</th><th class="r">ML</th></tr>'+top.map(function(t,n){return '<tr><td>'+(n+1)+'. '+esc(t.nama)+'<div class="bar"><i style="width:'+(t.qty/maks*100)+'%"></i></div></td><td class="r">'+ang(t.qty)+'</td><td class="r">'+ang(t.ml)+'</td></tr>';}).join("")+'</table>':'<div class="kosong">Belum ada pesanan selesai di periode ini.</div>')+'<div class="note">Hanya pesanan berstatus <b>Selesai</b> yang dihitung sebagai penjualan. Pesanan Batal tidak dihitung. Gunakan ini untuk menentukan parfum mana yang perlu distok lebih banyak.</div></div>';
+    $("isi").innerHTML=h;
+  }
+  $("chips").onclick=function(e){var t=e.target.closest("[data-r]");if(t){rentang=t.dataset.r;gambar();}};
+})();
+</script>
+</body>
+</html>
