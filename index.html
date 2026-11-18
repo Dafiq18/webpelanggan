@@ -9731,45 +9731,7 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE KUIS ===== */
     
-      /* ================================================================
-       KODE TESTIMONI: bagian "Kata Pelanggan" di bawah katalog. Isinya dibaca dari file testimoni.json di GitHub.
-       Kalau testimoni.json kosong atau belum ada, bagian ini otomatis TIDAK tampil.
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
-       ================================================================ */
-    (function(){
-      var footer=document.querySelector(".footer"); if(!footer||document.getElementById("tmBox")) return;
-      var NOMOR_WA="62882005034977";    /* nomor WhatsApp tokomu (untuk tombol "kirim testimoni") */
-
-      function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
-      function aman(u){u=String(u||"").trim();return (/^https:\/\//i.test(u)||/^[\w\-\/.]+\.(png|jpe?g|webp)$/i.test(u))?u:"";}
-      var s=document.createElement("style");
-      s.textContent="#tmBox{margin:26px 0 10px}#tmBox h2{font-size:22px;margin:0 0 4px}#tmBox .tm-s{color:#9aa8bd;font-size:13px;margin-bottom:12px}"+
-        "#tmBox .tm-l{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x mandatory;scrollbar-width:none}#tmBox .tm-l::-webkit-scrollbar{display:none}"+
-        "#tmBox .tm-c{flex:0 0 min(300px,82%);scroll-snap-align:start;padding:16px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05)}"+
-        "#tmBox .tm-st{color:#fbbf24;letter-spacing:2px;font-size:15px}#tmBox .tm-t{margin:8px 0 12px;line-height:1.55;font-size:14px;color:#e2e8f0;white-space:pre-line}"+
-        "#tmBox .tm-p{display:flex;gap:10px;align-items:center}#tmBox .tm-p img{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto}"+
-        "#tmBox .tm-p b{display:block;font-size:14px}#tmBox .tm-p small{color:#9aa8bd}#tmBox .tm-pf{display:inline-block;margin-top:8px;font-size:12px;color:#86efac}"+
-        "#tmBox .tm-w{display:inline-block;margin-top:4px;padding:11px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;font-weight:800;font-size:14px;text-decoration:none}";
-      document.head.appendChild(s);
-
-      fetch("testimoni.json?v="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():[];}).then(function(d){
-        if(!Array.isArray(d)) return;
-        d=d.filter(function(x){return x&&String(x.isi||"").trim()&&String(x.nama||"").trim();}).slice(0,30);
-        if(!d.length) return;
-        var rata=d.reduce(function(a,x){return a+Math.min(5,Math.max(1,Number(x.bintang)||5));},0)/d.length;
-        var h=d.map(function(x){
-          var b=Math.min(5,Math.max(1,Math.round(Number(x.bintang)||5))), f=aman(x.foto);
-          return '<div class="tm-c"><div class="tm-st" aria-label="'+b+' bintang">'+"★".repeat(b)+"☆".repeat(5-b)+'</div><div class="tm-t">“'+esc(String(x.isi).slice(0,400))+'”</div>'+
-            '<div class="tm-p">'+(f?'<img src="'+esc(f)+'" alt="" loading="lazy" onerror="this.remove()">':'')+'<div><b>'+esc(String(x.nama).slice(0,40))+'</b><small>'+esc(String(x.kota||"").slice(0,40))+'</small></div></div>'+
-            (x.parfum?'<span class="tm-pf">🧴 '+esc(String(x.parfum).slice(0,60))+'</span>':'')+'</div>';
-        }).join("");
-        var wa="https://wa.me/"+String(NOMOR_WA).replace(/\D/g,"")+"?text="+encodeURIComponent("Halo, saya mau kirim testimoni untuk Aroma Semarang:\n\nNama:\nKota:\nParfum yang dibeli:\nTestimoni:\n");
-        var box=document.createElement("section"); box.id="tmBox";
-        box.innerHTML='<h2>💬 Kata Pelanggan</h2><div class="tm-s">★ '+rata.toFixed(1).replace(".",",")+' dari '+d.length+' testimoni</div><div class="tm-l">'+h+'</div><a class="tm-w" target="_blank" rel="noopener" href="'+esc(wa)+'">✍️ Kirim testimoni kamu</a>';
-        footer.parentNode.insertBefore(box,footer);
-      }).catch(function(){});
-    })();
-    /* ===== AKHIR KODE TESTIMONI ===== */
+    
     
   loadCart();
     searchProduct();
