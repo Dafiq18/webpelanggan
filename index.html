@@ -9601,6 +9601,136 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE APLIKASI ===== */
     
+      /* ================================================================
+       KODE KUIS: "Cari Parfum yang Cocok" — 4 pertanyaan singkat, lalu muncul rekomendasi dari katalogmu
+       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       ================================================================ */
+    (function(){
+      var list=document.getElementById("productList"), toolbar=document.querySelector(".toolbar");
+      if(!list||document.getElementById("kzBox")) return;
+
+      /* ====== PENGATURAN ====== */
+      var JUMLAH_HASIL=6;
+      var HARGA=[ ["≤ 30rb",0,30000], ["31–45rb",30001,45000], ["46–60rb",45001,60000], ["> 60rb",60001,0], ["Bebas, yang penting cocok",0,0] ];
+      var SUASANA=[
+        ["fresh","🍋 Segar & bersih","fresh,clean,aquatic,water,marine,citrus,bergamot,lemon,orange,green,sea,ocean,mint,lavender,airy"],
+        ["sweet","🍰 Manis & hangat","sweet,gourmand,coffee,vanilla,caramel,chocolate,cacao,sugar,honey,praline,tonka,creamy"],
+        ["floral","🌸 Bunga & lembut","floral,flower,rose,jasmine,iris,violet,tuberose,peony,lily,powdery,musk"],
+        ["fruity","🍓 Buah & ceria","fruity,fruit,berry,tropical,peach,apple,pear,cherry,strawberry,raspberry,mango,pineapple,coconut,melon"],
+        ["bold","🪵 Kuat & maskulin","bold,woody,oud,wood,leather,amber,smoky,spicy,incense,patchouli,vetiver,tobacco"],
+        ["luxury","💎 Mewah & misterius","luxury,signature,niche,exclusive,elixir,intense,royal,premium,mysterious,misterius"]
+      ];
+      var SOAL=[
+        {k:"g",t:"Parfum ini untuk siapa?",o:[["wanita","👩 Wanita"],["pria","👨 Pria"],["unisex","👫 Siapa saja / Unisex"]]},
+        {k:"s",t:"Kamu suka aroma yang seperti apa?",o:SUASANA.map(function(x){return [x[0],x[1]];})},
+        {k:"w",t:"Biasanya dipakai kapan?",o:[["siang","☀️ Siang / kegiatan harian"],["malam","🌙 Malam / acara spesial"],["semua","🔁 Kapan saja"]]},
+        {k:"h",t:"Budget per botol (harga paling murah / 30 ML)?",o:HARGA.map(function(x,i){return [String(i),x[0]];})}
+      ];
+
+      function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c];});}
+      function norm(v){var t=String(v||"").toLowerCase();return t.normalize?t.normalize("NFD").replace(/[\u0300-\u036f]/g,""):t;}
+      function rp(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
+      function gender(c){
+        var d=c.querySelector(".detail-data"), t=norm((d&&d.dataset.gender)||(c.querySelector(".gender")||{}).textContent||"");
+        var w=t.indexOf("wanita")>=0||t.indexOf("women")>=0, p=t.indexOf("pria")>=0||(t.indexOf("men")>=0&&t.indexOf("women")<0);
+        if(t.indexOf("unisex")>=0||(w&&p)) return "unisex"; return w?"wanita":(p?"pria":"unisex");
+      }
+      function termurah(c){var m=0;c.querySelectorAll(".prices tbody td").forEach(function(td){var v=Number(String(td.textContent).replace(/\D/g,""));if(v>0&&(!m||v<m))m=v;});return m;}
+      function hit(teks,kata){var n=0;kata.forEach(function(k){if(teks.indexOf(k)>=0)n++;});return n;}
+
+      function nilai(c,j){
+        var d=c.querySelector(".detail-data"); if(!d) return null;
+        var g=gender(c), alasan=[], skor=0;
+        if(j.g==="wanita"){ if(g==="pria") return null; skor+=g==="wanita"?3:1; }
+        else if(j.g==="pria"){ if(g==="wanita") return null; skor+=g==="pria"?3:1; }
+        else skor+=1;
+        if(c.classList.contains("kt-habis")||c.classList.contains("st-habis")) return null;
+        var s=SUASANA.filter(function(x){return x[0]===j.s;})[0], kata=s[2].split(",");
+        var aksen=norm(d.dataset.accord), umum=norm((c.querySelector(".desc")||{}).textContent+" "+((c.querySelector(".chips")||{}).textContent||"")), h1=hit(aksen,kata), h2=hit(umum,kata);
+        var sk=Math.min(6,h1*2+h2); if(sk<=0) return null;
+        skor+=sk; alasan.push(s[1].replace(/^\S+\s/,""));
+        var oc=norm(d.dataset.occasion+" "+((c.querySelector(".chips")||{}).textContent||""));
+        if(j.w==="siang"&&/siang|pagi|sore|panas|outdoor|casual/.test(oc)){skor+=2;alasan.push("Cocok siang hari");}
+        if(j.w==="malam"&&/malam|acara|formal|date/.test(oc)){skor+=2;alasan.push("Cocok malam hari");}
+        var hg=HARGA[Number(j.h)], m=termurah(c);
+        if(hg&&(hg[1]||hg[2])){
+          if(!m) return null;
+          var dalam=m>=hg[1]&&(!hg[2]||m<=hg[2]);
+          if(!dalam){ if(hg[2]&&m>hg[2]*1.25) return null; skor-=2; } else { skor+=2; alasan.push("Sesuai budget"); }
+        }
+        return {c:c,skor:skor,alasan:alasan,harga:m};
+      }
+
+      /* ---------- tampilan ---------- */
+      var s=document.createElement("style");
+      s.textContent="#kzBox{position:fixed;inset:0;z-index:97;display:none;align-items:flex-end;justify-content:center;background:rgba(2,6,15,.8);backdrop-filter:blur(12px)}#kzBox.open{display:flex}"+
+        "#kzBox .kz-p{width:min(620px,100%);max-height:92vh;overflow:auto;background:#0b1120;border:1px solid rgba(255,255,255,.12);border-radius:24px 24px 0 0;color:#e2e8f0}"+
+        "#kzBox .kz-hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(11,17,32,.97);border-bottom:1px solid rgba(255,255,255,.1)}"+
+        "#kzBox .kz-hd b{flex:1;font-size:16px}#kzBox .kz-x,#kzBox .kz-b{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer}"+
+        "#kzBox .kz-bar{height:4px;background:rgba(255,255,255,.1)}#kzBox .kz-bar i{display:block;height:100%;background:linear-gradient(90deg,#ee4d2d,#ff7337);transition:width .25s}"+
+        "#kzBox .kz-c{padding:18px}#kzBox h3{margin:0 0 4px;font-size:20px}#kzBox .kz-n{color:#9aa8bd;font-size:13px;margin-bottom:14px}"+
+        "#kzBox .kz-o{display:block;width:100%;text-align:left;margin:0 0 9px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer}"+
+        "#kzBox .kz-o:active{transform:scale(.98);background:rgba(238,77,45,.25)}"+
+        "#kzBox .kz-r{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.07)}"+
+        "#kzBox .kz-r img{width:64px;height:64px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.05);flex:0 0 auto}"+
+        "#kzBox .kz-i{flex:1;min-width:0}#kzBox .kz-i b{display:block}#kzBox .kz-i small{display:block;color:#9aa8bd}#kzBox .kz-i em{display:block;font-style:normal;font-size:12px;color:#86efac;margin-top:2px}"+
+        "#kzBox .kz-a{display:flex;flex-direction:column;gap:6px}#kzBox .kz-a button,#kzBox .kz-u{border:0;border-radius:10px;padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#ee4d2d,#ff7337)}"+
+        "#kzBox .kz-a button.d,#kzBox .kz-u{background:rgba(255,255,255,.1)}#kzBox .kz-u{display:block;width:100%;margin-top:14px;padding:12px;font-size:14px}"+
+        "#kzBanner{display:flex;align-items:center;gap:12px;margin:10px 0;padding:14px 16px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.16));color:#fff;cursor:pointer;width:100%;font:inherit;text-align:left}"+
+        "#kzBanner span{font-size:28px}#kzBanner b{display:block;font-size:15px}#kzBanner small{color:#cbd5e1}";
+      document.head.appendChild(s);
+      var box=document.createElement("div"); box.id="kzBox"; document.body.appendChild(box);
+      var j={}, no=0;
+      function kerangka(isi,persen){
+        box.innerHTML='<div class="kz-p"><div class="kz-hd">'+(no>0&&no<=SOAL.length?'<button class="kz-b" type="button" data-kembali="1" aria-label="Kembali">‹</button>':'')+'<b>🎯 Cari Parfum yang Cocok</b><button class="kz-x" type="button" aria-label="Tutup">✕</button></div><div class="kz-bar"><i style="width:'+persen+'%"></i></div><div class="kz-c">'+isi+'</div></div>';
+      }
+      function soal(){
+        var q=SOAL[no];
+        kerangka('<h3>'+esc(q.t)+'</h3><div class="kz-n">Pertanyaan '+(no+1)+' dari '+SOAL.length+'</div>'+q.o.map(function(x){return '<button type="button" class="kz-o" data-v="'+esc(x[0])+'">'+esc(x[1])+'</button>';}).join(""),(no/SOAL.length)*100);
+      }
+      function hasil(){
+        var r=[]; list.querySelectorAll(".card").forEach(function(c){var v=nilai(c,j); if(v) r.push(v);});
+        r.sort(function(a,b){return b.skor-a.skor;});
+        r=r.slice(0,JUMLAH_HASIL);
+        var h=r.length?r.map(function(x,i){
+          var im=x.c.querySelector(".bottle-wrap img"), nm=x.c.querySelector("h2"), br=x.c.querySelector(".brand"), d=x.c.querySelector(".detail-data");
+          return '<div class="kz-r" data-k="'+esc(d.dataset.code)+'"><img src="'+esc(im?im.getAttribute("src"):"")+'" alt="" onerror="this.style.visibility=\'hidden\'"><div class="kz-i"><b>'+(i+1)+'. '+esc(nm?nm.textContent:"")+'</b><small>'+esc(br?br.textContent:"")+(x.harga?' • mulai '+rp(x.harga):'')+'</small><em>✓ '+esc(x.alasan.join(" · ✓ "))+'</em></div><div class="kz-a"><button type="button" data-pilih="1">🛒 Pilih</button><button type="button" class="d" data-detail="1">Detail</button></div></div>';
+        }).join(""):'<div class="kz-n" style="padding:20px 0">Belum ada yang pas dengan pilihanmu. Coba ubah jawaban, misalnya budget atau aroma.</div>';
+        kerangka('<h3>Rekomendasi untukmu ✨</h3><div class="kz-n">'+(r.length?r.length+' parfum paling cocok dari katalog':'')+'</div>'+h+'<button type="button" class="kz-u" data-ulang="1">🔄 Ulangi kuis</button>',100);
+      }
+      function mulai(){ j={}; no=0; soal(); box.classList.add("open"); document.body.style.overflow="hidden"; }
+      function tutup(){ box.classList.remove("open"); document.body.style.overflow=""; }
+      function kartu(k){var h=null;list.querySelectorAll(".card").forEach(function(c){var d=c.querySelector(".detail-data");if(d&&d.dataset.code===k)h=c;});return h;}
+      document.addEventListener("click",function(e){
+        if(e.target.closest("#kzBanner,.mn-item.mn-kuis")){ e.preventDefault(); var l=document.querySelector(".mn-lapis"); if(l&&document.querySelector(".mn-drawer.open")) l.click(); mulai(); return; }
+        if(!box.classList.contains("open")) return;
+        if(e.target===box||e.target.closest(".kz-x")){ tutup(); return; }
+        if(e.target.closest("[data-kembali]")){ no=Math.max(0,no-1); soal(); return; }
+        if(e.target.closest("[data-ulang]")){ mulai(); return; }
+        var o=e.target.closest(".kz-o"); if(o){ j[SOAL[no].k]=o.dataset.v; no++; if(no<SOAL.length) soal(); else hasil(); return; }
+        var r=e.target.closest(".kz-r"); if(!r) return; var c=kartu(r.dataset.k); if(!c) return;
+        if(e.target.closest("[data-pilih]")){ tutup(); try{ openPicker(c); }catch(x){ var t=c.querySelector("[data-add-cart]"); if(t) t.click(); } }
+        else if(e.target.closest("[data-detail]")){ tutup(); var d=c.querySelector("[data-open-detail]"); if(d) d.click(); }
+      });
+
+      /* tombol ajakan di atas katalog + item di menu ☰ */
+      if(toolbar&&toolbar.parentNode){
+        var b=document.createElement("button"); b.type="button"; b.id="kzBanner";
+        b.innerHTML='<span>🎯</span><div><b>Bingung pilih parfum?</b><small>Jawab 4 pertanyaan, dapat rekomendasi yang cocok</small></div>';
+        toolbar.parentNode.insertBefore(b,toolbar);
+      }
+      var drawer=document.querySelector(".mn-drawer");
+      if(drawer&&window.MutationObserver){
+        var pasang=function(){
+          if(drawer.querySelector(".mn-item.mn-kuis")) return;
+          var t=drawer.querySelector('.mn-item[data-aksi="ai"]')||drawer.querySelector(".mn-item.mn-info")||drawer.querySelector('a.mn-item[href*="wa.me"]'); if(!t) return;
+          t.insertAdjacentHTML("afterend",'<a class="mn-item mn-kuis" href="#"><i>🎯</i><span>Cari Parfum Cocok<small>Kuis 4 pertanyaan</small></span></a>');
+        };
+        pasang(); new MutationObserver(pasang).observe(drawer,{childList:true,subtree:true});
+      }
+    })();
+    /* ===== AKHIR KODE KUIS ===== */
+    
   loadCart();
     searchProduct();
     renderCart();
