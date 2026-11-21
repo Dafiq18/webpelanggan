@@ -21,5 +21,34 @@
   }
  },
  "hapus": [],
- "baru": []
+ "baru": [
+  {
+   "kode": "BT-805377",
+   "nama": "Marfa",
+   "brand": "Memo Paris for women and men",
+   "gender": "Unisex",
+   "aroma": "Peach, Mandarin",
+   "deskripsi": "Marfa by Memo Paris adalah wewangian Floral Woody Musk untuk wanita dan pria. Marfa diluncurkan pada tahun 2016. Perancang wewangian ini adalah Alienor Massenet. Nada atas terdiri dari Peach dan Mandarin; nada tengah terdiri dari Tuberose, Ylang Ylang, dan Orange Blossom; nada dasar terdiri dari Vanilla Bean, Musk, Sandalwood, Tonka Bean, dan Cedarwood.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.37185.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  }
+ ]
 }
