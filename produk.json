@@ -38,6 +38,174 @@
  "hapus": [],
  "baru": [
   {
+   "kode": "BT-805391",
+   "nama": "Madinah",
+   "brand": "Al Haramain Perfumes for women and men",
+   "gender": "Unisex",
+   "aroma": "FLORAL, POWDERY (Wangi Bunga & Lembut)",
+   "deskripsi": "Madinah by Al Haramain Perfumes adalah wewangian Oriental Floral untuk wanita dan pria. Nada atas terdiri dari Mawar, Geranium, Davana, Jeruk, dan Bergamot; nada tengah terdiri dari Mawar, Kayu Cendana, Saffron, Anggrek, Melati, Cedar, dan Cengkeh; nada dasar terdiri dari Kayu Cendana, Musk, Nada Bunga, Amber, Cedar, dan Cashmeran.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.19946.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     36000,
+     56000,
+     102000
+    ],
+    "LE PARFUM": [
+     42000,
+     66000,
+     122000
+    ],
+    "EXTRAIT": [
+     50000,
+     76000,
+     142000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805387",
+   "nama": "Alpha",
+   "brand": "HMNS for women and men",
+   "gender": "Unisex",
+   "aroma": "BOLD, WOODY,  OUD (Wangi Kuat & Berwibawa)",
+   "deskripsi": "Alpha by HMNS adalah wewangian untuk wanita dan pria. Alpha diluncurkan pada tahun 2019. Perancang wewangian ini adalah Agil Usman. Nada atas terdiri dari rumput dan jeruk; nada tengah terdiri dari aroma kayu dan teh hijau; nada dasar terdiri dari cedar dan vetiver.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.75907.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805389",
+   "nama": "The Perfection",
+   "brand": "HMNS for women and men",
+   "gender": "Unisex",
+   "aroma": "BOLD, WOODY,  OUD (Wangi Kuat & Berwibawa)",
+   "deskripsi": "The Perfection by HMNS adalah wewangian Aromatic Fougere untuk wanita dan pria. The Perfection diluncurkan pada tahun 2021. Nada atas terdiri dari Cengkeh, Pala, Bergamot, dan resin Elemi; nada tengah terdiri dari Lavender, Pir Hijau, Lily-of-the-Valley, dan Marigold; nada dasar terdiri dari Kulit, Musk, Kayu Apung, dan Kayu Cendana.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.75967.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     112000
+    ],
+    "LE PARFUM": [
+     46000,
+     72000,
+     136000
+    ],
+    "EXTRAIT": [
+     52000,
+     86000,
+     162000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805392",
+   "nama": "Orgsm",
+   "brand": "HMNS for women",
+   "gender": "Wanita",
+   "aroma": "SWEET, GOURMAND, COFFEE (Wangi Manis & Lezat)",
+   "deskripsi": "Orgsm by HMNS adalah wewangian untuk wanita. Orgsm diluncurkan pada tahun 2019. Perancang wewangian ini adalah Nanako Ogi. Nada atasnya adalah Apel; nada tengahnya adalah Mawar, Peony, dan Melati; nada dasarnya adalah Vanili dan Amber.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.75908.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805385",
+   "nama": "Red Vanilla",
+   "brand": "Zara for women",
+   "gender": "Wanita",
+   "aroma": "SWEET, GOURMAND, COFFEE (Wangi Manis & Lezat)",
+   "deskripsi": "Red Vanilla by Zara adalah wewangian Floral Fruity untuk wanita. Red Vanilla diluncurkan pada tahun 2015. Wewangian ini mengandung Black Currant, Vanilla, Praline, Patchouli, Pear, Tonka Bean, dan Iris.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.35806.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805375",
+   "nama": "Hawas Ice",
+   "brand": "Rasasi for men",
+   "gender": "Pria",
+   "aroma": "FRESH, CLEAN,  AQUATIC (Wangi Segar & Bersih)",
+   "deskripsi": "Hawas Ice by Rasasi adalah wewangian Aromatik untuk pria. Hawas Ice diluncurkan pada tahun 2023. Nada atas terdiri dari Apel, Lemon Italia, Bergamot Sisilia, dan Adas Bintang; nada tengah terdiri dari Plum, Bunga Jeruk, dan Kapulaga; nada dasar terdiri dari Musk, Amber, Kayu Apung, dan Lumut.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.89050.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
    "kode": "BT-805390",
    "nama": "Farhampton",
    "brand": "HMNS for women and men",
