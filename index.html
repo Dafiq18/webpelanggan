@@ -151,7 +151,43 @@ button{touch-action:manipulation}
 .picker-label{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;margin:14px 0 8px}.picker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.picker-choice{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.04);color:#fff;padding:12px 8px;text-align:center;cursor:pointer;min-height:58px;font-weight:900}.picker-choice small{display:block;color:#94a3b8;font-size:11px;margin-top:3px;font-weight:700}.picker-choice.active{border-color:var(--cyan);background:rgba(34,211,238,.13);box-shadow:0 0 0 2px rgba(34,211,238,.09) inset}.picker-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.picker-actions button{min-height:48px;border-radius:13px;border:0;font-weight:900;cursor:pointer}.picker-cancel{background:rgba(255,255,255,.08);color:#fff}.picker-confirm{background:linear-gradient(100deg,#67e8f9,#a7f3d0);color:#052e16}
 .ai-status{font-size:11px;color:#86efac;margin-top:3px}.ai-msg.bot strong{font-weight:900}
 @media(max-width:600px){.picker-grid{grid-template-columns:1fr 1fr}.picker-actions{grid-template-columns:1fr}.ai-messages{height:56vh}.ai-input{grid-template-columns:1fr}.ai-send{min-height:46px}.hero h1{font-size:clamp(38px,13vw,60px)}.search{padding:8px 12px}.search input{min-height:44px}}
-.clear-btn{background:linear-gradient(135deg,#c0392b,#8e1f16)!important;color:#fff!important}.ai-msg{white-space:pre-wrap;line-height:1.55}</style></head><body><main class="wrap">
+.clear-btn{background:linear-gradient(135deg,#c0392b,#8e1f16)!important;color:#fff!important}.ai-msg{white-space:pre-wrap;line-height:1.55}</style>
+<style>
+html{background:#0b0a14}
+body{background-color:#0d0b17!important;background-image:radial-gradient(900px 520px at 85% -5%,rgba(217,119,6,.20),transparent 60%),radial-gradient(700px 480px at 0% 100%,rgba(124,58,237,.16),transparent 60%),linear-gradient(170deg,#140d20 0%,#0d0b17 55%,#120a16 100%)!important;background-attachment:fixed!important;background-repeat:no-repeat!important}
+#bgDaun{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+#bgDaun svg{position:absolute;top:-10vh;width:var(--s);height:var(--s);opacity:var(--o);filter:drop-shadow(0 3px 4px rgba(0,0,0,.35));animation:dnJatuh var(--d) linear var(--t) infinite;will-change:transform}
+@keyframes dnJatuh{
+ 0%{transform:translate3d(0,-12vh,0) rotate(var(--r0)) rotateY(0)}
+ 20%{transform:translate3d(calc(var(--x)*.7),20vh,0) rotate(calc(var(--r0) + 70deg)) rotateY(140deg)}
+ 45%{transform:translate3d(calc(var(--x)*-.5),48vh,0) rotate(calc(var(--r0) + 160deg)) rotateY(260deg)}
+ 70%{transform:translate3d(calc(var(--x)*.8),76vh,0) rotate(calc(var(--r0) + 250deg)) rotateY(380deg)}
+ 100%{transform:translate3d(calc(var(--x)*-.3),115vh,0) rotate(calc(var(--r0) + 340deg)) rotateY(520deg)}}
+@media (prefers-reduced-motion:reduce){#bgDaun{display:none}}
+</style>
+<script>
+(function(){
+  try{
+    if(document.getElementById("bgDaun")) return;
+    var hp=window.innerWidth<700, n=hp?11:18;
+    var W=[["#f59e0b","#fde68a"],["#ea580c","#fdba74"],["#c2410c","#fdba74"],["#d97706","#fcd34d"],["#b45309","#fcd34d"],["#a3b84d","#ecfccb"],["#dc2626","#fecaca"]];
+    function daun(w){
+      return '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2C8 7 4 14 6 23c2 3 6 5 10 7 4-2 8-4 10-7 2-9-2-16-10-21z" fill="'+w[0]+'"/><path d="M16 4v26M16 12l-5-3M16 17l-6-3M16 22l-5-2M16 12l5-3M16 17l6-3M16 22l5-2" stroke="'+w[1]+'" stroke-opacity=".75" stroke-width="1.1" stroke-linecap="round" fill="none"/></svg>';
+    }
+    function pasang(){
+      var k=document.createElement("div"); k.id="bgDaun"; k.setAttribute("aria-hidden","true");
+      for(var i=0;i<n;i++){
+        var h=document.createElement("div"); h.innerHTML=daun(W[i%W.length]); var s=h.firstChild;
+        s.style.cssText="left:"+(Math.random()*100).toFixed(1)+"%;--s:"+(18+Math.random()*16).toFixed(0)+"px;--o:"+(.7+Math.random()*.25).toFixed(2)+";--d:"+(13+Math.random()*12).toFixed(1)+"s;--t:-"+(Math.random()*24).toFixed(1)+"s;--x:"+Math.round((Math.random()*2-1)*110)+"px;--r0:"+Math.round(Math.random()*360)+"deg";
+        k.appendChild(s);
+      }
+      document.body.appendChild(k);
+      document.addEventListener("visibilitychange",function(){ k.style.display=document.hidden?"none":""; });
+    }
+    if(document.body) pasang(); else document.addEventListener("DOMContentLoaded",pasang);
+  }catch(e){}
+})();
+</script></head><body><main class="wrap">
 <!-- =========================
      NAVIGASI KATEGORI
      ========================= -->
