@@ -18,10 +18,53 @@
      232000
     ]
    }
+  },
+  "MCB-27880": {
+   "lencana": "TERLARIS"
+  },
+  "PFX-R09875-1": {
+   "lencana": "TERLARIS"
+  },
+  "PZ-01002": {
+   "lencana": "TERLARIS"
+  },
+  "XD3830": {
+   "lencana": "TERLARIS"
+  },
+  "MCB-56268": {
+   "lencana": "TERLARIS"
   }
  },
  "hapus": [],
  "baru": [
+  {
+   "kode": "BT-805386",
+   "nama": "Erba Pura",
+   "brand": "Sospiro Perfumes for women and men",
+   "gender": "Unisex",
+   "aroma": "Profil aroma belum tersedia pada data sumber, Lihat karakter parfum / sesuaikan dengan selera",
+   "deskripsi": "Erba Pura by Sospiro Perfumes adalah wewangian oriental untuk wanita dan pria. Erba Pura diluncurkan pada tahun 2013. Erba Pura diciptakan oleh Christian Carbonnel dan Laura Santander. Nada atasnya adalah Jeruk, Bergamot, dan Lemon; nada tengahnya adalah Buah-buahan; nada dasarnya adalah Musk Putih, Amber, dan Vanili Madagaskar.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.18652.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     36000,
+     56000,
+     102000
+    ],
+    "LE PARFUM": [
+     42000,
+     66000,
+     122000
+    ],
+    "EXTRAIT": [
+     50000,
+     76000,
+     142000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
   {
    "kode": "BT-805377",
    "nama": "Marfa",
