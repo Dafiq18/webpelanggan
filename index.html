@@ -9912,4 +9912,87 @@ async function askAI(){
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
   else init();
 })();
+</script><style>
+#fvSheet .fv-x,.mn-x,.close{min-width:44px;min-height:44px}
+html,body{overscroll-behavior-x:none}
+.mn-drawer,#fvSheet .fv-p{overscroll-behavior:contain}
+</style>
+<script>
+/* KODE TUTUP: panel (favorit, menu, keranjang, detail, dll) bisa ditutup dengan geser ke bawah / geser ke kanan,
+   tombol Kembali di Android/iPhone, tombol Esc, dan ketuk area gelap. */
+(function(){
+  try{
+    if(window.__aromaTutup) return; window.__aromaTutup=true;
+    var SEL="#fvSheet,.mn-drawer,.shop-modal,.picker-modal,.modal";
+    var TUTUP='[data-close-detail],[data-tutup],.fv-x,.mn-x,.close,[aria-label*="utup"],[aria-label*="lose"]';
+    function daftar(){ return Array.prototype.slice.call(document.querySelectorAll(SEL)).filter(function(e){return e.classList.contains("open");}); }
+    function teratas(){
+      var l=daftar(), t=null, z=-1;
+      l.forEach(function(e){ var v=parseInt(getComputedStyle(e).zIndex,10); if(isNaN(v)) v=0; if(v>=z){ z=v; t=e; } });
+      return t;
+    }
+    function tutup(ov){
+      if(!ov) return;
+      var b=ov.querySelector(TUTUP);
+      if(b) b.click(); else ov.classList.remove("open");
+    }
+
+    /* ---- tombol Kembali (Android / iPhone) ---- */
+    var tumpukan=0, abaikan=false, dariBack=false;
+    function sinkron(){
+      var n=daftar().length;
+      if(n>tumpukan){ for(var i=0;i<n-tumpukan;i++) history.pushState({aroma:1},""); tumpukan=n; }
+      else if(n<tumpukan){
+        var kurang=tumpukan-n; tumpukan=n;
+        if(!dariBack){ abaikan=true; history.go(-kurang); }
+      }
+      dariBack=false;
+    }
+    window.addEventListener("popstate",function(){
+      if(abaikan){ abaikan=false; return; }
+      var t=teratas(); if(t){ dariBack=true; tutup(t); }
+    });
+    var mo=new MutationObserver(sinkron);
+    mo.observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
+
+    /* ---- tombol Esc (komputer) ---- */
+    document.addEventListener("keydown",function(e){ if(e.key==="Escape"){ var t=teratas(); if(t) tutup(t); } });
+
+    /* ---- geser untuk menutup ---- */
+    var g=null;
+    function bisaGulir(el,batas){ while(el&&el!==batas){ if(el.scrollTop>0&&el.scrollHeight>el.clientHeight) return true; el=el.parentElement; } return false; }
+    document.addEventListener("touchstart",function(e){
+      g=null; if(e.touches.length!==1) return;
+      var ov=teratas(); if(!ov) return;
+      var drawer=ov.classList.contains("mn-drawer"), panel=drawer?ov:ov.firstElementChild;
+      if(!panel||!panel.contains(e.target)) return;
+      g={ov:ov,panel:panel,drawer:drawer,x:e.touches[0].clientX,y:e.touches[0].clientY,dx:0,dy:0,mulai:false,batal:false,t:Date.now(),scroll:bisaGulir(e.target,panel)};
+    },{passive:true});
+    document.addEventListener("touchmove",function(e){
+      if(!g||g.batal) return;
+      var dx=e.touches[0].clientX-g.x, dy=e.touches[0].clientY-g.y; g.dx=dx; g.dy=dy;
+      if(!g.mulai){
+        if(Math.abs(dx)<10&&Math.abs(dy)<10) return;
+        var ok=g.drawer?(dx>0&&Math.abs(dx)>Math.abs(dy)):(dy>0&&Math.abs(dy)>Math.abs(dx)&&!g.scroll);
+        if(!ok){ g.batal=true; return; }
+        g.mulai=true; g.panel.style.transition="none";
+      }
+      if(e.cancelable) e.preventDefault();
+      g.panel.style.transform=g.drawer?"translateX("+Math.max(0,dx)+"px)":"translateY("+Math.max(0,dy)+"px)";
+    },{passive:false});
+    function selesai(){
+      if(!g) return; var s=g; g=null; if(!s.mulai) return;
+      var jarak=s.drawer?s.dx:s.dy, cepat=jarak/Math.max(1,Date.now()-s.t)>0.6;
+      s.panel.style.transition="transform .18s ease";
+      if(jarak>90||(cepat&&jarak>40)){
+        s.panel.style.transform=""; s.panel.style.transition=""; tutup(s.ov);
+      }else{
+        s.panel.style.transform="";
+        setTimeout(function(){ s.panel.style.transition=""; },200);
+      }
+    }
+    document.addEventListener("touchend",selesai,{passive:true});
+    document.addEventListener("touchcancel",selesai,{passive:true});
+  }catch(e){}
+})();
 </script></body></html>
