@@ -9997,4 +9997,103 @@ html,body{overscroll-behavior-x:none}
     document.addEventListener("touchcancel",selesai,{passive:true});
   }catch(e){}
 })();
+</script><style>
+#wlBox select{width:100%;border:1px solid var(--line,rgba(255,255,255,.1));outline:none;border-radius:12px;background:rgba(255,255,255,.06);color:#fff;padding:13px 36px 13px 13px;font:inherit;font-size:16px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23aebbd0' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+#wlBox select:focus{border-color:#ee4d2d}
+#wlBox select:disabled{opacity:.5}
+#wlBox select option{background:#0b1120;color:#fff}
+#wlBox .wl-hasil{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);color:#a7f3d0;font-size:13px;line-height:1.5;display:none}
+#wlBox .wl-hasil.err{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.3);color:#fecdd3}
+.wl-link{display:block;margin:10px 0 0;padding:6px 0;border:0;background:none;color:#ff8a65;font:inherit;font-size:13px;font-weight:800;cursor:pointer;text-align:left}
+</style>
+<script>
+/* KODE ALAMAT: pilih Provinsi > Kota/Kabupaten > Kecamatan > Kelurahan/Desa (kode pos otomatis) di form alamat, seluruh Indonesia.
+   Data dari API wilayah publik (emsifa). Kalau gagal dimuat, pelanggan tetap bisa menulis alamat manual. */
+(function(){
+  try{
+    if(window.__aromaAlamat) return; window.__aromaAlamat=true;
+    var BASE="https://www.emsifa.com/api-wilayah-indonesia/v2/", cache={};
+    function ambil(p){
+      if(cache[p]) return Promise.resolve(cache[p]);
+      return fetch(BASE+p+".json").then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
+        .then(function(j){ var d=(j&&j.data)||[]; if(!Array.isArray(d)) d=[]; cache[p]=d; return d; });
+    }
+    function rapi(s){
+      s=String(s==null?"":s).trim();
+      if(s&&s===s.toUpperCase()&&/[A-Z]{3}/.test(s)) s=s.toLowerCase().replace(/(^|[\s\-\/(])([a-z])/g,function(m,a,b){ return a+b.toUpperCase(); });
+      return s;
+    }
+    function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+    function opsi(list,judul,val){
+      return '<option value="">'+judul+'</option>'+list.map(function(x){ return '<option value="'+esc(x.id)+'" data-n="'+esc(rapi(x.name))+'" data-pos="'+esc(x.postal_code||"")+'">'+esc(rapi(x.name))+'</option>'; }).join("");
+    }
+    function pasang(){
+      var ta=document.getElementById("spAlamat"); if(!ta||ta.getAttribute("data-wil")) return;
+      ta.setAttribute("data-wil","1");
+      var lab=document.querySelector('label[for="spAlamat"]'), ada=ta.value.trim().length>0, mode=ada?"manual":"daftar", seq={};
+      var box=document.createElement("div"); box.id="wlBox";
+      box.innerHTML='<label>Provinsi</label><select id="wlProv"><option value="">Memuat daftar…</option></select>'+
+        '<label>Kota / Kabupaten</label><select id="wlKota" disabled><option value="">Pilih provinsi dulu</option></select>'+
+        '<label>Kecamatan</label><select id="wlKec" disabled><option value="">Pilih kota dulu</option></select>'+
+        '<label>Kelurahan / Desa</label><select id="wlKel" disabled><option value="">Pilih kecamatan dulu</option></select>'+
+        '<label for="wlPos">Kode pos</label><input id="wlPos" type="text" inputmode="numeric" maxlength="5" placeholder="Terisi otomatis">'+
+        '<label for="wlJalan">Nama jalan, nomor rumah, RT/RW, patokan</label><textarea id="wlJalan" maxlength="250" placeholder="Contoh: Jl. Pandanaran No. 5, RT 02/RW 03, depan toko Maju"></textarea>'+
+        '<div class="wl-hasil" id="wlHasil"></div>';
+      var tombol=document.createElement("button"); tombol.type="button"; tombol.className="wl-link";
+      (lab||ta).parentNode.insertBefore(box,lab||ta); box.appendChild(tombol);
+      var $=function(i){ return document.getElementById(i); };
+      function tampilMode(){
+        var d=mode==="daftar";
+        box.querySelectorAll("label,select,input,textarea,.wl-hasil").forEach(function(e){ e.style.display=d?"":"none"; });
+        if(!d) $("wlHasil").style.display="none";
+        if(lab) lab.style.display=d?"none":""; ta.style.display=d?"none":"";
+        tombol.textContent=d?"Alamat tidak ketemu? Tulis manual":"← Pilih lewat daftar wilayah (lebih mudah)";
+        if(d) susun();
+      }
+      tombol.onclick=function(){ mode=mode==="daftar"?"manual":"daftar"; if(mode==="daftar") ta.value=""; tampilMode(); };
+      function pilihan(id){ var s=$(id), o=s&&s.options[s.selectedIndex]; return o&&o.value?{id:o.value,n:o.getAttribute("data-n"),pos:o.getAttribute("data-pos")}:null; }
+      function susun(){
+        if(mode!=="daftar") return false;
+        var pv=pilihan("wlProv"), kt=pilihan("wlKota"), kc=pilihan("wlKec"), kl=pilihan("wlKel"), pos=$("wlPos").value.replace(/\D/g,""), jl=$("wlJalan").value.trim().replace(/\s+/g," "), h=$("wlHasil");
+        if(!(pv&&kt&&kc&&kl&&/^\d{5}$/.test(pos)&&jl.length>=5)){ ta.value=""; h.style.display="none"; return false; }
+        var a=jl+", Kel/Desa "+kl.n+", Kec. "+kc.n+", "+kt.n+", "+pv.n+", "+pos;
+        ta.value=a; ta.dispatchEvent(new Event("input",{bubbles:true}));
+        h.className="wl-hasil"; h.style.display="block"; h.innerHTML="📍 "+esc(a); return true;
+      }
+      function galat(msg){ var h=$("wlHasil"); h.className="wl-hasil err"; h.style.display="block"; h.textContent=msg; }
+      function isi(id,list,judul,aktif){ var s=$(id); s.innerHTML=opsi(list,judul); s.disabled=!aktif; }
+      function kosong(id,judul){ var s=$(id); s.innerHTML='<option value="">'+judul+'</option>'; s.disabled=true; }
+      function muat(kunci,path,id,judul,gagal){
+        var n=(seq[kunci]=(seq[kunci]||0)+1); $(id).innerHTML='<option value="">Memuat…</option>'; $(id).disabled=true;
+        ambil(path).then(function(d){ if(seq[kunci]!==n) return; d=d.slice().sort(function(a,b){ return String(a.name).localeCompare(String(b.name),"id"); }); isi(id,d,judul,true); $("wlHasil").style.display="none"; })
+          .catch(function(){ if(seq[kunci]!==n) return; $(id).innerHTML='<option value="">Gagal memuat</option>'; galat("Daftar wilayah gagal dimuat. Periksa internet lalu pilih lagi, atau tekan \"Tulis manual\"."); });
+      }
+      $("wlProv").onchange=function(){ var p=pilihan("wlProv"); kosong("wlKec","Pilih kota dulu"); kosong("wlKel","Pilih kecamatan dulu"); $("wlPos").value=""; seq.kec=seq.kel=(seq.kec||0)+1;
+        if(!p){ kosong("wlKota","Pilih provinsi dulu"); susun(); return; } muat("kota","regencies/"+p.id,"wlKota","Pilih kota / kabupaten"); susun(); };
+      $("wlKota").onchange=function(){ var p=pilihan("wlKota"); kosong("wlKel","Pilih kecamatan dulu"); $("wlPos").value=""; seq.kel=(seq.kel||0)+1;
+        if(!p){ kosong("wlKec","Pilih kota dulu"); susun(); return; } muat("kec","districts/"+p.id,"wlKec","Pilih kecamatan"); susun(); };
+      $("wlKec").onchange=function(){ var p=pilihan("wlKec"); $("wlPos").value="";
+        if(!p){ kosong("wlKel","Pilih kecamatan dulu"); susun(); return; } muat("kel","villages/"+p.id,"wlKel","Pilih kelurahan / desa"); susun(); };
+      $("wlKel").onchange=function(){ var p=pilihan("wlKel"); $("wlPos").value=p&&p.pos?p.pos:""; susun(); };
+      $("wlPos").oninput=function(){ this.value=this.value.replace(/\D/g,"").slice(0,5); susun(); };
+      $("wlJalan").oninput=susun;
+      muat("prov","provinces","wlProv","Pilih provinsi");
+      tampilMode();
+    }
+    /* cegah simpan kalau pilihan belum lengkap */
+    document.addEventListener("click",function(e){
+      var b=e.target.closest&&e.target.closest("#spSimpan"); if(!b) return;
+      var box=document.getElementById("wlBox"), ta=document.getElementById("spAlamat"); if(!box||!ta) return;
+      var terlihat=box.querySelector("#wlProv").style.display!=="none"; if(!terlihat) return;
+      if(ta.value.trim().length>=10) return;
+      e.stopImmediatePropagation(); e.preventDefault();
+      var v=function(id){ var s=document.getElementById(id); return s&&s.value; }, err=document.getElementById("spErr"), m;
+      if(!v("wlProv")) m="Pilih provinsi dulu."; else if(!v("wlKota")) m="Pilih kota / kabupaten."; else if(!v("wlKec")) m="Pilih kecamatan."; else if(!v("wlKel")) m="Pilih kelurahan / desa.";
+      else if(!/^\d{5}$/.test(v("wlPos")||"")) m="Kode pos harus 5 angka."; else m="Tulis nama jalan, nomor rumah, dan RT/RW (minimal 5 huruf).";
+      if(err) err.textContent=m;
+    },true);
+    new MutationObserver(pasang).observe(document.body,{childList:true,subtree:true});
+    pasang();
+  }catch(e){}
+})();
 </script></body></html>
