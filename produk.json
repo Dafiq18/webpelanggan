@@ -33,10 +33,237 @@
   },
   "MCB-56268": {
    "lencana": "TERLARIS"
+  },
+  "XD3895": {
+   "habis": true
   }
  },
  "hapus": [],
  "baru": [
+  {
+   "kode": "BT-805373",
+   "nama": "Mad About You",
+   "brand": "Bath & Body Works for women",
+   "gender": "Wanita",
+   "aroma": "FLORAL, POWDERY (Wangi Bunga & Lembut)",
+   "deskripsi": "Mad About You by Bath & Body Works adalah wewangian Floral Fruity untuk wanita. Mad About You diluncurkan pada tahun 2014. Nada atasnya adalah Stroberi Besar, Black Currant, dan Cassis; nada tengahnya adalah Peony, Melati Merah Muda, dan Lili; nada dasarnya adalah Patchouli, Vanili, Musk, dan Amber.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.23323.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     36000,
+     56000,
+     102000
+    ],
+    "LE PARFUM": [
+     42000,
+     66000,
+     120000
+    ],
+    "EXTRAIT": [
+     50000,
+     76000,
+     142000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805380",
+   "nama": "My Way",
+   "brand": "Giorgio Armani for women",
+   "gender": "Wanita",
+   "aroma": "FLORAL, POWDERY (Wangi Bunga & Lembut)",
+   "deskripsi": "My Way by Giorgio Armani adalah wewangian Floral untuk wanita. My Way diluncurkan pada tahun 2020. My Way diciptakan oleh Carlos Benaïm dan Bruno Jovanovic. Nada atasnya adalah Bunga Jeruk dan Bergamot; nada tengahnya adalah Tuberose dan Melati India; nada dasarnya adalah Vanili Madagaskar, Musk Putih, dan Cedar Virginia.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.62036.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805376",
+   "nama": "Kirkè",
+   "brand": "Tiziana Terenzi for women and men",
+   "gender": "Unisex",
+   "aroma": "FRUITY, BERRY & TROPICAL (Wangi Buah Ceria)",
+   "deskripsi": "Kirkè by Tiziana Terenzi adalah wewangian Chypre Fruity untuk wanita dan pria. Kirkè diluncurkan pada tahun 2015. Perancang wewangian ini adalah Paolo Terenzi. Nada atas terdiri dari Markisa, Persik, Pir, Rasberi, Cassis, dan Pasir; nada tengah adalah Lily-of-the-Valley; nada dasar terdiri dari Musk, Kayu Cendana, Vanili, Patchouli, dan Heliotrope.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.32172.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     112000
+    ],
+    "LE PARFUM": [
+     46000,
+     72000,
+     136000
+    ],
+    "EXTRAIT": [
+     52000,
+     86000,
+     162000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805379",
+   "nama": "Miss Dior Blooming Bouquet (2023)",
+   "brand": "Dior for women",
+   "gender": "Wanita",
+   "aroma": "FLORAL, POWDERY (Wangi Bunga & Lembut)",
+   "deskripsi": "Miss Dior Blooming Bouquet (2023) oleh Dior adalah wewangian Floral untuk wanita. Miss Dior Blooming Bouquet (2023) diluncurkan pada tahun 2023. Nada atasnya adalah Bergamot dan Sweet Pea; nada tengahnya adalah Peony dan Damask Rose; nada dasarnya adalah White Musk.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.78945.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805371",
+   "nama": "Scandalous",
+   "brand": "Victoria's Secret for women",
+   "gender": "Wanita",
+   "aroma": "SWEET, GOURMAND & COFFEE (Wangi Manis & Lezat)",
+   "deskripsi": "Scandalous by Victoria's Secret adalah wewangian Floral Fruity untuk wanita. Scandalous diluncurkan pada tahun 2014. Perancang wewangian ini adalah Gil Clavien. Nada atas adalah Raspberry; nada tengah adalah Peony; nada dasar adalah Praline.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.28256.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     36000,
+     56000,
+     102000
+    ],
+    "LE PARFUM": [
+     42000,
+     66000,
+     122000
+    ],
+    "EXTRAIT": [
+     50000,
+     76000,
+     142000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805381",
+   "nama": "Sabaya",
+   "brand": "ALREHAB PERFUMES for women",
+   "gender": "Wanita",
+   "aroma": "FRUITY, BERRY & TROPICAL (Wangi Buah Ceria)",
+   "deskripsi": "Sabaya by ALREHAB PERFUMES adalah wewangian Floral untuk wanita. Wewangian ini menampilkan aroma Jeruk, Mawar, dan Nuansa Hijau.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.36622.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     36000,
+     56000,
+     102000
+    ],
+    "LE PARFUM": [
+     42000,
+     66000,
+     120000
+    ],
+    "EXTRAIT": [
+     50000,
+     76000,
+     142000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805382",
+   "nama": "Gardenia",
+   "brand": "Zara for women",
+   "gender": "Wanita",
+   "aroma": "SWEET, GOURMAND & COFFEE (Wangi Manis & Lezat)",
+   "deskripsi": "Gardenia by Zara adalah wewangian Floral Fruity Gourmand untuk wanita. Gardenia diluncurkan pada tahun 2021. Nada atasnya adalah Bunga Jeruk; nada tengahnya adalah Kopi; nada dasarnya adalah Vanila.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Ffimgs.net%2Fmdimg%2Fperfume-thumbs%2Fdark-375x500.68682.avif&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     40000,
+     60000,
+     110000
+    ],
+    "LE PARFUM": [
+     46000,
+     70000,
+     130000
+    ],
+    "EXTRAIT": [
+     52000,
+     80000,
+     150000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
+  {
+   "kode": "BT-805383",
+   "nama": "The Woman",
+   "brand": "By Olla Ramlan for women",
+   "gender": "Wanita",
+   "aroma": "FLORAL, POWDERY (Wangi Bunga & Lembut)",
+   "deskripsi": "The Woman dari By Olla Ramlan • Wanita. Data katalog asli menyediakan nama, brand, gambar, kode, dan harga; notes resmi belum tercantum, jadi tidak dibuat-buat.",
+   "gambar": "https://images.weserv.nl/?url=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcTf_lAstjqJue1Uo9HEQ1ISx5-lPHLvKQZiwyjjbciHbA%26amp%3Bs%3D10&w=520&h=700&fit=contain&output=webp",
+   "harga": {
+    "EDP": [
+     32000,
+     50000,
+     90000
+    ],
+    "LE PARFUM": [
+     40000,
+     60000,
+     110000
+    ],
+    "EXTRAIT": [
+     46000,
+     70000,
+     130000
+    ]
+   },
+   "habis": false,
+   "lencana": "BARU"
+  },
   {
    "kode": "BT-805391",
    "nama": "Madinah",
