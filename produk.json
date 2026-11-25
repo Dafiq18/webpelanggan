@@ -36,6 +36,48 @@
   },
   "XD3895": {
    "habis": true
+  },
+  "LZ-81469-1": {
+   "habis": true
+  },
+  "LZ-718432": {
+   "habis": true
+  },
+  "LZ-568354": {
+   "habis": true
+  },
+  "LB-169": {
+   "habis": true
+  },
+  "LB-288": {
+   "habis": true
+  },
+  "LB-427": {
+   "habis": true
+  },
+  "LB-589": {
+   "habis": true
+  },
+  "LBR-3510": {
+   "habis": true
+  },
+  "LBR-9001": {
+   "habis": true
+  },
+  "IBR-7611543": {
+   "habis": true
+  },
+  "BT-604288-12670": {
+   "habis": true
+  },
+  "IFF-454": {
+   "habis": true
+  },
+  "IFF RC602-W": {
+   "lencana": "LIMITED"
+  },
+  "PFX-R04361-2": {
+   "habis": true
   }
  },
  "hapus": [],
