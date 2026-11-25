@@ -10414,4 +10414,124 @@ html,body{overscroll-behavior-x:none}
     pasang();
   }catch(e){}
 })();
-</script></body></html>
+</script><!-- ===== KODE BERANDA-BARU v2: tampilan ringkas ala aplikasi belanja (fungsi & harga tidak disentuh) ===== -->
+<style>
+html{background:#0f0a1f}
+body{background-color:#0f0a1f!important;background-image:radial-gradient(900px 520px at 85% -5%,rgba(168,85,247,.28),transparent 60%),radial-gradient(700px 480px at 0% 100%,rgba(236,72,153,.15),transparent 60%),linear-gradient(170deg,#1a0f33 0%,#0f0a1f 55%,#170a26 100%)!important}
+/* header */
+.mn-top{background:linear-gradient(135deg,#140f24,#2a1747)!important;border-bottom:1px solid rgba(213,139,255,.25)!important;box-shadow:0 4px 22px rgba(0,0,0,.45)}
+.mn-top .mn-logo{border-color:rgba(213,139,255,.4)!important;background:rgba(255,255,255,.06)!important}
+.mn-top .search{border-radius:999px!important;background:rgba(255,255,255,.07)!important;border:1.5px solid rgba(213,139,255,.38)!important}
+.mn-top .mn-btn{border-radius:50%!important;background:rgba(255,255,255,.1)!important;border-color:rgba(213,139,255,.25)!important}
+.mn-top .mn-nama{line-height:1.12;font-weight:800}
+.mn-top .mn-nama i{font-style:normal;color:#d58bff}
+.mn-top .mn-nama small{display:block;font-size:11.5px;font-weight:500;color:#cdb8ee;margin-top:2px;letter-spacing:.01em}
+@media(min-width:760px){.mn-top .mn-nama{font-size:21px!important}}
+/* promo */
+.tm-promo{background:linear-gradient(120deg,#7c3aed,#a21caf 55%,#db2777)!important;box-shadow:0 14px 36px rgba(147,51,234,.35)!important}
+/* kategori: deretan ikon kecil */
+.category-nav{background:none!important;border:0!important;border-radius:0!important;padding:6px 0 2px!important;margin:6px 0 0!important;gap:2px!important;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.category-nav::-webkit-scrollbar{display:none}
+.category-nav .category-pill{flex:0 0 auto!important;flex-direction:column!important;align-items:center!important;gap:4px!important;min-width:68px!important;padding:4px 2px!important;background:none!important;border:0!important;box-shadow:none!important;text-align:center!important;color:#e8dcfb!important;white-space:nowrap}
+.category-nav .category-pill .kt-ic{width:46px!important;height:46px!important;border-radius:50%!important;display:grid!important;place-items:center;font-size:23px!important;background:linear-gradient(145deg,rgba(168,85,247,.28),rgba(255,255,255,.05))!important;border:1px solid rgba(213,139,255,.3)!important;box-shadow:none!important}
+.category-nav .category-pill .kt-tx{display:block;line-height:1.1;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.category-nav .category-pill .kt-tx small{display:none}
+.category-nav .category-pill.active .kt-ic{background:linear-gradient(135deg,#7c3aed,#c026d3)!important;border-color:transparent!important;box-shadow:0 5px 14px rgba(124,58,237,.5)!important}
+.category-nav .category-pill.active{background:none!important;box-shadow:none!important;color:#fff!important}
+@media(min-width:900px){.category-nav{justify-content:center;gap:14px!important}.category-nav .category-pill .kt-tx small{display:block;font-size:9.5px;color:#cdb8ee;font-weight:600;margin-top:1px}}
+/* promo & banner: ramping */
+.tm-promo{margin:8px 0 2px!important;padding:10px 14px!important;border-radius:14px!important}
+.tm-promo .t1{font-size:10px!important}.tm-promo .t2{font-size:clamp(16px,4.4vw,22px)!important}.tm-promo .t3{font-size:11px!important;margin-top:2px!important}
+.tm-promo::after{width:110px!important;height:110px!important}
+/* judul besar disembunyikan di HP, ringkas di komputer */
+.hero{display:none!important}
+@media(min-width:900px){.hero{display:block!important;background:none!important;border:0!important;box-shadow:none!important;padding:6px 2px!important;margin:6px 0 0!important}.hero p,.hero .eyebrow{display:none!important}.hero h1{font-size:22px!important;margin:0!important}.hero h1 span{-webkit-text-fill-color:#e0a6ff!important}}
+#kzBanner{margin:8px 0 0!important;padding:8px 12px!important;border-radius:12px!important;background:linear-gradient(135deg,rgba(124,58,237,.38),rgba(192,38,211,.2))!important;border:1px solid rgba(213,139,255,.35)!important}
+#kzBanner span{font-size:20px!important}#kzBanner b{font-size:13px!important}#kzBanner small{font-size:11px!important}
+/* filter: satu baris geser */
+#flBar{margin:8px 0!important;padding:6px 10px!important;gap:3px!important;border-radius:12px!important;background:rgba(24,14,46,.72)!important;border:1px solid rgba(213,139,255,.22)!important}
+#flBar .fl-r{gap:6px!important}#flBar .fl-t{font-size:9.5px!important}
+#flBar .fl-c{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none}#flBar .fl-c::-webkit-scrollbar{display:none}
+#flBar button{padding:5px 10px!important;font-size:11.5px!important;white-space:nowrap;flex:0 0 auto}
+#flBar select{padding:5px 8px!important;font-size:11.5px!important}
+#flBar button.on{background:linear-gradient(135deg,#7c3aed,#c026d3)!important;color:#fff!important;border-color:transparent!important}
+/* daftar produk: kotak-kotak 2 kolom */
+.wrap{width:min(100% - 16px,1200px)!important}
+#productList{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;align-items:stretch}
+@media(min-width:700px){#productList{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}}
+@media(min-width:1000px){#productList{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+#productList .card{display:flex!important;flex-direction:column;margin:0!important;padding:0!important;border-radius:12px!important;overflow:hidden;background:linear-gradient(160deg,rgba(44,26,80,.88),rgba(20,13,38,.94))!important;border:1px solid rgba(213,139,255,.2)!important;box-shadow:0 6px 18px rgba(10,4,24,.45)!important;min-width:0}
+#productList .card:hover{border-color:rgba(213,139,255,.5)!important}
+#productList .card-main{display:flex!important;flex-direction:column!important;grid-template-columns:none!important;gap:0!important;padding:0!important;flex:1}
+#productList .bottle-wrap{width:100%!important;height:auto!important;aspect-ratio:1/1;max-height:none!important;margin:0!important;border-radius:0!important;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(168,85,247,.1))!important;display:grid;place-items:center;overflow:hidden}
+#productList .bottle-wrap img{width:100%!important;height:100%!important;object-fit:contain!important;padding:6px}
+#productList .bottle-wrap img.broken{opacity:.35}
+#productList .bottle-wrap .gender{font-size:9.5px!important;padding:2px 7px!important;left:6px!important;top:6px!important}
+#productList .bottle-wrap .kt-lencana{font-size:9px!important}
+#productList .fv-h{width:30px!important;height:30px!important;font-size:16px!important}
+#productList .card-info{width:100%!important;max-width:none!important;align-self:stretch!important;padding:8px 9px 9px!important;display:flex;flex-direction:column;gap:3px;flex:1}
+#productList .card-info .code{font-size:9.5px!important;color:#e0a6ff!important;letter-spacing:.04em}
+#productList .card-info h2{font-size:13px!important;line-height:1.25!important;margin:0!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em}
+#productList .card-info .brand{font-size:10.5px!important;color:#cdb8ee!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#productList .card-info .desc,#productList .card-info .chips{display:none!important}
+#productList .prices{display:none!important}
+#productList .sp-harga{font-size:13.5px;font-weight:800;color:#f0abfc;margin-top:2px}
+#productList .sp-harga small{font-size:10px;font-weight:600;color:#b9a6d8;margin-right:3px}
+#productList .card-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:5px!important;margin-top:6px!important}
+#productList .card-actions .buy-btn{order:-1;grid-column:1/-1;min-height:34px!important;padding:7px 8px!important;font-size:11.5px!important;border-radius:9px!important;background:linear-gradient(135deg,#7c3aed,#c026d3)!important;color:#fff!important;box-shadow:none!important}
+#productList .card-actions .detail-btn,#productList .card-actions .bd-t{min-height:30px!important;padding:5px 4px!important;font-size:10.5px!important;border-radius:8px!important;border:1px solid rgba(213,139,255,.35)!important;color:#ecdcff!important;background:rgba(255,255,255,.04)!important;width:auto!important}
+#productList .card-actions .detail-btn b{display:none}
+/* tombol melayang lebih kecil */
+.ai-fab{padding:9px 13px!important;font-size:12px!important;left:10px!important;bottom:10px!important}
+.cart-fab{padding:9px 13px!important;font-size:12px!important;right:10px!important;bottom:10px!important}
+.cart-count{min-width:20px!important;height:20px!important;font-size:11px!important}
+body{padding-bottom:64px}
+/* kepercayaan + footer */
+.bn-trust{margin:18px 0 6px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#140f24,#2a1747);border:1px solid rgba(213,139,255,.22);display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.bn-trust div{display:flex;gap:9px;align-items:center;color:#e8dcfb;font-size:11.5px;line-height:1.3}
+.bn-trust i{font-style:normal;font-size:22px}.bn-trust b{display:block;color:#fff;font-size:12.5px}
+.footer{color:#cdb8ee!important;font-size:11px!important}
+</style>
+<script>
+(function(){
+  try{
+    var KAT={all:["SEMUA",""],fresh:["FRESH","& Aquatic"],fruity:["FRUITY","& Tropical"],floral:["FLORAL","& Powdery"],sweet:["SWEET","& Gourmand"],bold:["WOODY","& Oud"],luxury:["LUXURY","& Viral"]};
+    function rapikan(){
+      var nm=document.querySelector(".mn-top .mn-nama");
+      if(nm&&!nm.querySelector("small")) nm.innerHTML='Aroma <i>Semarang</i><small>Toko Parfum Refill</small>';
+      document.querySelectorAll(".category-pill").forEach(function(b){
+        var t=b.querySelector(".kt-tx"), k=KAT[b.getAttribute("data-category")];
+        if(t&&k&&!t.querySelector("small")) t.innerHTML=k[0]+(k[1]?'<small>'+k[1]+'</small>':'');
+      });
+      document.querySelectorAll("#productList .card").forEach(function(c){
+        if(c.querySelector(".sp-harga")) return;
+        var m=0, mn=0;
+        c.querySelectorAll(".prices tbody td").forEach(function(td,i){ var s=td.textContent.replace(/\D/g,""); if(s&&td.cellIndex>0){ var n=Number(s); if(!mn||n<mn) mn=n; } });
+        var h=c.querySelector(".card-info h2"); if(!h||!mn) return;
+        var d=document.createElement("div"); d.className="sp-harga"; d.innerHTML='<small>mulai</small>Rp'+mn.toLocaleString("id-ID");
+        h.parentNode.insertBefore(d,h.nextSibling);
+      });
+      var f=document.querySelector("footer.footer");
+      if(f&&!document.querySelector(".bn-trust")){
+        var s=document.createElement("section"); s.className="bn-trust";
+        s.innerHTML='<div><i>💎</i><span><b>Produk Original</b>&amp; Berkualitas</span></div><div><i>⚡</i><span><b>Pengiriman Cepat</b>Seluruh Indonesia</span></div><div><i>🎧</i><span><b>Pelayanan Ramah</b>&amp; Responsif</span></div><div><i>💜</i><span><b>Kepuasan Pelanggan</b>Prioritas Kami</span></div>';
+        f.parentNode.insertBefore(s,f);
+      }
+    }
+    /* ketuk foto atau nama = buka detail (sama seperti menekan tombol Lihat detail) */
+    document.addEventListener("click",function(e){
+      var t=e.target; if(!t.closest) return;
+      var c=t.closest("#productList .card"); if(!c) return;
+      if(t.closest("button,a,input,select,textarea,.card-actions,.fv-h")) return;
+      if(t.closest(".bottle-wrap,h2,.sp-harga")){ var b=c.querySelector("[data-open-detail]"); if(b) b.click(); }
+    });
+    rapikan();
+    var tm=document.querySelector('meta[name="theme-color"]'); if(tm) tm.setAttribute("content","#140f24");
+    if(window.MutationObserver){
+      var tunda=0;
+      new MutationObserver(function(){ clearTimeout(tunda); tunda=setTimeout(rapikan,60); }).observe(document.body,{childList:true,subtree:true});
+    }
+  }catch(e){}
+})();
+</script>
+<!-- ===== AKHIR KODE BERANDA-BARU ===== --></body></html>
