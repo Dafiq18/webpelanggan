@@ -9365,7 +9365,7 @@ async function askAI(){
        KODE STOK: stok dihitung dalam ML. Parfum yang stoknya habis tampil "Stok habis";
        stok menipis diberi tanda "Sisa ... ml". Stok diatur di halaman stok.html.
        Parfum yang stoknya tidak diisi dianggap selalu tersedia.
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var PROYEK="aroma-semarang", KUNCI_API="AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k";
@@ -9412,7 +9412,7 @@ async function askAI(){
     
       /* ================================================================
        KODE FILTER: filter "Untuk" (Wanita / Pria / Unisex), filter harga, dan urutan (harga / nama) di katalog
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var toolbar=document.querySelector(".toolbar"), list=document.getElementById("productList");
@@ -9503,7 +9503,7 @@ async function askAI(){
     /* ================================================================
        KODE FAVORIT: tombol ♡ di setiap parfum + tombol ♡ di atas untuk melihat daftar favorit
        (tersimpan di perangkat pembeli sendiri)
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var list=document.getElementById("productList"); if(!list||document.getElementById("fvBtn")) return;
@@ -9589,7 +9589,7 @@ async function askAI(){
       /* ================================================================
        KODE APLIKASI: tombol "Pasang Aplikasi" di menu ☰ (web bisa dipasang di layar utama HP seperti aplikasi)
        Butuh file: manifest.webmanifest dan sw.js di GitHub, serta baris <link rel="manifest"> di bagian atas index.html.
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var sudah=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
@@ -9640,7 +9640,7 @@ async function askAI(){
     
       /* ================================================================
        KODE KUIS: "Cari Parfum yang Cocok" — 4 pertanyaan singkat, lalu muncul rekomendasi dari katalogmu
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var list=document.getElementById("productList"), toolbar=document.querySelector(".toolbar");
@@ -9771,7 +9771,7 @@ async function askAI(){
         /* ================================================================
        KODE TESTIMONI v2: bagian "Kata Pelanggan" di bawah katalog. Isinya = testimoni.json + ulasan pembeli yang sudah kamu SETUJUI di ulasan-admin.html.
        Kalau testimoni.json kosong atau belum ada, bagian ini otomatis TIDAK tampil.
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var footer=document.querySelector(".footer"); if(!footer||document.getElementById("tmBox")) return;
@@ -9832,7 +9832,7 @@ async function askAI(){
     
       /* ================================================================
        KODE BANDING: bandingkan 2 parfum berdampingan (aroma, waktu pakai, ketahanan, harga)
-       (tempel di atas baris:  loadCart();  — PALING BAWAH)
+       (tempel di atas baris:  loadCart()  — PALING BAWAH)
        ================================================================ */
     (function(){
       var list=document.getElementById("productList"); if(!list||document.getElementById("bdBar")) return;
@@ -9906,7 +9906,96 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE BANDING ===== */
     
-  loadCart();
+      /* ================================================================
+       KODE PESANAN-KUAT: pesanan tetap tersimpan walau tab toko sudah ditutup
+       (tempel di atas baris:  loadCart()  — PALING BAWAH, setelah KODE LACAK)
+       ================================================================ */
+    (function(){
+      if(typeof halamanCheckoutBaru!=="function") return;
+      var asliHalaman=halamanCheckoutBaru;
+
+      /* ---- kode yang berjalan DI DALAM halaman checkout (popup) ---- */
+      function skripPopup(CFG,VER){
+        var ANT="aromaPesananAntrian", SAYA="aromaPesananSaya", sudah={}, siap=null;
+        function muat(src){ return new Promise(function(ok,gagal){ var s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=function(){ gagal(new Error("muat")); }; document.head.appendChild(s); }); }
+        function tunggu(n){ return new Promise(function(ok,gagal){ (function c(){ if(window.firebase&&firebase.firestore) return ok(); if(--n<=0) return gagal(new Error("sdk")); setTimeout(c,300); })(); }); }
+        function db(){
+          if(siap) return siap;
+          var b="https://www.gstatic.com/firebasejs/"+VER+"/";
+          siap=tunggu(40).catch(function(){ return muat(b+"firebase-app-compat.js").then(function(){ return muat(b+"firebase-firestore-compat.js"); }); })
+            .then(function(){ if(!firebase.apps.length) firebase.initializeApp(CFG); return firebase.firestore(); });
+          siap.catch(function(){ siap=null; });
+          return siap;
+        }
+        function susun(D,H){
+          return { nomor:String(D.noPesanan).slice(0,39), nama:String(D.name||"").slice(0,119), wa:String(D.phone||"").slice(0,39),
+            alamat:String(D.address||"").slice(0,599), email:String(D.email||"").slice(0,119),
+            items:(D.items||[]).slice(0,60).map(function(i){ return {kode:String(i.code||""),nama:String(i.name||"").slice(0,119),jenis:String(i.type||""),ukuran:String(i.size||""),botol:String(i.botol||""),botolHarga:Number(i.botolHarga)||0,harga:Number(i.price)||0,qty:Number(i.qty)||1}; }),
+            subtotal:Number(H.sub)||0, botol:Number(H.botol)||0, potPromo:Number(H.potPromo)||0, potVoucher:Number(H.potVoucher)||0,
+            voucher:String((D.cfg&&D.cfg.voucher&&D.cfg.voucher.kode)||"").slice(0,39), total:Number(H.total)||0, status:"baru" };
+        }
+        function baca(k){ try{ var a=JSON.parse(localStorage.getItem(k)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+        function tulis(k,a){ try{ localStorage.setItem(k,JSON.stringify(a)); }catch(e){} }
+        function banner(teks,warna,coba){
+          var b=document.getElementById("kuatBanner");
+          if(!b){ b=document.createElement("div"); b.id="kuatBanner";
+            b.style.cssText="position:fixed;left:12px;right:12px;bottom:84px;z-index:99999;padding:12px 14px;border-radius:12px;font:600 14px system-ui,sans-serif;color:#fff;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.4)";
+            document.body.appendChild(b); }
+          b.style.background=warna; b.textContent=teks;
+          if(coba){ var t=document.createElement("button"); t.textContent="Coba lagi"; t.style.cssText="margin-left:10px;padding:6px 12px;border:0;border-radius:8px;font-weight:700"; t.onclick=coba; b.appendChild(t); }
+        }
+        function catatLokal(D,H){
+          var a=baca(SAYA).filter(function(x){ return x.nomor!==D.noPesanan; });
+          a.unshift({nomor:String(D.noPesanan),tgl:Date.now(),total:Number(H.total)||0,items:D.items.slice(0,20).map(function(i){ return {nama:String(i.name||""),jenis:String(i.type||""),ukuran:String(i.size||""),qty:Number(i.qty)||1}; })});
+          tulis(SAYA,a.slice(0,30));
+        }
+        window.__aromaSimpanPopup=function(D,H){
+          if(!D||!H||!D.items||!D.items.length||sudah[D.noPesanan]) return;
+          var data=susun(D,H);
+          try{ catatLokal(D,H); }catch(e){}
+          banner("⏳ Mencatat pesanan…","#475569");
+          function coba(){
+            banner("⏳ Mencatat pesanan…","#475569");
+            db().then(function(d){
+              var ts=firebase.firestore.FieldValue.serverTimestamp();
+              return d.collection("pesanan").doc(data.nomor).set(Object.assign({},data,{dibuat:ts}))
+                .then(function(){ return d.collection("status").doc(data.nomor).set({nomor:data.nomor,status:"baru",diperbarui:ts}).catch(function(){}); });
+            }).then(function(){
+              sudah[D.noPesanan]=1; tulis(ANT,baca(ANT).filter(function(x){ return x.nomor!==data.nomor; })); banner("✅ Pesanan "+data.nomor+" tercatat","#16a34a");
+              setTimeout(function(){ var b=document.getElementById("kuatBanner"); if(b) b.style.display="none"; },6000);
+            }).catch(function(e){
+              if(e&&e.code==="permission-denied"&&sudah[D.noPesanan]) return;
+              var q=baca(ANT).filter(function(x){ return x.nomor!==data.nomor; }); q.push(data); tulis(ANT,q.slice(-20));
+              banner("⚠️ Pesanan belum tercatat (sinyal?). Tetap kirim WhatsApp ya.","#b45309",coba);
+            });
+          }
+          coba();
+        };
+      }
+
+      halamanCheckoutBaru=function(D){
+        var h=asliHalaman(D);
+        if(typeof h!=="string") return h;
+        /* panggilan lewat tab toko (bisa hilang) → diganti panggilan dari halaman ini sendiri */
+        h=h.split("window.opener.__aromaSimpanPesanan(").join("window.__aromaSimpanPopup(");
+        var cfg=JSON.stringify(FIREBASE_CONFIG_KUAT()).replace(/</g,"\\u003c");
+        var b="https://www.gstatic.com/firebasejs/10.12.2/";
+        var skr="<script>("+skripPopup.toString()+")("+cfg+","+JSON.stringify("10.12.2")+");<\/script>";
+        var sdk="<script src=\""+b+"firebase-app-compat.js\"><\/script><script src=\""+b+"firebase-firestore-compat.js\"><\/script>";
+        /* skrip penyimpan dipasang paling awal (tombol WA langsung berfungsi), SDK database dimuat di akhir */
+        var j=h.indexOf("<body"); j=j<0?-1:h.indexOf(">",j);
+        if(j>=0) h=h.slice(0,j+1)+skr+h.slice(j+1); else h=skr+h;
+        var i=h.lastIndexOf("</body>");
+        return i<0 ? h+sdk : h.slice(0,i)+sdk+h.slice(i);
+      };
+      function FIREBASE_CONFIG_KUAT(){
+        return { apiKey:"AIzaSyAWMBRY8TAJMCLSqTdMVKlo_U1aQCGa51k", authDomain:"aroma-semarang.firebaseapp.com", projectId:"aroma-semarang",
+          storageBucket:"aroma-semarang.firebasestorage.app", messagingSenderId:"92275973960", appId:"1:92275973960:web:7653449d240a7b147d1d7d" };
+      }
+    })();
+    /* ===== AKHIR KODE PESANAN-KUAT ===== */
+    
+    loadCart();
     searchProduct();
     renderCart();
   }
