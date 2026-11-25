@@ -9995,6 +9995,235 @@ async function askAI(){
     })();
     /* ===== AKHIR KODE PESANAN-KUAT ===== */
     
+        /* ================================================================
+       KODE TAMPILAN-CHECKOUT: halaman checkout gaya baru + pilihan ekspedisi/ongkir
+       (tempel di atas baris:  loadCart();  — PALING BAWAH, SETELAH KODE PESANAN-KUAT)
+       ================================================================ */
+    (function(){
+      if(typeof halamanCheckoutBaru!=="function"||typeof hitungTotal!=="function") return;
+      var asliHalaman=halamanCheckoutBaru;
+
+      /* ====== PENGATURAN ONGKIR — boleh kamu ubah angkanya ======
+         Harga per KILO untuk 5 zona tujuan (kirim dari Semarang):
+         zona 1 = Jawa Tengah & DIY | 2 = Jawa lainnya (Jatim, Jabar, Banten, DKI)
+         zona 3 = Sumatera, Bali, NTB | 4 = Kalimantan, Sulawesi, NTT | 5 = Maluku & Papua
+         Ini PERKIRAAN. Admin tetap mengonfirmasi ongkir final lewat WhatsApp. */
+      var EKSPEDISI=[
+        {id:"idx",  nama:"ID Express", ket:"Cepat, Terjangkau",  warna:"#dc2626", tarif:[9000,12000,26000,38000,62000],  hari:["1–2","2–3","3–5","4–7","6–10"]},
+        {id:"jne",  nama:"JNE",        ket:"Jangkauan Luas",     warna:"#1d4ed8", tarif:[10000,14000,28000,40000,65000], hari:["1–2","2–3","3–5","4–7","6–10"]},
+        {id:"jnt",  nama:"J&T Express",ket:"Lebih Cepat",        warna:"#e11d48", tarif:[10000,13000,27000,39000,64000], hari:["1–2","2–3","3–5","4–7","6–9"]},
+        {id:"sicepat",nama:"SiCepat",  ket:"Paket Prioritas",    warna:"#b91c1c", tarif:[9500,12500,26500,38500,63000],  hari:["1–2","2–3","3–5","4–6","5–9"]}
+      ];
+      var BERAT_PER_BOTOL=0.3;      /* kg per botol (isi + kemasan) — pembulatan ke atas, minimal 1 kg */
+      var GRATIS_ONGKIR_DI=0;       /* belanja sekian rupiah gratis ongkir; 0 = tidak dipakai */
+      var DAERAH=[                  /* kata di alamat → zona */
+        [1,["jawa tengah","yogyakarta","jogja"]],
+        [2,["jawa timur","jawa barat","banten","dki jakarta","jakarta"]],
+        [3,["aceh","sumatera","sumatra","riau","jambi","bengkulu","lampung","bangka","kepulauan riau","bali","nusa tenggara barat"]],
+        [4,["kalimantan","sulawesi","nusa tenggara timur","gorontalo"]],
+        [5,["maluku","papua"]]
+      ];
+
+      /* ---- kode yang berjalan DI DALAM halaman checkout ---- */
+      function skripBaru(D,EK,PENGATURAN){
+        var $=function(id){ return document.getElementById(id); };
+        var rp=function(n){ return "Rp"+Number(n||0).toLocaleString("id-ID"); };
+        var G="━━━━━━━━━━━━━━";
+        var pilih=null, tahap=1, catatan="";
+        function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]; }); }
+        function sync(fn,args){ try{ var a=window.opener&&window.opener.__aromaCart; if(a) a[fn].apply(a,args); }catch(e){} }
+        function hit(){ return hitungTotal(D.items,D.cfg); }
+        function kode64(){ try{ return btoa(unescape(encodeURIComponent(JSON.stringify({n:D.name,w:D.phone,a:D.address})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }catch(e){ return ""; } }
+        function zona(){
+          var a=String(D.address||"").toLowerCase();
+          for(var i=0;i<PENGATURAN.daerah.length;i++) for(var j=0;j<PENGATURAN.daerah[i][1].length;j++) if(a.indexOf(PENGATURAN.daerah[i][1][j])>=0) return {z:PENGATURAN.daerah[i][0],pasti:true};
+          return {z:2,pasti:false};
+        }
+        function kilo(){ var q=0; D.items.forEach(function(i){ q+=Number(i.qty)||1; }); return Math.max(1,Math.ceil(q*PENGATURAN.berat-1e-9)); }
+        function ongkir(e){
+          var H=hit(), z=zona().z, t=e.tarif[z-1], k=kilo();
+          if(PENGATURAN.gratis>0&&H.total>=PENGATURAN.gratis) return 0;
+          return Math.round((t+(k-1)*t*0.7)/500)*500;
+        }
+        function cari(id){ for(var i=0;i<EK.length;i++) if(EK[i].id===id) return EK[i]; return null; }
+        function termurah(){ var b=null,m=1e12; EK.forEach(function(e){ var o=ongkir(e); if(o<m){ m=o; b=e; } }); return b; }
+        function ongkirTerpilih(){ var e=cari(pilih); return e?ongkir(e):0; }
+        function infoKirim(){
+          var e=cari(pilih); if(!e||!D.items.length) return "";
+          return "Ekspedisi: "+e.nama+" (est. "+e.hari[zona().z-1]+" hari) ongkir "+rp(ongkirTerpilih());
+        }
+        function barisItem(i,k){
+          return ["*"+(k+1)+". "+i.name+"* ("+i.code+")","    "+i.type+" "+i.size+(i.botol?" • "+i.botol:"")+" • ×"+i.qty+" = "+rp((i.price+(i.botolHarga||0))*i.qty)];
+        }
+        function bagianTotal(H,L){
+          L.push("Subtotal  "+rp(H.sub));
+          if(H.botol>0) L.push("Botol  +"+rp(H.botol));
+          if(H.potPromo>0) L.push((D.promoTeks||"Promo")+"  −"+rp(H.potPromo));
+          if(H.potVoucher>0) L.push("Voucher "+D.cfg.voucher.kode+"  −"+rp(H.potVoucher));
+          var e=cari(pilih);
+          if(e) L.push("🚚 Ongkir "+e.nama+"  +"+rp(ongkirTerpilih()));
+          L.push("💰 *TOTAL  "+rp(H.total+ongkirTerpilih())+"*");
+        }
+        function teksWA(){
+          var H=hit(), L=["🛍️ *PESANAN BARU*",D.toko+" • No. *"+D.noPesanan+"*",G,"👤 *"+D.name+"*"];
+          if(D.tulisAlamat){ L.push("📱 "+D.phone,"📍 "+D.address); }
+          var e=cari(pilih); if(e) L.push("🚚 "+e.nama+" (est. "+e.hari[zona().z-1]+" hari)");
+          L.push(G);
+          D.items.forEach(function(i,k){ barisItem(i,k).forEach(function(x){ L.push(x); }); });
+          L.push(G); bagianTotal(H,L); L.push(G);
+          if(catatan.trim()) L.push("📝 Catatan: "+catatan.trim());
+          if(!D.tulisAlamat) L.push("🔖 Kode label: "+kode64());
+          L.push("Mohon konfirmasi pesanan & ongkir ya 🙏");
+          return L.join("\n");
+        }
+        function teksEmail(){
+          var H=hit(), L=["PESANAN BARU — "+D.toko,"No. Pesanan: "+D.noPesanan,"","Nama: "+D.name,"Email: "+D.email,"WhatsApp: "+D.phone,"Alamat: "+D.address];
+          var e=cari(pilih); if(e) L.push("Ekspedisi: "+e.nama);
+          if(catatan.trim()) L.push("Catatan: "+catatan.trim());
+          L.push("","DAFTAR PESANAN:");
+          D.items.forEach(function(i,k){ barisItem(i,k).forEach(function(x){ L.push(x.replace(/\*/g,"")); }); });
+          L.push(""); bagianTotal(H,L); L.push("","Pesanan dikirim dari website "+D.toko+".");
+          return L.join("\n").replace(/\*/g,"");
+        }
+        function langkah(n){
+          tahap=Math.max(tahap,n);
+          [1,2,3].forEach(function(k){ var s=$("st"+k); if(s) s.className="st"+(k<tahap?" ok":"")+(k===tahap?" on":""); });
+        }
+        function gambarEkspedisi(){
+          var z=zona(), pasti=z.pasti, ada=D.items.length>0;
+          if(!ada){ $("eks").innerHTML='<div class="kos">Pesanan kosong.</div>'; return; }
+          if(!pilih||!cari(pilih)) pilih=termurah().id;
+          var h=EK.map(function(e){
+            var o=ongkir(e), on=e.id===pilih;
+            return '<label class="ek'+(on?' on':'')+'"><input type="radio" name="eks" value="'+e.id+'"'+(on?' checked':'')+'><span class="rd"></span>'+
+              '<span class="lg" style="color:'+e.warna+'">'+esc(e.nama)+'</span><span class="kt">'+esc(e.ket)+'</span>'+
+              '<span class="hg2"><small>Estimasi: '+e.hari[z.z-1]+' hari</small><b>'+(o===0?'GRATIS':rp(o))+'</b></span></label>';
+          }).join("");
+          if(!pasti) h+='<div class="kos">ℹ️ Tujuan belum terbaca jelas dari alamat, jadi tarif memakai perkiraan umum. Admin akan mengonfirmasi ongkir final.</div>';
+          else h+='<div class="kos">Berat perkiraan '+kilo()+' kg. Ongkir final dikonfirmasi admin lewat WhatsApp.</div>';
+          $("eks").innerHTML=h;
+        }
+        function render(){
+          if(D.items.length&&(!pilih||!cari(pilih))) pilih=termurah().id;
+          var H=hit(), ada=D.items.length>0, ok=ongkirTerpilih(), e=cari(pilih), n=0;
+          D.items.forEach(function(i){ n+=Number(i.qty)||1; });
+          $("cnt").textContent=n; $("cnt").style.display=n?"flex":"none";
+          $("cust").innerHTML='<div class="g2"><div><label>Nama Penerima</label><div class="fk">'+esc(D.name)+'</div></div><div><label>No. WhatsApp</label><div class="fk">'+esc(D.phone)+'</div></div></div>'+
+            '<label>Alamat Lengkap</label><div class="fk a">'+esc(D.address)+'</div><div class="nm">'+esc(D.email)+' • No. pesanan <b>'+esc(D.noPesanan)+'</b></div>';
+          gambarEkspedisi();
+          $("list").innerHTML=ada?D.items.map(function(i,k){
+            return '<div class="it">'+(i.img?'<img class="th" alt="" src="'+esc(i.img)+'" onerror="this.style.visibility=\'hidden\'">':'<div class="th"></div>')+
+              '<div class="tx"><b>'+esc(i.name)+'</b><small>'+esc(i.type)+' • '+esc(i.size)+'</small>'+(i.botol?'<small>🍼 '+esc(i.botol)+'</small>':'')+
+              '<div class="bw"><span class="hg">'+rp(i.price+(i.botolHarga||0))+'</span><span class="qt">× '+i.qty+'</span></div></div>'+
+              '<button class="hp" data-k="'+k+'">Hapus</button></div>';
+          }).join(""):'<div class="kos">Pesanan kosong.</div>';
+          var pr='';
+          if(H.potPromo>0) pr+='<div class="pm">🔥 '+esc(D.promoTeks||"Promo")+' — hemat '+rp(H.potPromo)+'</div>';
+          if(H.potVoucher>0) pr+='<div class="pm">🎟️ Voucher '+esc(D.cfg.voucher.kode)+' — hemat '+rp(H.potVoucher)+'</div>';
+          if(!pr) pr='<div class="kos">Tidak ada promo atau voucher yang dipakai.</div>';
+          $("promo").innerHTML=pr;
+          var b='<div class="row"><span>Subtotal Produk</span><span>'+rp(H.sub)+'</span></div>';
+          if(H.botol>0) b+='<div class="row"><span>Biaya botol</span><span>+ '+rp(H.botol)+'</span></div>';
+          if(H.potPromo>0) b+='<div class="row hj"><span>'+esc(D.promoTeks||"Promo")+'</span><span>− '+rp(H.potPromo)+'</span></div>';
+          if(H.potVoucher>0) b+='<div class="row hj"><span>Voucher '+esc(D.cfg.voucher.kode)+'</span><span>− '+rp(H.potVoucher)+'</span></div>';
+          b+='<div class="row"><span>Ongkos Kirim'+(e&&ada?'<small>('+esc(e.nama)+' • '+e.hari[zona().z-1]+' hari)</small>':'')+'</span><span>'+(ada?(ok===0?'GRATIS':rp(ok)):'-')+'</span></div>';
+          b+='<div class="tot"><span>Total Pembayaran</span><b>'+rp(H.total+(ada?ok:0))+'</b></div>';
+          $("ring").innerHTML=b;
+          $("tot2").textContent=rp(H.total+(ada?ok:0));
+          $("wa").disabled=$("wa2").disabled=$("em").disabled=!ada;
+        }
+        $("eks").onchange=function(ev){ var t=ev.target; if(t&&t.name==="eks"){ pilih=t.value; langkah(2); render(); } };
+        $("cat").oninput=function(){ catatan=this.value.slice(0,200); };
+        $("list").onclick=function(e){
+          var k=e.target.getAttribute&&e.target.getAttribute("data-k"); if(k===null) return;
+          var i=D.items.splice(Number(k),1)[0]; sync("remove",[i.code,i.type,i.size,i.botol||""]); render();
+        };
+        function kirimWA(){
+          if(!D.items.length) return;
+          var H=hit(), D2=Object.assign({},D,{address:D.address+" [KIRIM: "+(infoKirim()||"-")+"; TOTAL BAYAR "+rp(H.total+ongkirTerpilih())+(catatan.trim()?"; CATATAN: "+catatan.trim().slice(0,60):"")+"]"});
+          D2.address=D2.address.slice(0,590);
+          try{ if(window.__aromaSimpanPopup) window.__aromaSimpanPopup(D2,H); else window.opener.__aromaSimpanPesanan(D2,H); }catch(e){}
+          langkah(3);
+          window.open("https://wa.me/"+D.wa+"?text="+encodeURIComponent(teksWA()),"_blank");
+        }
+        $("wa").onclick=kirimWA; $("wa2").onclick=kirimWA;
+        $("em").onclick=function(){ location.href="mailto:"+D.mail+"?subject="+encodeURIComponent("Pesanan Baru "+D.noPesanan)+"&body="+encodeURIComponent(teksEmail()); };
+        $("pr").onclick=function(){ window.print(); };
+        $("cl").onclick=function(){ if(!D.items.length) return; if(confirm("Hapus semua pesanan?")){ D.items=[]; sync("clear",[]); render(); } };
+        $("bk").onclick=function(){ window.close(); };
+        render(); langkah(1);
+      }
+
+      var CSS='*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3eefb;color:#1e1b2e;padding-bottom:104px}'+
+        '.hd{background:linear-gradient(135deg,#140f24,#2a1747);color:#fff;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;box-shadow:0 2px 14px rgba(0,0,0,.35)}'+
+        '.hd button{border:0;background:rgba(255,255,255,.14);color:#fff;width:38px;height:38px;border-radius:50%;font-size:22px;cursor:pointer;flex:none}'+
+        '.hd img{height:38px;width:auto;max-width:44px;object-fit:contain;flex:none}.hd .nm1{flex:1;min-width:0;line-height:1.15}.hd .nm1 b{font-size:19px;font-weight:800;display:block}.hd .nm1 b i{font-style:normal;color:#d58bff}.hd .nm1 span{font-size:12px;color:#cdb8ee}'+
+        '.cr{position:relative;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:20px;flex:none}#cnt{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:10px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}'+
+        '.hero{background:radial-gradient(120% 140% at 85% 0,#7c3aed 0,#3b1a6b 45%,#1a1030 100%);color:#fff;padding:22px 16px 24px}.hero div{max-width:1040px;margin:0 auto}.hero h1{margin:0;font-size:26px;font-weight:800}.hero h1 i{font-style:normal;color:#e0a6ff}.hero p{margin:6px 0 0;color:#e1d3f7;font-size:14px}'+
+        '.wrap{max-width:1040px;margin:0 auto;padding:16px}'+
+        '.steps{display:flex;align-items:flex-start;margin:4px 0 18px}.stp{flex:1;text-align:center;position:relative;font-size:12.5px;font-weight:700;color:#6b6480}.stp:not(:last-child)::after{content:"";position:absolute;top:15px;left:calc(50% + 20px);right:calc(-50% + 20px);height:2px;background:#cfc3e6}'+
+        '.st{width:30px;height:30px;margin:0 auto 6px;border-radius:50%;background:#9d93b5;color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;position:relative;z-index:1}.st.on{background:#6d28d9;box-shadow:0 0 0 4px rgba(109,40,217,.18)}.st.ok{background:#16a34a}.stp.cur{color:#1e1b2e}'+
+        '.grid{display:grid;grid-template-columns:1fr;gap:14px}@media(min-width:900px){.grid{grid-template-columns:1.55fr 1fr;align-items:start}.side{position:sticky;top:84px}}'+
+        '.card{background:#fff;border:1px solid #e5dcf5;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(76,29,149,.06)}'+
+        '.ct{display:flex;align-items:center;gap:10px;margin:0 0 12px}.ct i{font-style:normal;font-size:22px}.ct b{font-size:17px;font-weight:800;display:block}.ct span{font-size:12.5px;color:#6b6480}'+
+        'label{display:block;font-size:12.5px;font-weight:700;margin:10px 0 5px;color:#3b3552}.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:520px){.g2{grid-template-columns:1fr}}'+
+        '.fk{border:1px solid #ddd2f0;background:#faf7ff;border-radius:10px;padding:11px 12px;font-size:14px;word-break:break-word}.fk.a{line-height:1.5;white-space:pre-wrap}.nm{margin-top:10px;font-size:12px;color:#7a7291}.nm b{color:#6d28d9}'+
+        '.ek{display:grid;grid-template-columns:22px 92px 1fr auto;align-items:center;gap:10px;border:1.5px solid #e3d9f4;border-radius:12px;padding:11px 12px;margin-bottom:8px;cursor:pointer;background:#fff}.ek.on{border-color:#6d28d9;background:#f4ecff;box-shadow:0 0 0 2px rgba(109,40,217,.12)}'+
+        '.ek input{position:absolute;opacity:0;pointer-events:none}.rd{width:20px;height:20px;border-radius:50%;border:2px solid #b3a6d1;display:block;position:relative}.ek.on .rd{border-color:#6d28d9}.ek.on .rd::after{content:"";position:absolute;inset:3px;border-radius:50%;background:#6d28d9}'+
+        '.lg{font-weight:900;font-size:16px;font-style:italic;letter-spacing:-.3px}.kt{font-size:13px;color:#4a4361}.hg2{text-align:right}.hg2 small{display:block;font-size:11.5px;color:#6b6480;margin:0}.hg2 b{font-size:15px;color:#4c1d95}'+
+        '@media(max-width:520px){.ek{grid-template-columns:22px 1fr auto}.kt{display:none}}'+
+        '.kos{font-size:12.5px;color:#6b6480;padding:4px 2px}'+
+        '#cat{width:100%;min-height:62px;border:1px solid #ddd2f0;background:#faf7ff;border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;resize:vertical;color:#1e1b2e}'+
+        '.it{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee8f8}.it:last-child{border:0}.it:first-child{padding-top:0}.th{flex:0 0 64px;width:64px;height:84px;object-fit:contain;border-radius:10px;background:#f4eefc}'+
+        '.tx{flex:1;min-width:0}.tx b{font-size:14.5px}small{display:block;color:#6b6480;margin-top:3px;font-size:12px}.bw{display:flex;justify-content:space-between;margin-top:8px}.hg{color:#6d28d9;font-weight:800}.qt{color:#6b6480}'+
+        '.hp{align-self:flex-start;background:#fff;border:1px solid #f0a4a4;color:#dc2626;border-radius:8px;padding:5px 11px;font:inherit;font-size:12px;cursor:pointer}'+
+        '.pm{padding:9px 11px;margin-top:6px;border-radius:10px;background:#f4ecff;border:1px dashed #a78bfa;font-size:13px}'+
+        '.row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;font-size:14.5px;border-bottom:1px solid #f0eaf9}.row small{margin-top:1px}.hj{color:#15803d}'+
+        '.tot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#ede4ff,#e2d3ff);font-weight:800}.tot b{font-size:22px;color:#5b21b6}'+
+        '.aman{display:flex;gap:12px;align-items:center;background:#efe6ff;border:1px solid #dccbf7;border-radius:14px;padding:14px;margin-bottom:14px}.aman i{font-style:normal;font-size:30px}.aman b{display:block;font-size:14px}.aman span{font-size:12.5px;color:#4a4361}'+
+        '.btnwa{width:100%;border:0;border-radius:14px;padding:15px 16px;min-height:54px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font:inherit;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 8px 20px rgba(22,163,74,.35)}.btnwa small{color:#dcfce7;margin:2px 0 0;font-weight:500}.btnwa:disabled{opacity:.45}'+
+        '.lain{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}.lain button{border:1px solid #d7c9ef;background:#fff;color:#4c1d95;border-radius:12px;padding:12px 6px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}.lain button:disabled{opacity:.4}'+
+        '.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid #e5dcf5;box-shadow:0 -6px 20px rgba(76,29,149,.12)}.bar .tt{flex:1}.bar .tt small{margin:0}.bar .tt b{font-size:20px;color:#5b21b6}'+
+        '#wa{border:0;border-radius:12px;padding:0 20px;min-height:48px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font:inherit;font-weight:800;font-size:15px;cursor:pointer}#wa:disabled{opacity:.4}.nomob{display:none}@media(min-width:900px){.bar{display:none}.nomob{display:block}}'+
+        '.ft{background:linear-gradient(135deg,#140f24,#2a1747);color:#e8dcfb;padding:18px 16px 24px;margin-top:8px;font-size:12.5px}.ft div{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.ft b{display:block;color:#fff;font-size:13px}'+
+        '.card>.t{font-size:16px;font-weight:800;margin:0 0 10px;color:#1e1b2e}.card div[style*="color"]{color:#6b6480!important}.card b[style]{color:#4c1d95!important}#lcSalin{background:#6d28d9!important;color:#fff!important;border:0!important}'+
+        '.by-m{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eee8f8!important}.by-m small{color:#6b6480!important}.by-m .by-n{color:#1e1b2e!important}.by-c{background:#efe6ff!important;color:#5b21b6!important}.by-t{background:#f4ecff!important;color:#5b21b6!important}.by-k{color:#6b6480!important}'+
+        '@media print{.hd button,.bar,.lain,.hp,.ft,.hero,.steps,.btnwa{display:none!important}body{background:#fff}.card{box-shadow:none}}';
+
+      halamanCheckoutBaru=function(D){
+        var h=asliHalaman(D);
+        if(typeof h!=="string") return h;
+        /* ambil skrip penyimpan (KODE PESANAN-KUAT) dari halaman lama supaya tetap dipakai */
+        var m1=h.match(/<script>\(function skripPopup[\s\S]*?<\/script>/);
+        var m2=h.match(/<script src="[^"]*firebase-(?:app|firestore)-compat\.js"><\/script>/g)||[];
+        var logo=""; try{ logo=new URL("logo.png",location.href).href; }catch(e){}
+        var P={daerah:DAERAH,berat:BERAT_PER_BOTOL,gratis:GRATIS_ONGKIR_DI};
+        var json=function(x){ return JSON.stringify(x).replace(/</g,"\\u003c"); };
+        return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Checkout • Aroma Semarang</title><style>'+CSS+'</style></head><body>'+
+          (m1?m1[0]:'')+
+          '<header class="hd"><button id="bk" aria-label="Kembali">‹</button>'+(logo?'<img src="'+logo+'" alt="" onerror="this.style.display=\'none\'">':'')+
+          '<div class="nm1"><b>Aroma <i>Semarang</i></b><span>Toko Parfum Refill</span></div><div class="cr">🛒<span id="cnt"></span></div></header>'+
+          '<section class="hero"><div><h1>Checkout <i>Pesanan</i></h1><p>Periksa alamat, pilih ekspedisi, lalu kirim pesanan Anda lewat WhatsApp</p></div></section>'+
+          '<main class="wrap"><div class="steps"><div class="stp"><div class="st on" id="st1">1</div>Alamat &amp; Pengiriman</div><div class="stp"><div class="st" id="st2">2</div>Konfirmasi Pesanan</div><div class="stp"><div class="st" id="st3">3</div>Selesai</div></div>'+
+          '<div class="grid"><div>'+
+            '<section class="card"><div class="ct"><i>📍</i><div><b>Alamat Pengiriman</b><span>Pastikan alamat lengkap agar paket sampai dengan tepat</span></div></div><div id="cust"></div></section>'+
+            '<section class="card"><div class="ct"><i>🚚</i><div><b>Pilih Ekspedisi</b><span>Ongkir dihitung otomatis sesuai tujuan dan berat</span></div></div><div id="eks"></div></section>'+
+            '<section class="card"><div class="ct"><i>📝</i><div><b>Catatan Tambahan <span style="display:inline;font-weight:400">(Opsional)</span></b></div></div><textarea id="cat" maxlength="200" placeholder="Contoh: paket mudah pecah, tolong dibungkus rapi…"></textarea></section>'+
+            '<section class="card"><div class="ct"><i>🛍️</i><div><b>Pesanan</b></div></div><div id="list"></div></section>'+
+            '<section class="card"><div class="ct"><i>🎟️</i><div><b>Promo dan Voucher</b></div></div><div id="promo"></div></section>'+
+          '</div><aside class="side">'+
+            '<section class="card"><div class="ct"><i>🧾</i><div><b>Ringkasan Pesanan</b></div></div><div id="ring"></div></section>'+
+            '<div class="aman"><i>🛡️</i><div><b>Belanja Aman &amp; Terpercaya</b><span>Data Anda aman, pesanan diproses dengan profesional.</span></div></div>'+
+            '<div class="nomob"><button class="btnwa" id="wa2">Pesan Sekarang via WhatsApp →<small>Konfirmasi pesanan ke admin kami</small></button></div>'+
+            '<div class="lain"><button id="em">✉️ Kirim Email</button><button id="pr">🖨️ Cetak</button><button id="cl">🗑️ Hapus semua</button></div>'+
+          '</aside></div></main>'+
+          '<footer class="ft"><div><span><b>💎 Produk Original</b>&amp; Berkualitas</span><span><b>⚡ Pengiriman Cepat</b>Seluruh Indonesia</span><span><b>🎧 Pelayanan Ramah</b>&amp; Responsif</span><span><b>💜 Kepuasan Pelanggan</b>Prioritas Kami</span></div></footer>'+
+          '<div class="bar"><div class="tt"><small>Total pembayaran</small><b id="tot2"></b></div><button id="wa">Kirim via WhatsApp</button></div>'+
+          '<script>var hitungTotal=('+hitungTotal.toString()+');('+skripBaru.toString()+')('+json(D)+','+json(EKSPEDISI)+','+json(P)+');<\/script>'+m2.join("")+'</body></html>';
+      };
+    })();
+    /* ===== AKHIR KODE TAMPILAN-CHECKOUT ===== */
+    
     loadCart();
     searchProduct();
     renderCart();
