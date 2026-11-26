@@ -10534,4 +10534,33 @@ body{padding-bottom:64px}
   }catch(e){}
 })();
 </script>
-<!-- ===== AKHIR KODE BERANDA-BARU ===== --></body></html>
+<!-- ===== AKHIR KODE BERANDA-BARU ===== --><!-- ===== KODE BERANDA-PERBAIKAN: harga tampil lagi di kartu + pencarian tidak "tersangkut" di kategori/filter ===== -->
+<style>
+#productList .prices{display:block!important;margin:0 8px 8px;border-top:1px solid rgba(213,139,255,.18);padding:5px 0 0}
+#productList .prices .price-title{display:none}
+#productList .prices .table-scroll{overflow:visible!important}
+#productList .prices table{width:100%!important;min-width:0!important;border-collapse:collapse;font-size:9.5px;line-height:1.25;table-layout:auto}
+#productList .prices th{font-size:8.5px!important;font-weight:700;color:#b9a6d8!important;padding:1px 2px!important;text-align:right;border:0!important;background:none!important}
+#productList .prices th:first-child,#productList .prices td:first-child{text-align:left}
+#productList .prices td{font-size:10px!important;padding:2px 2px!important;color:#f3e8ff!important;text-align:right;border:0!important;white-space:nowrap}
+#productList .prices td:first-child{color:#e0a6ff!important;font-weight:800;font-size:9px!important}
+#productList .sp-harga{display:none!important}
+@media(min-width:1000px){#productList .prices td{font-size:11px!important}}
+</style>
+<script>
+(function(){
+  try{
+    var kolom=document.getElementById("searchInput"); if(!kolom) return;
+    /* saat mengetik di pencarian: lepas kategori & filter yang masih aktif, supaya hasil tidak kosong */
+    kolom.addEventListener("input",function(){
+      if(!kolom.value.trim()) return;
+      var all=document.querySelector('.category-pill[data-category="all"]');
+      var aktif=document.querySelector(".category-pill.active");
+      if(all&&aktif&&aktif!==all){ var y=window.scrollY; all.click(); window.scrollTo(0,y); }
+      var x=document.getElementById("flX");
+      if(x&&!x.hidden) x.click();
+    },true);
+  }catch(e){}
+})();
+</script>
+<!-- ===== AKHIR KODE BERANDA-PERBAIKAN ===== --></body></html>
