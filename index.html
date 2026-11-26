@@ -10566,8 +10566,18 @@ body{padding-bottom:64px}
   }catch(e){}
 })();
 </script>
-<!-- ===== AKHIR KODE BERANDA-PERBAIKAN ===== --><!-- ===== KODE LATAR-DIAM: matikan semua daun bergerak ===== -->
+<!-- ===== AKHIR KODE BERANDA-PERBAIKAN ===== --><!-- ===== KODE LATAR-PARFUM: latar diam, cahaya lembut + pola bunga tipis ===== -->
 <style>
 #bgDaun,#bgDaun2,#bgHias{display:none!important}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(236,72,153,.22),transparent 38%),
+    radial-gradient(circle at 92% 22%,rgba(168,85,247,.25),transparent 40%),
+    radial-gradient(circle at 20% 88%,rgba(251,191,36,.16),transparent 38%),
+    radial-gradient(circle at 88% 92%,rgba(244,114,182,.20),transparent 36%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><g fill='none' stroke='%23f9a8d4' stroke-opacity='.22' stroke-width='1.2'><g transform='translate(22 22)'><ellipse rx='3.2' ry='8' cy='-8'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(72)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(144)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(216)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(288)'/></g><g transform='translate(67 67) scale(.8)'><ellipse rx='3.2' ry='8' cy='-8'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(72)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(144)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(216)'/><ellipse rx='3.2' ry='8' cy='-8' transform='rotate(288)'/></g></g><circle cx='67' cy='20' r='1.6' fill='%23fcd34d' fill-opacity='.35'/><circle cx='20' cy='68' r='1.6' fill='%23fcd34d' fill-opacity='.35'/></svg>");
+  background-size:auto,auto,auto,auto,90px 90px;
+}
 </style>
-<!-- ===== AKHIR KODE LATAR-DIAM ===== --></body></html>
+<!-- ===== AKHIR KODE LATAR-PARFUM ===== --></body></html>
