@@ -10566,4 +10566,122 @@ body{padding-bottom:64px}
   }catch(e){}
 })();
 </script>
-<!-- ===== AKHIR KODE BERANDA-PERBAIKAN ===== --></body></html>
+<!-- ===== AKHIR KODE BERANDA-PERBAIKAN ===== --><!-- ===== KODE LATAR-DAUN-BUNGA: latar diam bergambar daun & bunga kecil (tanpa animasi, digambar sendiri) ===== -->
+<style>
+#bgDaun,#bgDaun2{display:none!important}
+#bgHias{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+#bgHias img{position:absolute;height:auto;opacity:var(--o);transform:rotate(var(--r)) scaleX(var(--f));filter:drop-shadow(0 3px 5px rgba(0,0,0,.4));user-select:none}
+</style>
+<script>
+(function(){
+  try{
+    var hp=window.innerWidth<700;
+    function acak(a,b){ return a+Math.random()*(b-a); }
+    /* bentuk daun: kerangka halus + gerigi/lekuk */
+    function bentuk(jenis){
+      var P=[],N=90,i,t,w,lebar;
+      for(i=0;i<=N;i++){
+        t=i/N;
+        if(jenis==="oak"){ w=Math.pow(Math.sin(Math.PI*Math.pow(t,.85)),.7)*(1+.34*Math.sin(t*Math.PI*5+.4)); lebar=.37; }
+        else if(jenis==="birch"){ w=Math.pow(Math.sin(Math.PI*Math.pow(t,.8)),.9)*(1+.05*Math.sin(t*Math.PI*30)); lebar=.46; }
+        else if(jenis==="elm"){ w=Math.pow(Math.sin(Math.PI*Math.pow(t,.7)),.85)*(1+.045*Math.sin(t*Math.PI*36)); lebar=.36; }
+        else { w=Math.pow(Math.sin(Math.PI*Math.pow(t,.9)),.8)*(1+.10*Math.sin(t*Math.PI*14)); lebar=.42; }
+        P.push([100+w*lebar*200, 14+t*176]);
+      }
+      for(i=N;i>=0;i--){ P.push([200-P[i][0], P[i][1]]); }
+      return "M"+P.map(function(p){return p[0].toFixed(1)+" "+p[1].toFixed(1);}).join("L")+"Z";
+    }
+    var MAPLE="M100 6L116 50L146 34L140 82L188 74L160 112L182 138L128 142L134 172L108 158L108 198L92 198L92 158L66 172L72 142L18 138L40 112L12 74L60 82L54 34L84 50Z";
+
+    function urat(jenis){
+      var s="",k,y,len;
+      if(jenis==="maple"){
+        return '<path d="M100 196V40M100 150L48 120M100 150L152 120M100 110L30 80M100 110L170 80M100 70L68 44M100 70L132 44" stroke="#3b1d08" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round" fill="none"/>'+
+               '<path d="M100 196V40M100 150L48 120M100 150L152 120M100 110L30 80M100 110L170 80M100 70L68 44M100 70L132 44" stroke="#ffe2a8" stroke-opacity=".25" stroke-width="1" stroke-linecap="round" fill="none" transform="translate(-.8 -.8)"/>';
+      }
+      s+='<path d="M100 190V20" stroke="#3b1d08" stroke-opacity=".5" stroke-width="2.4" stroke-linecap="round"/><path d="M100 190V20" stroke="#ffe2a8" stroke-opacity=".28" stroke-width="1.1" transform="translate(-1 0)"/>';
+      for(k=0;k<9;k++){
+        y=170-k*15; len=58-k*4.2;
+        s+='<path d="M100 '+y+'Q'+(100-len*.55)+' '+(y-12)+' '+(100-len)+' '+(y-26)+'M100 '+y+'Q'+(100+len*.55)+' '+(y-12)+' '+(100+len)+' '+(y-26)+'" stroke="#3b1d08" stroke-opacity=".38" stroke-width="1.5" stroke-linecap="round" fill="none"/>';
+      }
+      return s;
+    }
+
+    /* satu daun = satu gambar SVG (digambar sekali, lalu hanya digerakkan → ringan) */
+    function daun(jenis,warna,blur,idn){
+      var d=jenis==="maple"?MAPLE:bentuk(jenis), f="f"+idn, g="g"+idn, c="c"+idn;
+      var seedn=3+idn*7;
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -4 220 215" width="660" height="645">'+
+        '<defs>'+
+        '<radialGradient id="'+g+'" cx="50%" cy="78%" r="85%"><stop offset="0" stop-color="'+warna[0]+'"/><stop offset=".45" stop-color="'+warna[1]+'"/><stop offset="1" stop-color="'+warna[2]+'"/></radialGradient>'+
+        '<clipPath id="'+c+'"><path d="'+d+'"/></clipPath>'+
+        '<filter id="'+f+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">'+
+          '<feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="'+seedn+'" result="w"/>'+
+          '<feDisplacementMap in="SourceGraphic" in2="w" scale="3.5" result="b"/>'+
+          '<feTurbulence type="fractalNoise" baseFrequency=".28 .5" numOctaves="3" seed="'+(seedn+2)+'" result="n"/>'+
+          '<feDiffuseLighting in="n" surfaceScale="1.1" diffuseConstant="1.08" lighting-color="#fff6e6" result="l"><feDistantLight azimuth="235" elevation="52"/></feDiffuseLighting>'+
+          '<feComposite in="l" in2="b" operator="in" result="lt"/>'+
+          '<feBlend in="b" in2="lt" mode="multiply" result="m"/>'+
+          '<feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="3" seed="'+(seedn+5)+'" result="bt"/>'+
+          '<feColorMatrix in="bt" type="matrix" values="0 0 0 0 .25  0 0 0 0 .10  0 0 0 0 .02  0 0 0 1.6 -.55" result="bercak"/>'+
+          '<feComposite in="bercak" in2="b" operator="in" result="bc"/>'+
+          '<feMerge><feMergeNode in="m"/><feMergeNode in="bc"/></feMerge>'+
+          (blur>0?'<feGaussianBlur stdDeviation="'+blur+'"/>':'')+
+        '</filter></defs>'+
+        '<g filter="url(#'+f+')"><path d="'+d+'" fill="url(#'+g+')"/><g clip-path="url(#'+c+')">'+urat(jenis)+'</g>'+
+        (jenis==="maple"?'':'<path d="M100 188Q102 200 98 210" stroke="#5b3a18" stroke-width="3.6" stroke-linecap="round" fill="none"/>')+'</g></svg>';
+    }
+
+
+    /* bunga: sakura (5 kelopak), daisy (banyak kelopak), kosmos (8 kelopak lebar) */
+    function bunga(jenis,w,idn){
+      var g="b"+idn, f="bf"+idn, k=[], i, n, rot, d;
+      if(jenis==="sakura"){ n=5; d="M0 0C-16 -14 -18 -46 -9 -60C-5 -57 -2 -55 0 -60C2 -55 5 -57 9 -60C18 -46 16 -14 0 0Z"; }
+      else if(jenis==="daisy"){ n=13; d="M0 0C-5 -16 -5 -44 0 -62C5 -44 5 -16 0 0Z"; }
+      else { n=8; d="M0 0C-20 -12 -24 -46 -12 -58C-6 -54 -3 -52 0 -56C3 -52 6 -54 12 -58C24 -46 20 -12 0 0Z"; }
+      for(i=0;i<n;i++){ rot=(360/n)*i; k.push('<path d="'+d+'" transform="rotate('+rot.toFixed(1)+')" fill="url(#'+g+')" stroke="'+w[3]+'" stroke-opacity=".35" stroke-width=".8"/>'); }
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-70 -70 140 140" width="280" height="280">'+
+        '<defs><radialGradient id="'+g+'" cx="50%" cy="100%" r="110%" gradientUnits="objectBoundingBox"><stop offset="0" stop-color="'+w[0]+'"/><stop offset=".5" stop-color="'+w[1]+'"/><stop offset="1" stop-color="'+w[2]+'"/></radialGradient>'+
+        '<filter id="'+f+'" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".5" numOctaves="2" seed="'+(idn+11)+'" result="n"/><feDiffuseLighting in="n" surfaceScale=".9" diffuseConstant="1.1" lighting-color="#fff" result="l"><feDistantLight azimuth="235" elevation="55"/></feDiffuseLighting><feComposite in="l" in2="SourceGraphic" operator="in" result="lt"/><feBlend in="SourceGraphic" in2="lt" mode="multiply"/></filter></defs>'+
+        '<g filter="url(#'+f+')">'+k.join("")+'</g>'+
+        '<circle r="7" fill="'+w[4]+'"/><circle r="3.4" fill="'+w[5]+'"/>'+
+        (jenis==="sakura"?'<g stroke="'+w[5]+'" stroke-width="1" stroke-linecap="round"><path d="M0 0L-12 -14M0 0L12 -14M0 0L0 -18M0 0L-16 -4M0 0L16 -4"/></g>':'')+
+        '</svg>';
+    }
+
+    var JENIS=["maple","oak","birch","elm","maple","oak"];
+    var DAUN=[
+      ["#e8a21c","#d2520e","#7a1d0a"],["#f2c230","#d9871a","#8a3a0a"],["#d9441a","#a3200f","#5a0d08"],
+      ["#c9b236","#b8741a","#6e3a0c"],["#ef8a1a","#c7400d","#6b1a07"],["#a3b84d","#7e8a2a","#4a5410"]
+    ];
+    /* kelopak terang -> tengah, tepi, garis, pusat, putik */
+    var BUNGA=[
+      ["#ffd1e3","#f58bb5","#d94b86","#9d2a5e","#f5c542","#c27a10"],  /* sakura merah muda */
+      ["#ffe3ec","#f7a8c4","#e0689a","#a8396d","#f9d85a","#b8860b"],
+      ["#e9d5ff","#c08df0","#8f4fd0","#5b2a95","#fcd34d","#c2860a"],  /* lilac */
+      ["#ffd9b8","#f89a5b","#d9582a","#8a3010","#fff1a8","#c9922a"]   /* jingga persik */
+    ];
+    var TIPE=["sakura","daisy","cosmos","sakura"];
+    function pasang(){
+      var lama=document.getElementById("bgHias"); if(lama) lama.remove();
+      var k=document.createElement("div"); k.id="bgHias"; k.setAttribute("aria-hidden","true");
+      var uri=function(s){ return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s); };
+      var S=[], i;
+      for(i=0;i<6;i++) S.push({s:uri(daun(JENIS[i],DAUN[i],0,i)),t:"daun"});
+      for(i=0;i<4;i++) S.push({s:uri(bunga(TIPE[i],BUNGA[i],i)),t:"bunga"});
+      var kol=hp?4:8, baris=hp?7:5, lebarSel=100/kol, tinggiSel=100/baris, n=0, c, r, x, y, p, ukur, im;
+      for(r=0;r<baris;r++) for(c=0;c<kol;c++){
+        p=S[Math.floor(Math.random()*S.length)];
+        ukur=p.t==="bunga"?acak(hp?30:36,hp?46:58):acak(hp?24:30,hp?40:52);
+        x=(c+acak(.05,.85))*lebarSel; y=(r+acak(.05,.85))*tinggiSel;
+        im=new Image(); im.alt=""; im.decoding="async"; im.draggable=false; im.src=p.s;
+        im.style.cssText="left:"+x.toFixed(1)+"%;top:"+y.toFixed(1)+"%;width:"+ukur.toFixed(0)+"px;--o:"+acak(.55,.9).toFixed(2)+";--r:"+Math.round(acak(0,360))+"deg;--f:"+(Math.random()<.5?1:-1);
+        k.appendChild(im);
+      }
+      document.body.appendChild(k);
+    }
+    if(document.body) pasang(); else document.addEventListener("DOMContentLoaded",pasang);
+  }catch(e){}
+})();
+</script>
+<!-- ===== AKHIR KODE LATAR-DAUN-BUNGA ===== --></body></html>
