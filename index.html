@@ -9996,33 +9996,25 @@ async function askAI(){
     /* ===== AKHIR KODE PESANAN-KUAT ===== */
     
         /* ================================================================
-       KODE TAMPILAN-CHECKOUT: halaman checkout gaya baru + pilihan ekspedisi/ongkir
+       KODE TAMPILAN-CHECKOUT: halaman checkout gaya baru + pilihan cara kirim (ongkir DIISI ADMIN, bukan perkiraan)
        (tempel di atas baris:  loadCart();  — PALING BAWAH, SETELAH KODE PESANAN-KUAT)
        ================================================================ */
     (function(){
       if(typeof halamanCheckoutBaru!=="function"||typeof hitungTotal!=="function") return;
       var asliHalaman=halamanCheckoutBaru;
 
-      /* ====== PENGATURAN ONGKIR — boleh kamu ubah angkanya ======
-         Harga per KILO untuk 5 zona tujuan (kirim dari Semarang):
-         zona 1 = Jawa Tengah & DIY | 2 = Jawa lainnya (Jatim, Jabar, Banten, DKI)
-         zona 3 = Sumatera, Bali, NTB | 4 = Kalimantan, Sulawesi, NTT | 5 = Maluku & Papua
-         Ini PERKIRAAN. Admin tetap mengonfirmasi ongkir final lewat WhatsApp. */
+      /* ====== PILIHAN CARA KIRIM — boleh kamu tambah/ubah namanya ======
+         TIDAK ada harga di sini. Ongkir diketik admin sendiri di halaman pesanan.html
+         setelah dikonfirmasi ke pelanggan (kirim sendiri / J&T / JNE / dll). */
       var EKSPEDISI=[
-        {id:"idx",  nama:"ID Express", ket:"Cepat, Terjangkau",  warna:"#dc2626", tarif:[9000,12000,26000,38000,62000],  hari:["1–2","2–3","3–5","4–7","6–10"]},
-        {id:"jne",  nama:"JNE",        ket:"Jangkauan Luas",     warna:"#1d4ed8", tarif:[10000,14000,28000,40000,65000], hari:["1–2","2–3","3–5","4–7","6–10"]},
-        {id:"jnt",  nama:"J&T Express",ket:"Lebih Cepat",        warna:"#e11d48", tarif:[10000,13000,27000,39000,64000], hari:["1–2","2–3","3–5","4–7","6–9"]},
-        {id:"sicepat",nama:"SiCepat",  ket:"Paket Prioritas",    warna:"#b91c1c", tarif:[9500,12500,26500,38500,63000],  hari:["1–2","2–3","3–5","4–6","5–9"]}
+        {id:"sendiri",nama:"Antar sendiri",ket:"Diantar langsung oleh toko",warna:"#16a34a"},
+        {id:"jnt",    nama:"J&T Express", ket:"Ekspedisi",  warna:"#e11d48"},
+        {id:"jne",    nama:"JNE",         ket:"Ekspedisi",  warna:"#1d4ed8"},
+        {id:"idx",    nama:"ID Express",  ket:"Ekspedisi",  warna:"#dc2626"},
+        {id:"sicepat",nama:"SiCepat",     ket:"Ekspedisi",  warna:"#b91c1c"},
+        {id:"lain",   nama:"Lainnya / ambil sendiri", ket:"Dibicarakan lewat WhatsApp", warna:"#7c3aed"}
       ];
-      var BERAT_PER_BOTOL=0.3;      /* kg per botol (isi + kemasan) — pembulatan ke atas, minimal 1 kg */
-      var GRATIS_ONGKIR_DI=0;       /* belanja sekian rupiah gratis ongkir; 0 = tidak dipakai */
-      var DAERAH=[                  /* kata di alamat → zona */
-        [1,["jawa tengah","yogyakarta","jogja"]],
-        [2,["jawa timur","jawa barat","banten","dki jakarta","jakarta"]],
-        [3,["aceh","sumatera","sumatra","riau","jambi","bengkulu","lampung","bangka","kepulauan riau","bali","nusa tenggara barat"]],
-        [4,["kalimantan","sulawesi","nusa tenggara timur","gorontalo"]],
-        [5,["maluku","papua"]]
-      ];
+      var P={};
 
       /* ---- kode yang berjalan DI DALAM halaman checkout ---- */
       function skripBaru(D,EK,PENGATURAN){
@@ -10034,23 +10026,12 @@ async function askAI(){
         function sync(fn,args){ try{ var a=window.opener&&window.opener.__aromaCart; if(a) a[fn].apply(a,args); }catch(e){} }
         function hit(){ return hitungTotal(D.items,D.cfg); }
         function kode64(){ try{ return btoa(unescape(encodeURIComponent(JSON.stringify({n:D.name,w:D.phone,a:D.address})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); }catch(e){ return ""; } }
-        function zona(){
-          var a=String(D.address||"").toLowerCase();
-          for(var i=0;i<PENGATURAN.daerah.length;i++) for(var j=0;j<PENGATURAN.daerah[i][1].length;j++) if(a.indexOf(PENGATURAN.daerah[i][1][j])>=0) return {z:PENGATURAN.daerah[i][0],pasti:true};
-          return {z:2,pasti:false};
-        }
-        function kilo(){ var q=0; D.items.forEach(function(i){ q+=Number(i.qty)||1; }); return Math.max(1,Math.ceil(q*PENGATURAN.berat-1e-9)); }
-        function ongkir(e){
-          var H=hit(), z=zona().z, t=e.tarif[z-1], k=kilo();
-          if(PENGATURAN.gratis>0&&H.total>=PENGATURAN.gratis) return 0;
-          return Math.round((t+(k-1)*t*0.7)/500)*500;
-        }
         function cari(id){ for(var i=0;i<EK.length;i++) if(EK[i].id===id) return EK[i]; return null; }
-        function termurah(){ var b=null,m=1e12; EK.forEach(function(e){ var o=ongkir(e); if(o<m){ m=o; b=e; } }); return b; }
-        function ongkirTerpilih(){ var e=cari(pilih); return e?ongkir(e):0; }
+        function termurah(){ return EK[0]; }
+        function ongkirTerpilih(){ return 0; }
         function infoKirim(){
           var e=cari(pilih); if(!e||!D.items.length) return "";
-          return "Ekspedisi: "+e.nama+" (est. "+e.hari[zona().z-1]+" hari) ongkir "+rp(ongkirTerpilih());
+          return "Kirim: "+e.nama+" (ongkir dikonfirmasi admin)";
         }
         function barisItem(i,k){
           return ["*"+(k+1)+". "+i.name+"* ("+i.code+")","    "+i.type+" "+i.size+(i.botol?" • "+i.botol:"")+" • ×"+i.qty+" = "+rp((i.price+(i.botolHarga||0))*i.qty)];
@@ -10061,19 +10042,19 @@ async function askAI(){
           if(H.potPromo>0) L.push((D.promoTeks||"Promo")+"  −"+rp(H.potPromo));
           if(H.potVoucher>0) L.push("Voucher "+D.cfg.voucher.kode+"  −"+rp(H.potVoucher));
           var e=cari(pilih);
-          if(e) L.push("🚚 Ongkir "+e.nama+"  +"+rp(ongkirTerpilih()));
-          L.push("💰 *TOTAL  "+rp(H.total+ongkirTerpilih())+"*");
+          if(e) L.push("🚚 Ongkir ("+e.nama+"): *dikonfirmasi admin*");
+          L.push("💰 *TOTAL PRODUK  "+rp(H.total)+"* (belum termasuk ongkir)");
         }
         function teksWA(){
           var H=hit(), L=["🛍️ *PESANAN BARU*",D.toko+" • No. *"+D.noPesanan+"*",G,"👤 *"+D.name+"*"];
           if(D.tulisAlamat){ L.push("📱 "+D.phone,"📍 "+D.address); }
-          var e=cari(pilih); if(e) L.push("🚚 "+e.nama+" (est. "+e.hari[zona().z-1]+" hari)");
+          var e=cari(pilih); if(e) L.push("🚚 Cara kirim: "+e.nama);
           L.push(G);
           D.items.forEach(function(i,k){ barisItem(i,k).forEach(function(x){ L.push(x); }); });
           L.push(G); bagianTotal(H,L); L.push(G);
           if(catatan.trim()) L.push("📝 Catatan: "+catatan.trim());
           if(!D.tulisAlamat) L.push("🔖 Kode label: "+kode64());
-          L.push("Mohon konfirmasi pesanan & ongkir ya 🙏");
+          L.push("Mohon konfirmasi pesanan & ongkirnya ya 🙏");
           return L.join("\n");
         }
         function teksEmail(){
@@ -10090,22 +10071,21 @@ async function askAI(){
           [1,2,3].forEach(function(k){ var s=$("st"+k); if(s) s.className="st"+(k<tahap?" ok":"")+(k===tahap?" on":""); });
         }
         function gambarEkspedisi(){
-          var z=zona(), pasti=z.pasti, ada=D.items.length>0;
+          var ada=D.items.length>0;
           if(!ada){ $("eks").innerHTML='<div class="kos">Pesanan kosong.</div>'; return; }
           if(!pilih||!cari(pilih)) pilih=termurah().id;
           var h=EK.map(function(e){
-            var o=ongkir(e), on=e.id===pilih;
+            var on=e.id===pilih;
             return '<label class="ek'+(on?' on':'')+'"><input type="radio" name="eks" value="'+e.id+'"'+(on?' checked':'')+'><span class="rd"></span>'+
               '<span class="lg" style="color:'+e.warna+'">'+esc(e.nama)+'</span><span class="kt">'+esc(e.ket)+'</span>'+
-              '<span class="hg2"><small>Estimasi: '+e.hari[z.z-1]+' hari</small><b>'+(o===0?'GRATIS':rp(o))+'</b></span></label>';
+              '<span class="hg2"><small>Ongkir</small><b>Diisi admin</b></span></label>';
           }).join("");
-          if(!pasti) h+='<div class="kos">ℹ️ Tujuan belum terbaca jelas dari alamat, jadi tarif memakai perkiraan umum. Admin akan mengonfirmasi ongkir final.</div>';
-          else h+='<div class="kos">Berat perkiraan '+kilo()+' kg. Ongkir final dikonfirmasi admin lewat WhatsApp.</div>';
+          h+='<div class="kos">Ongkir belum dihitung di sini. Admin akan mengabari besarnya ongkir lewat WhatsApp, lalu total akhir bisa dilihat di <b>Pesanan Saya</b>.</div>';
           $("eks").innerHTML=h;
         }
         function render(){
           if(D.items.length&&(!pilih||!cari(pilih))) pilih=termurah().id;
-          var H=hit(), ada=D.items.length>0, ok=ongkirTerpilih(), e=cari(pilih), n=0;
+          var H=hit(), ada=D.items.length>0, e=cari(pilih), n=0;
           D.items.forEach(function(i){ n+=Number(i.qty)||1; });
           $("cnt").textContent=n; $("cnt").style.display=n?"flex":"none";
           $("cust").innerHTML='<div class="g2"><div><label>Nama Penerima</label><div class="fk">'+esc(D.name)+'</div></div><div><label>No. WhatsApp</label><div class="fk">'+esc(D.phone)+'</div></div></div>'+
@@ -10126,10 +10106,10 @@ async function askAI(){
           if(H.botol>0) b+='<div class="row"><span>Biaya botol</span><span>+ '+rp(H.botol)+'</span></div>';
           if(H.potPromo>0) b+='<div class="row hj"><span>'+esc(D.promoTeks||"Promo")+'</span><span>− '+rp(H.potPromo)+'</span></div>';
           if(H.potVoucher>0) b+='<div class="row hj"><span>Voucher '+esc(D.cfg.voucher.kode)+'</span><span>− '+rp(H.potVoucher)+'</span></div>';
-          b+='<div class="row"><span>Ongkos Kirim'+(e&&ada?'<small>('+esc(e.nama)+' • '+e.hari[zona().z-1]+' hari)</small>':'')+'</span><span>'+(ada?(ok===0?'GRATIS':rp(ok)):'-')+'</span></div>';
-          b+='<div class="tot"><span>Total Pembayaran</span><b>'+rp(H.total+(ada?ok:0))+'</b></div>';
+          b+='<div class="row"><span>Ongkos Kirim'+(e&&ada?'<small>('+esc(e.nama)+')</small>':'')+'</span><span>'+(ada?'Dikonfirmasi admin':'-')+'</span></div>';
+          b+='<div class="tot"><span>Total Produk<small style="display:block;font-weight:500;font-size:11px;opacity:.7">belum termasuk ongkir</small></span><b>'+rp(H.total)+'</b></div>';
           $("ring").innerHTML=b;
-          $("tot2").textContent=rp(H.total+(ada?ok:0));
+          $("tot2").textContent=rp(H.total);
           $("wa").disabled=$("wa2").disabled=$("em").disabled=!ada;
         }
         $("eks").onchange=function(ev){ var t=ev.target; if(t&&t.name==="eks"){ pilih=t.value; langkah(2); render(); } };
@@ -10140,7 +10120,7 @@ async function askAI(){
         };
         function kirimWA(){
           if(!D.items.length) return;
-          var H=hit(), D2=Object.assign({},D,{address:D.address+" [KIRIM: "+(infoKirim()||"-")+"; TOTAL BAYAR "+rp(H.total+ongkirTerpilih())+(catatan.trim()?"; CATATAN: "+catatan.trim().slice(0,60):"")+"]"});
+          var H=hit(), D2=Object.assign({},D,{address:D.address+" [KIRIM: "+(infoKirim()||"-")+"; TOTAL PRODUK "+rp(H.total)+(catatan.trim()?"; CATATAN: "+catatan.trim().slice(0,60):"")+"]"});
           D2.address=D2.address.slice(0,590);
           try{ if(window.__aromaSimpanPopup) window.__aromaSimpanPopup(D2,H); else window.opener.__aromaSimpanPesanan(D2,H); }catch(e){}
           langkah(3);
@@ -10197,17 +10177,17 @@ async function askAI(){
         var m1=h.match(/<script>\(function skripPopup[\s\S]*?<\/script>/);
         var m2=h.match(/<script src="[^"]*firebase-(?:app|firestore)-compat\.js"><\/script>/g)||[];
         var logo=""; try{ logo=new URL("logo.png",location.href).href; }catch(e){}
-        var P={daerah:DAERAH,berat:BERAT_PER_BOTOL,gratis:GRATIS_ONGKIR_DI};
+        
         var json=function(x){ return JSON.stringify(x).replace(/</g,"\\u003c"); };
         return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Checkout • Aroma Semarang</title><style>'+CSS+'</style></head><body>'+
           (m1?m1[0]:'')+
           '<header class="hd"><button id="bk" aria-label="Kembali">‹</button>'+(logo?'<img src="'+logo+'" alt="" onerror="this.style.display=\'none\'">':'')+
           '<div class="nm1"><b>Aroma <i>Semarang</i></b><span>Toko Parfum Refill</span></div><div class="cr">🛒<span id="cnt"></span></div></header>'+
-          '<section class="hero"><div><h1>Checkout <i>Pesanan</i></h1><p>Periksa alamat, pilih ekspedisi, lalu kirim pesanan Anda lewat WhatsApp</p></div></section>'+
+          '<section class="hero"><div><h1>Checkout <i>Pesanan</i></h1><p>Periksa alamat, pilih cara kirim, lalu kirim pesanan Anda lewat WhatsApp</p></div></section>'+
           '<main class="wrap"><div class="steps"><div class="stp"><div class="st on" id="st1">1</div>Alamat &amp; Pengiriman</div><div class="stp"><div class="st" id="st2">2</div>Konfirmasi Pesanan</div><div class="stp"><div class="st" id="st3">3</div>Selesai</div></div>'+
           '<div class="grid"><div>'+
             '<section class="card"><div class="ct"><i>📍</i><div><b>Alamat Pengiriman</b><span>Pastikan alamat lengkap agar paket sampai dengan tepat</span></div></div><div id="cust"></div></section>'+
-            '<section class="card"><div class="ct"><i>🚚</i><div><b>Pilih Ekspedisi</b><span>Ongkir dihitung otomatis sesuai tujuan dan berat</span></div></div><div id="eks"></div></section>'+
+            '<section class="card"><div class="ct"><i>🚚</i><div><b>Pilih Cara Kirim</b><span>Ongkir dikonfirmasi admin setelah pesanan masuk</span></div></div><div id="eks"></div></section>'+
             '<section class="card"><div class="ct"><i>📝</i><div><b>Catatan Tambahan <span style="display:inline;font-weight:400">(Opsional)</span></b></div></div><textarea id="cat" maxlength="200" placeholder="Contoh: paket mudah pecah, tolong dibungkus rapi…"></textarea></section>'+
             '<section class="card"><div class="ct"><i>🛍️</i><div><b>Pesanan</b></div></div><div id="list"></div></section>'+
             '<section class="card"><div class="ct"><i>🎟️</i><div><b>Promo dan Voucher</b></div></div><div id="promo"></div></section>'+
@@ -10218,7 +10198,7 @@ async function askAI(){
             '<div class="lain"><button id="em">✉️ Kirim Email</button><button id="pr">🖨️ Cetak</button><button id="cl">🗑️ Hapus semua</button></div>'+
           '</aside></div></main>'+
           '<footer class="ft"><div><span><b>💎 Produk Original</b>&amp; Berkualitas</span><span><b>⚡ Pengiriman Cepat</b>Seluruh Indonesia</span><span><b>🎧 Pelayanan Ramah</b>&amp; Responsif</span><span><b>💜 Kepuasan Pelanggan</b>Prioritas Kami</span></div></footer>'+
-          '<div class="bar"><div class="tt"><small>Total pembayaran</small><b id="tot2"></b></div><button id="wa">Kirim via WhatsApp</button></div>'+
+          '<div class="bar"><div class="tt"><small>Total produk (belum ongkir)</small><b id="tot2"></b></div><button id="wa">Kirim via WhatsApp</button></div>'+
           '<script>var hitungTotal=('+hitungTotal.toString()+');('+skripBaru.toString()+')('+json(D)+','+json(EKSPEDISI)+','+json(P)+');<\/script>'+m2.join("")+'</body></html>';
       };
     })();
