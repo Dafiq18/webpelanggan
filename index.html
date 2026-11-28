@@ -8575,11 +8575,13 @@ async function askAI(){
           PROMO.teks=String(c.promo.teks||"Promo"); PROMO.sampai=String(c.promo.sampai||"");
         }
         if(typeof c.gabung==="boolean") GABUNG_PROMO_VOUCHER=c.gabung;
-        if(Array.isArray(c.botol)){
-          var b=c.botol.filter(function(x){ return x && x.nama; }).map(function(x){
-            var o={nama:String(x.nama),harga:Math.max(0,angka(x.harga,0))};
-            if(Array.isArray(x.ukuran) && x.ukuran.length) o.ukuran=x.ukuran.map(String);
-            return o;
+                if(Array.isArray(c.botol)){
+          var b=[];
+          c.botol.filter(function(x){ return x && x.nama; }).forEach(function(x){
+            var h=Math.max(0,angka(x.harga,0)), uk=(Array.isArray(x.ukuran) && x.ukuran.length)?x.ukuran.map(String):null;
+            var w=Array.isArray(x.warna)?x.warna.filter(function(k){ return k && k.nama; }):[];
+            if(!w.length){ var o={nama:String(x.nama),harga:h}; if(uk) o.ukuran=uk; b.push(o); }
+            else w.forEach(function(k){ var o={nama:String(x.nama)+" — tutup "+String(k.nama),harga:h}; if(uk) o.ukuran=uk; b.push(o); });
           });
           DAFTAR_BOTOL.splice.apply(DAFTAR_BOTOL,[0,DAFTAR_BOTOL.length].concat(b));
         }
@@ -10560,7 +10562,7 @@ body::after{
   background-size:auto,auto,auto,auto,90px 90px;
 }
 </style>
-<!-- ===== AKHIR KODE LATAR-PARFUM ===== --><!-- ===== KODE BOTOL-GAMBAR: pilihan botol bergambar di keranjang (gambar & harga diatur di admin.html → Botol) ===== -->
+<!-- ===== AKHIR KODE LATAR-PARFUM ===== --><!-- ===== KODE BOTOL-GAMBAR: pilihan botol bergambar + warna tutup di keranjang (diatur di admin.html → Botol) ===== -->
 <style>
 .btl-row{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:thin}
 .btl{flex:0 0 92px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#e5e7eb;border-radius:14px;padding:7px 6px 8px;text-align:center;cursor:pointer;font:inherit;position:relative}
@@ -10571,31 +10573,56 @@ body::after{
 .btl small{display:block;margin-top:3px;font-size:11px;color:#fdba74;font-weight:800}
 .btl .ck{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#ff7337;color:#fff;font-size:11px;display:none;place-items:center;font-weight:900}
 .btl.on .ck{display:grid}
+.wr-t{font-size:12px;font-weight:900;color:#cbd5e1;margin:2px 0 7px}
+.wr-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.wr{display:flex;align-items:center;gap:7px;border:1.5px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#e5e7eb;border-radius:999px;padding:6px 12px 6px 7px;font:inherit;font-size:12.5px;font-weight:800;cursor:pointer}
+.wr i{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.55);display:block;flex:none}
+.wr.on{border-color:#ff7337;background:rgba(255,115,55,.18)}
 </style>
 <script>
 (function(){
   try{
-    var GAMB={}, ada=false;
+    var SEP=" — tutup ", GAMB={}, WARNA={}, ada=false;
+    function dasar(v){ var i=v.indexOf(SEP); return i<0?v:v.slice(0,i); }
     function ubah(sel){
       if(!ada||sel.dataset.btl) return;
-      var opsi=[].slice.call(sel.options), pakai=opsi.some(function(o){ return GAMB[o.value]; });
-      if(!pakai) return;
+      var opsi=[].slice.call(sel.options);
+      if(!opsi.some(function(o){ return GAMB[dasar(o.value)]||WARNA[o.value]; })) return;
       sel.dataset.btl="1";
-      var baris=document.createElement("div"); baris.className="btl-row";
-      opsi.forEach(function(o){
-        var b=document.createElement("button"); b.type="button"; b.className="btl"+(o.selected?" on":"");
-        var g=GAMB[o.value], nm=o.value, tx=o.textContent||"", hrg=/\(([^)]*)\)\s*$/.exec(tx); hrg=hrg?hrg[1]:"";
-        var im=g?document.createElement("img"):document.createElement("span");
-        if(g){ im.className="im"; im.alt=""; im.loading="lazy"; im.src=g; im.onerror=function(){ var p=document.createElement("span"); p.className="ph"; p.textContent="🍼"; if(im.parentNode) im.parentNode.replaceChild(p,im); }; }
+      var G=[], peta={};
+      opsi.forEach(function(o){ var d=dasar(o.value); if(!peta[d]){ peta[d]={d:d,v:[],hrg:(/\(([^)]*)\)\s*$/.exec(o.textContent||"")||[])[1]||""}; G.push(peta[d]); } peta[d].v.push(o); });
+      var baris=document.createElement("div"); baris.className="btl-row", wadah=document.createElement("div");
+      function pilihOpsi(o){ sel.value=o.value; sel.dispatchEvent(new Event("change")); }
+      function gambarWarna(g){
+        wadah.innerHTML="";
+        var ada2=g.v.some(function(o){ return WARNA[o.value]; }); if(!ada2) return;
+        var t=document.createElement("div"); t.className="wr-t"; t.textContent="Warna tutup"; wadah.appendChild(t);
+        var r=document.createElement("div"); r.className="wr-row";
+        g.v.forEach(function(o){ var w=WARNA[o.value]; if(!w) return;
+          var b=document.createElement("button"); b.type="button"; b.className="wr"+(o.selected?" on":"");
+          var s=document.createElement("i"); s.style.background=w.hex; b.appendChild(s); b.appendChild(document.createTextNode(w.nama));
+          b.onclick=function(){ pilihOpsi(o); }; r.appendChild(b); });
+        wadah.appendChild(r);
+      }
+      G.forEach(function(g){
+        var terpilih=g.v.some(function(o){ return o.selected; });
+        var b=document.createElement("button"); b.type="button"; b.className="btl"+(terpilih?" on":"");
+        var gm=GAMB[g.d], im=gm?document.createElement("img"):document.createElement("span");
+        if(gm){ im.className="im"; im.alt=""; im.loading="lazy"; im.src=gm; im.onerror=function(){ var p=document.createElement("span"); p.className="ph"; p.textContent="🍼"; if(im.parentNode) im.parentNode.replaceChild(p,im); }; }
         else { im.className="ph"; im.textContent="🍼"; }
-        var n=document.createElement("b"); n.textContent=nm;
-        var h=document.createElement("small"); h.textContent=hrg;
+        var n=document.createElement("b"); n.textContent=g.d, h=document.createElement("small"); h.textContent=g.hrg;
         var ck=document.createElement("span"); ck.className="ck"; ck.textContent="✓";
         b.appendChild(ck); b.appendChild(im); b.appendChild(n); b.appendChild(h);
-        b.onclick=function(){ sel.value=o.value; sel.dispatchEvent(new Event("change")); };
+        b.onclick=function(){
+          if(terpilih) return;
+          var lama=null; opsi.forEach(function(o){ if(o.selected&&WARNA[o.value]) lama=WARNA[o.value].nama; });
+          var cocok=null; if(lama) g.v.forEach(function(o){ if(WARNA[o.value]&&WARNA[o.value].nama===lama) cocok=o; });
+          pilihOpsi(cocok||g.v[0]);
+        };
         baris.appendChild(b);
+        if(terpilih) gambarWarna(g);
       });
-      sel.style.display="none"; sel.parentNode.insertBefore(baris,sel.nextSibling);
+      sel.style.display="none"; sel.parentNode.insertBefore(wadah,sel.nextSibling); sel.parentNode.insertBefore(baris,sel.nextSibling);
     }
     function semua(){ var w=document.getElementById("cartItems"); if(!w) return; [].forEach.call(w.querySelectorAll("select[data-botol-index]"),ubah); }
     function pasang(){
@@ -10604,7 +10631,11 @@ body::after{
     }
     fetch("config.json?v="+Date.now(),{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(c){
       if(!c||!Array.isArray(c.botol)) return;
-      c.botol.forEach(function(b){ if(b&&b.nama&&b.gambar){ GAMB[String(b.nama)]=String(b.gambar); ada=true; } });
+      c.botol.forEach(function(b){
+        if(!b||!b.nama) return;
+        var d=String(b.nama); if(b.gambar){ GAMB[d]=String(b.gambar); ada=true; }
+        if(Array.isArray(b.warna)) b.warna.forEach(function(k){ if(k&&k.nama){ WARNA[d+SEP+String(k.nama)]={nama:String(k.nama),hex:/^#[0-9a-fA-F]{6}$/.test(k.hex)?k.hex:"#cccccc"}; ada=true; } });
+      });
       pasang();
     }).catch(function(){});
   }catch(e){}
