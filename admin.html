@@ -237,7 +237,7 @@ ol.st b{color:#ffb199}
   <h2 id="bJudulBox">Botol baru</h2>
   <label class="f">Nama botol</label><input class="in" id="bNama" maxlength="40" placeholder="Botol kaca polos">
   <label class="f">Tambahan harga (Rp)</label><input class="in" id="bHarga" type="number" inputmode="numeric" min="0" step="500" placeholder="0 = gratis">
-  <label class="f">Berlaku untuk ukuran</label>
+  <label class="f">Gambar botol (opsional)</label>   <div id="bImgBox" style="display:flex;gap:12px;align-items:center;min-height:72px"></div>   <input type="file" id="bFile" accept="image/*" hidden>   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button type="button" class="btn g s" id="bPilihFoto">📷 Pilih foto botol</button><button type="button" class="btn g s" id="bHapusFoto">Hapus gambar</button></div>   <input class="in" id="bImgUrl" placeholder="atau tempel alamat gambar / nama file, contoh: botol/kaca.jpg" style="margin-top:8px" autocomplete="off">   <div class="hint" id="bImgInfo">Foto akan dikecilkan otomatis lalu diunggah ke GitHub-mu (perlu mengisi data GitHub di tab Terbitkan → Otomatis).</div>   <label class="f">Berlaku untuk ukuran</label>
   <div class="sizes" id="bUk"></div>
   <div class="hint">Tidak memilih ukuran apa pun berarti botol ini berlaku untuk semua ukuran.</div>
   <div class="hint" id="bErr" style="color:var(--bad);min-height:18px"></div>
@@ -273,7 +273,7 @@ function rapikan(c){
   if(c&&typeof c==="object"){
     if(c.promo&&typeof c.promo==="object") o.promo={aktif:!!c.promo.aktif,persen:Math.max(0,Math.min(90,Number(c.promo.persen)||0)),teks:String(c.promo.teks||""),sampai:String(c.promo.sampai||"")};
     if(typeof c.gabung==="boolean") o.gabung=c.gabung;
-    if(Array.isArray(c.botol)) o.botol=c.botol.filter(function(b){return b&&b.nama;}).map(function(b){var x={nama:String(b.nama),harga:Math.max(0,Number(b.harga)||0)}; if(Array.isArray(b.ukuran)&&b.ukuran.length) x.ukuran=b.ukuran.map(String); return x;});
+    if(Array.isArray(c.botol)) o.botol=c.botol.filter(function(b){return b&&b.nama;}).map(function(b){var x={nama:String(b.nama),harga:Math.max(0,Number(b.harga)||0)}; if(Array.isArray(b.ukuran)&&b.ukuran.length) x.ukuran=b.ukuran.map(String); if(b.gambar) x.gambar=String(b.gambar).slice(0,300); return x;});
     if(Array.isArray(c.voucher)) o.voucher=c.voucher.filter(function(v){return v&&v.kode;}).map(function(v){var x={kode:String(v.kode).toUpperCase(),judul:String(v.judul||v.kode),tipe:v.tipe==="nominal"?"nominal":"persen",nilai:Number(v.nilai)||0,min:Math.max(0,Number(v.min)||0)}; if(Number(v.maks)>0&&x.tipe==="persen") x.maks=Number(v.maks); x.sampai=String(v.sampai||""); x.publik=!!v.publik; return x;});
   }
   return o;
@@ -409,7 +409,7 @@ function gambarBotol(){
   var el=$("bList");
   if(!cfg.botol.length){ el.innerHTML='<div class="empty">Belum ada pilihan botol.<br>Kalau kosong, pelanggan tidak diminta memilih botol.</div>'; return; }
   el.innerHTML=cfg.botol.map(function(b,i){
-    return '<div class="tick" style="border-left-color:var(--blue)"><div style="min-width:0"><div class="jd" style="font-size:16px">🍼 '+esc(b.nama)+'</div><small>'+(b.harga?('Tambahan '+rp(b.harga)):'Gratis')+' • '+(b.ukuran?('Ukuran '+b.ukuran.join(", ")):'Semua ukuran')+'</small></div>'+
+    return '<div class="tick" style="border-left-color:var(--blue)">'+(b.gambar?'<img src="'+esc(b.gambar)+'" alt="" style="width:54px;height:54px;object-fit:contain;border-radius:10px;background:#fff;flex:none" onerror="this.style.visibility=\'hidden\'">':'')+'<div style="min-width:0"><div class="jd" style="font-size:16px">🍼 '+esc(b.nama)+'</div><small>'+(b.harga?('Tambahan '+rp(b.harga)):'Gratis')+' • '+(b.ukuran?('Ukuran '+b.ukuran.join(", ")):'Semua ukuran')+'</small></div>'+
       '<div class="ac"><button class="btn g s" data-e="'+i+'">Ubah</button><button class="btn d s" data-h="'+i+'">Hapus</button></div></div>';
   }).join("");
   el.querySelectorAll("[data-e]").forEach(function(b){ b.onclick=function(){ bukaB(Number(b.getAttribute("data-e"))); }; });
@@ -421,17 +421,52 @@ function gambarUk(){
 }
 function bukaB(i){
   bEdit=i; var b=i>=0?cfg.botol[i]:{nama:"",harga:"",ukuran:[]};
-  $("bJudulBox").textContent=i>=0?"Ubah botol":"Botol baru"; $("bNama").value=b.nama; $("bHarga").value=b.harga||""; bUkur=(b.ukuran||[]).slice(); gambarUk(); $("bErr").textContent=""; $("mdB").classList.add("open");
+  $("bJudulBox").textContent=i>=0?"Ubah botol":"Botol baru"; $("bNama").value=b.nama; $("bHarga").value=b.harga||""; setGambar(b.gambar||""); bUkur=(b.ukuran||[]).slice(); gambarUk(); $("bErr").textContent=""; $("mdB").classList.add("open");
 }
 $("bBaru").onclick=function(){ bukaB(-1); };
 $("bSimpan").onclick=function(){
   var nama=$("bNama").value.trim(), harga=Math.max(0,Number($("bHarga").value)||0);
   if(!nama){ $("bErr").textContent="Isi nama botol dulu."; return; }
-  var o={nama:nama,harga:harga}; if(bUkur.length) o.ukuran=UKURAN.filter(function(u){return bUkur.indexOf(u)>=0;});
+  var o={nama:nama,harga:harga}; if(bGambar) o.gambar=bGambar; if(bUkur.length) o.ukuran=UKURAN.filter(function(u){return bUkur.indexOf(u)>=0;});
   if(bEdit>=0) cfg.botol[bEdit]=o; else cfg.botol.push(o);
   $("mdB").classList.remove("open"); gambarBotol(); tandai(); toast("Botol disimpan.");
 };
-
+/* ---------- gambar botol ---------- */
+var bGambar="";
+function setGambar(g){
+  bGambar=String(g||"").trim().slice(0,300); $("bImgUrl").value=bGambar;
+  $("bImgBox").innerHTML=bGambar?'<img src="'+esc(bGambar)+'" alt="" style="width:72px;height:72px;object-fit:contain;border-radius:12px;background:#fff" onerror="this.style.opacity=.25">':'<div class="hint">Belum ada gambar.</div>';
+}
+$("bImgUrl").oninput=function(){ bGambar=this.value.trim().slice(0,300); $("bImgBox").innerHTML=bGambar?'<img src="'+esc(bGambar)+'" alt="" style="width:72px;height:72px;object-fit:contain;border-radius:12px;background:#fff" onerror="this.style.opacity=.25">':'<div class="hint">Belum ada gambar.</div>'; };
+$("bHapusFoto").onclick=function(){ setGambar(""); };
+$("bPilihFoto").onclick=function(){ $("bFile").click(); };
+$("bFile").onchange=function(){
+  var f=this.files&&this.files[0]; this.value=""; if(!f) return;
+  var o=$("gOwner").value.trim(), r=$("gRepo").value.trim(), br=$("gBranch").value.trim()||"main", tk=$("gToken").value.trim(), info=$("bImgInfo");
+  if(!o||!r||!tk){ info.style.color="var(--bad)"; info.textContent="Isi dulu akun, repo, dan token GitHub di tab Terbitkan → Otomatis, lalu coba lagi. (Atau tempel alamat gambar di kolom bawah.)"; return; }
+  info.style.color=""; info.textContent="Mengecilkan foto…";
+  var rd=new FileReader();
+  rd.onerror=function(){ info.style.color="var(--bad)"; info.textContent="Foto tidak bisa dibaca."; };
+  rd.onload=function(){
+    var im=new Image();
+    im.onerror=function(){ info.style.color="var(--bad)"; info.textContent="File ini bukan gambar yang bisa dibuka."; };
+    im.onload=function(){
+      var m=700, w=im.naturalWidth, h=im.naturalHeight, k=Math.min(1,m/Math.max(w,h)); w=Math.round(w*k); h=Math.round(h*k);
+      var c=document.createElement("canvas"); c.width=w; c.height=h; var x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,w,h); x.drawImage(im,0,0,w,h);
+      var data=c.toDataURL("image/jpeg",.85).split(",")[1];
+      var nama=($("bNama").value||"botol").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,30)||"botol";
+      var path="botol/"+nama+"-"+Date.now().toString(36)+".jpg";
+      info.textContent="Mengunggah foto…";
+      fetch("https://api.github.com/repos/"+encodeURIComponent(o)+"/"+encodeURIComponent(r)+"/contents/"+path,{method:"PUT",headers:{"Authorization":"Bearer "+tk,"Accept":"application/vnd.github+json","Content-Type":"application/json"},body:JSON.stringify({message:"Tambah foto botol dari admin panel",content:data,branch:br})}).then(function(res){
+        if(res.status===401||res.status===403) throw new Error("Token ditolak. Cek token dan izin Contents: Read and write.");
+        if(!res.ok) throw new Error("Gagal mengunggah ("+res.status+").");
+        setGambar(path); info.style.color="var(--ok,#34d399)"; info.textContent="✔ Foto terunggah. Tekan Simpan botol, lalu Terbitkan.";
+      }).catch(function(e){ info.style.color="var(--bad)"; info.textContent=e.message||"Gagal terhubung."; });
+    };
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+};
 document.querySelectorAll(".modal").forEach(function(m){
   m.addEventListener("click",function(e){ if(e.target===m||e.target.hasAttribute("data-tutup")) m.classList.remove("open"); });
 });
