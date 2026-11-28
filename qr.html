@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QR Toko — Aroma Semarang</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#1a1030;color:#fff;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;display:grid;place-items:center;padding:20px}
+.poster{width:min(420px,100%);background:linear-gradient(160deg,#2a1747,#140f24);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:28px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.poster h1{margin:0;font-size:28px;letter-spacing:.04em}
+.poster p{margin:4px 0 0;color:#d8c6f5}
+#qr{display:inline-block;background:#fff;padding:16px;border-radius:18px;margin:22px 0 10px;min-width:260px;min-height:260px}
+#qr img,#qr canvas{display:block;max-width:100%;height:auto}
+.t{font-size:22px;font-weight:800;margin:6px 0 2px}
+.u{font-size:13px;color:#ff9a6b;word-break:break-all;margin-top:12px}
+.aksi{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+button{border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:800;color:#fff;background:linear-gradient(135deg,#ff7337,#ee4d2d);cursor:pointer}
+button.g{background:rgba(255,255,255,.12)}
+#pesan{color:#fda4af;margin-top:10px;font-size:14px}
+@media print{body{background:#fff;color:#000;padding:0}.aksi,#pesan{display:none}.poster{box-shadow:none;border:2px solid #000;background:#fff;color:#000;width:100%}.poster p,.t{color:#000}.u{color:#000}}
+</style>
+</head>
+<body>
+<div class="poster">
+  <h1>AROMA SEMARANG</h1>
+  <p>Toko Parfum Refill</p>
+  <div id="qr"></div>
+  <div class="t">Scan untuk belanja</div>
+  <p>Arahkan kamera HP ke kode di atas</p>
+  <div class="u" id="u"></div>
+  <div class="aksi"><button id="cetak">🖨️ Cetak</button><button class="g" id="unduh">⬇️ Simpan gambar</button></div>
+  <div id="pesan"></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+  var alamat=location.href.replace(/[?#].*$/,"").replace(/qr\.html$/,"");
+  document.getElementById("u").textContent=alamat;
+  try{
+    new QRCode(document.getElementById("qr"),{text:alamat,width:280,height:280,colorDark:"#1a1030",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
+  }catch(e){ document.getElementById("pesan").textContent="QR gagal dibuat. Periksa internet lalu muat ulang halaman."; }
+  document.getElementById("cetak").onclick=function(){ window.print(); };
+  document.getElementById("unduh").onclick=function(){
+    var c=document.querySelector("#qr canvas"), a=document.createElement("a");
+    if(!c){ document.getElementById("pesan").textContent="QR belum siap. Coba lagi sebentar."; return; }
+    a.href=c.toDataURL("image/png"); a.download="qr-aroma-semarang.png"; a.click();
+  };
+})();
+</script>
+</body>
+</html>
