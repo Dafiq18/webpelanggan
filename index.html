@@ -10560,4 +10560,54 @@ body::after{
   background-size:auto,auto,auto,auto,90px 90px;
 }
 </style>
-<!-- ===== AKHIR KODE LATAR-PARFUM ===== --></body></html>
+<!-- ===== AKHIR KODE LATAR-PARFUM ===== --><!-- ===== KODE BOTOL-GAMBAR: pilihan botol bergambar di keranjang (gambar & harga diatur di admin.html → Botol) ===== -->
+<style>
+.btl-row{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:thin}
+.btl{flex:0 0 92px;border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#e5e7eb;border-radius:14px;padding:7px 6px 8px;text-align:center;cursor:pointer;font:inherit;position:relative}
+.btl.on{border-color:#ff7337;background:rgba(255,115,55,.16);box-shadow:0 0 0 2px rgba(255,115,55,.25)}
+.btl .im{display:block;width:100%;height:68px;border-radius:9px;background:#fff;object-fit:contain;margin-bottom:6px}
+.btl .ph{display:grid;place-items:center;height:68px;border-radius:9px;background:rgba(255,255,255,.08);font-size:28px;margin-bottom:6px}
+.btl b{display:block;font-size:11px;line-height:1.25;font-weight:800;max-height:2.5em;overflow:hidden}
+.btl small{display:block;margin-top:3px;font-size:11px;color:#fdba74;font-weight:800}
+.btl .ck{position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#ff7337;color:#fff;font-size:11px;display:none;place-items:center;font-weight:900}
+.btl.on .ck{display:grid}
+</style>
+<script>
+(function(){
+  try{
+    var GAMB={}, ada=false;
+    function ubah(sel){
+      if(!ada||sel.dataset.btl) return;
+      var opsi=[].slice.call(sel.options), pakai=opsi.some(function(o){ return GAMB[o.value]; });
+      if(!pakai) return;
+      sel.dataset.btl="1";
+      var baris=document.createElement("div"); baris.className="btl-row";
+      opsi.forEach(function(o){
+        var b=document.createElement("button"); b.type="button"; b.className="btl"+(o.selected?" on":"");
+        var g=GAMB[o.value], nm=o.value, tx=o.textContent||"", hrg=/\(([^)]*)\)\s*$/.exec(tx); hrg=hrg?hrg[1]:"";
+        var im=g?document.createElement("img"):document.createElement("span");
+        if(g){ im.className="im"; im.alt=""; im.loading="lazy"; im.src=g; im.onerror=function(){ var p=document.createElement("span"); p.className="ph"; p.textContent="🍼"; if(im.parentNode) im.parentNode.replaceChild(p,im); }; }
+        else { im.className="ph"; im.textContent="🍼"; }
+        var n=document.createElement("b"); n.textContent=nm;
+        var h=document.createElement("small"); h.textContent=hrg;
+        var ck=document.createElement("span"); ck.className="ck"; ck.textContent="✓";
+        b.appendChild(ck); b.appendChild(im); b.appendChild(n); b.appendChild(h);
+        b.onclick=function(){ sel.value=o.value; sel.dispatchEvent(new Event("change")); };
+        baris.appendChild(b);
+      });
+      sel.style.display="none"; sel.parentNode.insertBefore(baris,sel.nextSibling);
+    }
+    function semua(){ var w=document.getElementById("cartItems"); if(!w) return; [].forEach.call(w.querySelectorAll("select[data-botol-index]"),ubah); }
+    function pasang(){
+      var w=document.getElementById("cartItems"); if(!w||!window.MutationObserver) return setTimeout(pasang,500);
+      new MutationObserver(semua).observe(w,{childList:true,subtree:true}); semua();
+    }
+    fetch("config.json?v="+Date.now(),{cache:"no-store"}).then(function(r){ return r.ok?r.json():null; }).then(function(c){
+      if(!c||!Array.isArray(c.botol)) return;
+      c.botol.forEach(function(b){ if(b&&b.nama&&b.gambar){ GAMB[String(b.nama)]=String(b.gambar); ada=true; } });
+      pasang();
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
+<!-- ===== AKHIR KODE BOTOL-GAMBAR ===== --></body></html>
